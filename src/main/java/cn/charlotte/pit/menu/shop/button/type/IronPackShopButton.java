@@ -28,6 +28,11 @@ public class IronPackShopButton extends AbstractShopButton {
         List<String> lines = new ArrayList<>();
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         lines.add("&7包含铁胸甲,铁护腿与铁靴子.");
+        if (profile.getUnlockedPerkMap().containsKey("all_armed_perk")) {
+            lines.add("&7已激活 &e全副武装&7: 额外获得铁头盔.");
+        } else {
+            lines.add("&7解锁 &e全副武装 &7后可额外获得铁头盔.");
+        }
         lines.add(" ");
         lines.add("&7&o死亡后消失");
         lines.add("&7价格: &6" + getDiscountPrice(player, getPrice(player)) + " 硬币");
@@ -58,11 +63,16 @@ public class IronPackShopButton extends AbstractShopButton {
 
     @Override
     public ItemStack[] getResultItem(Player player) {
-        return new ItemStack[]{
-                new ItemBuilder(Material.IRON_CHESTPLATE).canDrop(true).canSaveToEnderChest(true).deathDrop(true).lore("&6从商店中获得").internalName("shopItem").build(),
-                new ItemBuilder(Material.IRON_LEGGINGS).canDrop(true).canSaveToEnderChest(true).deathDrop(true).lore("&6从商店中获得").internalName("shopItem").build(),
-                new ItemBuilder(Material.IRON_BOOTS).canDrop(true).canSaveToEnderChest(true).deathDrop(true).lore("&6从商店中获得").internalName("shopItem").build()
-        };
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        boolean extraHelmet = profile.getUnlockedPerkMap().containsKey("all_armed_perk");
+        List<ItemStack> result = new ArrayList<>();
+        if (extraHelmet) {
+            result.add(new ItemBuilder(Material.IRON_HELMET).canDrop(true).canSaveToEnderChest(true).deathDrop(true).lore("&6从商店中获得").internalName("shopItem").build());
+        }
+        result.add(new ItemBuilder(Material.IRON_CHESTPLATE).canDrop(true).canSaveToEnderChest(true).deathDrop(true).lore("&6从商店中获得").internalName("shopItem").build());
+        result.add(new ItemBuilder(Material.IRON_LEGGINGS).canDrop(true).canSaveToEnderChest(true).deathDrop(true).lore("&6从商店中获得").internalName("shopItem").build());
+        result.add(new ItemBuilder(Material.IRON_BOOTS).canDrop(true).canSaveToEnderChest(true).deathDrop(true).lore("&6从商店中获得").internalName("shopItem").build());
+        return result.toArray(new ItemStack[0]);
     }
 
     @Override

@@ -4,6 +4,7 @@ target/
 !**/src/test/**/target/
 
 ### IntelliJ IDEA ###
+.idea/
 .idea/modules.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
@@ -39,3 +40,24 @@ build/
 
 
 .gradle/
+
+# Build / IDE / AI (remiaft clean)
+target/
+build/
+out/
+bin/
+.idea/
+*.iml
+.vscode/
+.cursor/
+.gradle/
+.gradle-user-home/
+.kotlin/
+.m2/
+.m2repo/
+.claude/
+.codex/
+.agents/
+.codex-build/
+.codex-tmp/
+dependency-reduced-pom.xml

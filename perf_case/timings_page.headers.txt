@@ -1,0 +1,15 @@
+HTTP/1.1 200 Connection established
+
+HTTP/2 200 
+date: Thu, 05 Feb 2026 05:13:39 GMT
+content-type: text/html;charset=UTF-8
+server: cloudflare
+x-powered-by: PHP/7.4.33
+cf-cache-status: DYNAMIC
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+server-timing: cfCacheStatus;desc="DYNAMIC"
+server-timing: cfEdge;dur=11,cfOrigin;dur=728
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=qBJXq%2FaTnLazP9enxCP96c3ZnRCMzWtQXoYN9yNZBPdn%2FuDBCsQ3QEpOOIc3L2FEmGZkas3Azuj7xj3Ui6AUT3xIVyyxNny7"}]}
+cf-ray: 9c8feb7289e5ca53-NRT
+alt-svc: h3=":443"; ma=86400
+

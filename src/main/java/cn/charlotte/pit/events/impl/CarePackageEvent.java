@@ -45,6 +45,8 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
     private static Location chest;
     @Getter
     private static ChestData chestData;
+    private static Material chestOriginalType = Material.AIR;
+    private static byte chestOriginalData = 0;
 
     private static BukkitRunnable runnable;
 
@@ -128,13 +130,28 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
             return;
         }
 
-        final Location location = locations.get(RandomUtil.random.nextInt(locations.size())).clone().getBlock().getLocation();
+        final List<Location> availableLocations = new ArrayList<>();
+        for (Location configured : locations) {
+            Location blockLocation = configured.clone().getBlock().getLocation();
+            if (blockLocation.getBlock().getType() == Material.AIR) {
+                availableLocations.add(blockLocation);
+            }
+        }
+        if (availableLocations.isEmpty()) {
+            CC.boardCast("&c警告! &6空投&7 坐标均非空气方块, 为保护地形本次活动已取消");
+            ThePit.getInstance().getEventFactory().inactiveEvent(this);
+            return;
+        }
+
+        final Location location = availableLocations.get(RandomUtil.random.nextInt(availableLocations.size()));
 
         Bukkit.getPluginManager()
                 .registerEvents(this, ThePit.getInstance());
         Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
             location.getWorld().strikeLightningEffect(location);
             CC.boardCast("&6&l空投! &7一个新的空投已在地图降落!打开可以获得神话物品,声望等稀有物资!");
+            chestOriginalType = location.getBlock().getType();
+            chestOriginalData = location.getBlock().getData();
             location.getBlock().setType(Material.CHEST);
             chest = location;
 
@@ -191,13 +208,27 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
     public void onInactive() {
         Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
             HandlerList.unregisterAll(this);
-            chestData.getSecondHologram().deSpawn();
+            if (chestData != null) {
+                if (chestData.getFirstHologram() != null) {
+                    chestData.getFirstHologram().deSpawn();
+                }
+                if (chestData.getSecondHologram() != null) {
+                    chestData.getSecondHologram().deSpawn();
+                }
+            }
             PackageMenu.getItems().clear();
-            chest.getBlock().setType(Material.AIR);
+            if (chest != null && chest.getBlock().getType() == Material.CHEST) {
+                chest.getBlock().setType(chestOriginalType);
+                chest.getBlock().setData(chestOriginalData);
+            }
             chestData = null;
             chest = null;
-            runnable.cancel();
-            runnable = null;
+            chestOriginalType = Material.AIR;
+            chestOriginalData = 0;
+            if (runnable != null) {
+                runnable.cancel();
+                runnable = null;
+            }
         });
     }
 

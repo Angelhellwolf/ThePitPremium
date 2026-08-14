@@ -19,6 +19,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
@@ -26,6 +27,41 @@ import java.util.regex.Pattern;
  * @Date: 2020/12/30 0:00
  */
 public class CC {
+
+    // Rate limiter for broadcast messages — prevents chat flooding when many players are online.
+    private static final Map<MessageType, Long> lastBroadcastTime = new ConcurrentHashMap<>();
+
+    /**
+     * Returns the minimum interval (ms) between broadcasts of the given type,
+     * scaled by online player count. Returns 0 when throttling is not needed.
+     */
+    private static long getBroadcastCooldownMs(MessageType type) {
+        int online = Bukkit.getOnlinePlayers().size();
+
+        switch (type) {
+            case STREAK:
+            case BOUNTY:
+                if (online < 20) return 1000;
+                if (online < 40) return 2000;
+                if (online < 60) return 3000;
+                if (online < 100) return 5000;
+                return 7000;
+            default:
+                return 0;
+        }
+    }
+
+    private static boolean shouldThrottle(MessageType type) {
+        long cooldown = getBroadcastCooldownMs(type);
+        if (cooldown <= 0) return false;
+        long now = System.currentTimeMillis();
+        Long last = lastBroadcastTime.get(type);
+        if (last != null && now - last < cooldown) {
+            return true;
+        }
+        lastBroadcastTime.put(type, now);
+        return false;
+    }
 
     public static final String BLUE;
     public static final String AQUA;
@@ -220,6 +256,7 @@ public class CC {
 
 
     public static void boardCast(MessageType type, String text) {
+        if (shouldThrottle(type)) return;
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (canPlayerSeeMessage(player, type)) {
                 player.sendMessage(CC.translate(text));

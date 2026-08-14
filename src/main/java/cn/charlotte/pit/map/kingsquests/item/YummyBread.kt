@@ -1,6 +1,7 @@
 package cn.charlotte.pit.map.kingsquests.item
 
 import cn.charlotte.pit.item.AbstractPitItem
+import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.util.PlayerUtil
 import cn.charlotte.pit.util.chat.CC
 import cn.charlotte.pit.util.countItem
@@ -20,6 +21,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 
+@AutoRegister
 object YummyBread: AbstractPitItem(), Listener {
 
     @EventHandler

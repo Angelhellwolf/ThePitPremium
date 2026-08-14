@@ -28,6 +28,20 @@ object NewConfiguration {
     var customChatFormat = "%pit_level_tag_roman% %s&f: %s"
 
     var scoreboardShowtime = true
+    var scoreboardUpdateTicks = 10
+
+    // perf toggles (rollback switches)
+    var perfMetricsEnable = false
+    var perfMetricsIntervalSeconds = 60
+
+    var perfScoreboardSpreadEnable = true
+    var perfScoreboardMaxUpdatesPerRun = 20
+
+    var perfNpcOptimizeEnable = true
+    var perfNpcForceVisibleEnable = true
+    var perfNpcShowDistance = 80.0
+    var perfNpcTextUpdateTicks = 40
+    var perfNpcTextUpdateMaxDistance = 60.0
 
     var pitSupportPermission = "pit.vip"
 
@@ -72,7 +86,9 @@ object NewConfiguration {
         noobDamageBoost = config.getDouble("noob-protect.damage_boost")
         noobDamageReduce = config.getDouble("noob-protect.damage_reduce")
 
-        CombatListener.eventBoost = config.getDouble("booster")
+        val configuredBoost = if (config.contains("booster")) config.getDouble("booster") else 0.0
+        val fallbackBoost = ThePit.getInstance().config.getDouble("booster", 1.0)
+        CombatListener.eventBoost = if (configuredBoost > 0) configuredBoost else fallbackBoost
 
         luckGem = config.getDouble("luck-gem", 0.30)
         waterMark = config.getString("water-mark")
@@ -94,6 +110,19 @@ object NewConfiguration {
         removeSupportWhenNoPermission = config.getBoolean("removeSupportWhenNoPermission", false)
 
         scoreboardShowtime = config.getBoolean("scoreboard-showtime")
+        scoreboardUpdateTicks = config.getInt("scoreboard-update-ticks", 10).coerceAtLeast(2)
+
+        perfMetricsEnable = config.getBoolean("perf-metrics.enable", false)
+        perfMetricsIntervalSeconds = config.getInt("perf-metrics.interval-seconds", 60).coerceAtLeast(10)
+
+        perfScoreboardSpreadEnable = config.getBoolean("perf.scoreboard.spread-updates.enable", true)
+        perfScoreboardMaxUpdatesPerRun = config.getInt("perf.scoreboard.spread-updates.max-updates-per-run", 20).coerceAtLeast(5)
+
+        perfNpcOptimizeEnable = config.getBoolean("perf.npc.optimize.enable", true)
+        perfNpcForceVisibleEnable = config.getBoolean("perf.npc.force-visible.enable", true)
+        perfNpcShowDistance = config.getDouble("perf.npc.show-distance", 80.0).coerceAtLeast(10.0)
+        perfNpcTextUpdateTicks = config.getInt("perf.npc.text-update-ticks", 40).coerceAtLeast(10)
+        perfNpcTextUpdateMaxDistance = config.getDouble("perf.npc.text-update-max-distance", 60.0).coerceAtLeast(10.0)
 
         mythicChance.clear()
         config.getConfigurationSection("mythicDropChance")!!.let {
@@ -294,6 +323,19 @@ object NewConfiguration {
         "highest-prestige" to 35,
 
         "scoreboard-showtime" to true,
+        "scoreboard-update-ticks" to 10,
+
+        "perf-metrics.enable" to false,
+        "perf-metrics.interval-seconds" to 60,
+
+        "perf.scoreboard.spread-updates.enable" to true,
+        "perf.scoreboard.spread-updates.max-updates-per-run" to 20,
+
+        "perf.npc.optimize.enable" to true,
+        "perf.npc.force-visible.enable" to true,
+        "perf.npc.show-distance" to 80.0,
+        "perf.npc.text-update-ticks" to 40,
+        "perf.npc.text-update-max-distance" to 60.0,
 
         "rate.dark.vip1.test" to "pit.vip1",
         "rate.dark.vip1.value" to 0.08,

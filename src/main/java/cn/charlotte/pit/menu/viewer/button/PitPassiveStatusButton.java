@@ -1,6 +1,7 @@
 package cn.charlotte.pit.menu.viewer.button;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.data.sub.PerkData;
 import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.chat.RomanUtil;
 import cn.charlotte.pit.util.item.ItemBuilder;
@@ -34,6 +35,8 @@ public class PitPassiveStatusButton extends Button {
         lores.add("&7伤害减免: &e" + (profile.getChosePerk().get(-5) == null ? "&c未解锁" : RomanUtil.convert(profile.getChosePerk().get(-5).getLevel())));
         lores.add("&7方块存在时间提升: &e" + (profile.getChosePerk().get(-6) == null ? "&c未解锁" : RomanUtil.convert(profile.getChosePerk().get(-6).getLevel())));
         lores.add("&7先发制人: &e" + (profile.getChosePerk().get(-7) == null ? "&c未解锁" : RomanUtil.convert(profile.getChosePerk().get(-7).getLevel())));
+        PerkData battleFuryData = profile.getUnlockedPerkMap().get("battle_fury_perk");
+        lores.add("&7愈战愈勇: &e" + (battleFuryData == null ? "&c未解锁" : RomanUtil.convert(Math.max(1, battleFuryData.getLevel()))));
         if (!profile.getPlayerOption().isProfileVisibility() && !PlayerUtil.isStaff(player)) {
             lores.clear();
             lores.add("&c此玩家隐藏了他的档案信息.");

@@ -96,6 +96,7 @@ public class EnchantmentFactor {
                 }
             }
         }
+
         log.info("" + enchantmentMap.size() + " enchantments loaded!");
     }
 

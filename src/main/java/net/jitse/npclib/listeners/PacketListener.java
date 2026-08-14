@@ -46,20 +46,19 @@ public class PacketListener {
                 .addPacketListener(new PacketAdapter(instance.getPlugin(), PacketType.Play.Client.USE_ENTITY) {
                     @Override
                     public void onPacketReceiving(PacketEvent event) {
-                        handleInteractPacket(event.getPlayer(), event.getPacket().getHandle());
+                        if (handleInteractPacket(event.getPlayer(), event.getPacket().getHandle())) {
+                            // Cancel the packet so the server doesn't try to process
+                            // a UseEntity for a fake NPC entity — prevents "invalid packet"
+                            // errors with cross-version clients (ViaVersion/PacketEvents).
+                            event.setCancelled(true);
+                        }
                     }
                 });
     }
 
-    private void handleInteractPacket(Player player, Object packet) {
+    private boolean handleInteractPacket(Player player, Object packet) {
         NPCBase npc = null;
         int packetEntityId = entityIdField.get(packet);
-
-        // Not using streams here is an intentional choice.
-        // Packet listeners is one of the few places where it is important to write optimized code.
-        // Lambdas (And the stream api) create a massive amount of objects, especially if it isn't a static lambda.
-        // So, we're avoiding them here.
-        // ~ Kneesnap, 9 / 20 / 2019.
 
         for (NPCBase testNPC : NPCManager.getAllNPCs()) {
             if (testNPC.isCreated() && testNPC.isShown(player) && testNPC.getEntityId() == packetEntityId) {
@@ -69,12 +68,11 @@ public class PacketListener {
         }
 
         if (npc == null) {
-            // Default player, not doing magic with the packet.
-            return;
+            return false;
         }
 
-        if (delay.contains(player.getUniqueId())) { // There is an active delay.
-            return;
+        if (delay.contains(player.getUniqueId())) {
+            return true; // Still an NPC packet, cancel it even during delay
         }
 
         NPCInteractEvent.ClickType clickType = actionField.get(packet).toString().equals("ATTACK")
@@ -82,6 +80,7 @@ public class PacketListener {
 
         delay.add(player.getUniqueId());
         Bukkit.getScheduler().runTask(plugin, new TaskCallNpcInteractEvent(new NPCInteractEvent(player, clickType, npc), this));
+        return true;
     }
 
     // This would be a non-static lambda, and its usage matters, so we'll make it a full class.

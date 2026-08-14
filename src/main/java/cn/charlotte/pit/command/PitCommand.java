@@ -130,6 +130,13 @@ public class PitCommand {
     }
 
     @Command(
+            names = {"lj", "trash"}
+    )
+    public void openTrashCan(Player player) {
+        player.openInventory(Bukkit.createInventory(null, 3 * 9, "垃圾桶"));
+    }
+
+    @Command(
             names = "show"
     )
     public void show(Player player) {

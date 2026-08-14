@@ -7,6 +7,7 @@ import cn.charlotte.pit.event.PitPlayerUpgradePerkEvent;
 import cn.charlotte.pit.menu.perk.UnKnowButton;
 import cn.charlotte.pit.menu.perk.prestige.PrestigePerkBuyMenu;
 import cn.charlotte.pit.perk.AbstractPerk;
+import cn.charlotte.pit.perk.PrestigePrerequisite;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.chat.RomanUtil;
 import cn.charlotte.pit.util.level.LevelUtil;
@@ -64,6 +65,14 @@ public class PrestigePerkBuyButton extends Button {
         } else {
             lore.addAll(perk.getDescription(player));
         }
+
+        if (perk instanceof PrestigePrerequisite) {
+            PrestigePrerequisite prerequisite = (PrestigePrerequisite) perk;
+            boolean passed = prerequisite.hasUnlockedRequirement(profile);
+            lore.add(" ");
+            lore.add("&7前置: " + (passed ? "&a" : "&c") + prerequisite.getRequirementDescription());
+        }
+
         lore.add(" ");
         String color;
         if (data != null) {
@@ -111,6 +120,13 @@ public class PrestigePerkBuyButton extends Button {
         }
         if (data != null) {
             if ((perk.getMaxLevel() > data.getLevel())) {
+                if (perk instanceof PrestigePrerequisite) {
+                    PrestigePrerequisite prerequisite = (PrestigePrerequisite) perk;
+                    if (!prerequisite.hasUnlockedRequirement(profile)) {
+                        player.sendMessage(CC.translate(prerequisite.getRequirementFailMessage()));
+                        return;
+                    }
+                }
                 int price = (int) perk.requireRenown(data.getLevel() + 1);
                 if (price > profile.getRenown()) {
                     player.sendMessage(CC.translate("&c你没有足够的声望!"));
@@ -123,6 +139,13 @@ public class PrestigePerkBuyButton extends Button {
                 }
             }
         } else {
+            if (perk instanceof PrestigePrerequisite) {
+                PrestigePrerequisite prerequisite = (PrestigePrerequisite) perk;
+                if (!prerequisite.hasUnlockedRequirement(profile)) {
+                    player.sendMessage(CC.translate(prerequisite.getRequirementFailMessage()));
+                    return;
+                }
+            }
             int price = (int) perk.requireRenown(1);
             if (price > profile.getRenown()) {
                 player.sendMessage(CC.translate("&c你没有足够的声望!"));

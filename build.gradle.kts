@@ -18,7 +18,12 @@ repositories {
     maven("https://repo.inventivetalent.org/content/groups/public/")
     maven("https://jitpack.io")
     maven("https://repo.rosewooddev.io/repository/public/")
-    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    // Restrict PlaceholderAPI repo to avoid resolving unrelated deps from it (it can redirect/fail intermittently).
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") {
+        content {
+            includeGroup("me.clip")
+        }
+    }
     maven("https://repo.panda-lang.org/releases")
     mavenLocal()
 }
@@ -36,11 +41,24 @@ dependencies {
     api(libs.slf4j)
     api(libs.reflectionhelper)
     compileOnly(libs.luckperms)
-    compileOnly(libs.narshorn)
+    // Java 15+ removed Nashorn from the JDK; bundle nashorn-core so JSHandler works on Java 17+ runtimes.
+    implementation(libs.narshorn)
     compileOnly(libs.httpclient)
     compileOnly(libs.httpcore)
     compileOnly(libs.decentholograms)
-    compileOnly(libs.protocollib)
+
+    // Network-stable fallback: if a matching ProtocolLib jar is present under libs/, use it and skip remote resolution.
+    // Prefer any local ProtocolLib jar to avoid network/metadata issues and Java version variant mismatch.
+    // Accepted filenames: libs/ProtocolLib-*.jar or libs/ProtocolLib*.jar
+    val localProtocolLib = fileTree("libs").matching {
+        include("ProtocolLib-*.jar", "ProtocolLib*.jar")
+    }.files.firstOrNull()
+    if (localProtocolLib != null) {
+        compileOnly(files(localProtocolLib))
+    } else {
+        compileOnly(libs.protocollib)
+    }
+
     compileOnly(libs.papi)
     compileOnly(libs.playerpoints)
     compileOnly(libs.spigot.get8())
@@ -50,7 +68,14 @@ tasks.shadowJar {
     archiveFileName.set("$pluginName-$version.jar")
     mergeServiceFiles()
     exclude("META-INF/**")
+    // Isolate ASM to avoid Bukkit cross-plugin class collisions (same package loaded by different PluginClassLoader).
+    // Keep Nashorn package unchanged: Nashorn contains internal hardcoded class names loaded reflectively.
+    relocate("org.objectweb.asm", "cn.charlotte.pit.shadow.asm")
 
+}
+// Prevent accidentally uploading the thin (non-shaded) jar: it misses bundled runtime deps like Nashorn for Java 17.
+tasks.jar {
+    enabled = false
 }
 tasks.build {
     dependsOn(tasks.shadowJar)

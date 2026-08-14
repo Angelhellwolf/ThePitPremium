@@ -25,7 +25,7 @@ public class LeaderBoardRunnable implements Runnable {
 
     public LeaderBoardRunnable(ThePit instance) {
         this.instance = instance;
-        scheduler.scheduleAtFixedRate(this, 0, 1, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this, 0, 60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -45,6 +45,7 @@ public class LeaderBoardRunnable implements Runnable {
                 .find()
                 .sort(Filters.eq("totalExp", -1))
                 .filter(Filters.gte("lastLogoutTime", System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000))
+                .limit(100)
                 .cursor()) {
 
             List<Document> documents = new ArrayList<>();

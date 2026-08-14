@@ -1,9 +1,11 @@
 package cn.charlotte.pit.npc;
 
 import cn.charlotte.pit.ThePit;
+import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.event.PitProfileLoadedEvent;
 import cn.charlotte.pit.npc.runnable.NpcRunnable;
 import cn.charlotte.pit.parm.AutoRegister;
+import cn.charlotte.pit.util.perf.PerfMetrics;
 import lombok.SneakyThrows;
 import net.jitse.npclib.NPCLib;
 import net.jitse.npclib.api.NPC;
@@ -13,6 +15,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,25 +61,59 @@ public class NpcFactory implements Listener {
             }
         }
 
-        new NpcRunnable().runTaskTimerAsynchronously(ThePit.getInstance(), 20, 20);
+        long period = Math.max(10L, NewConfiguration.INSTANCE.getPerfNpcTextUpdateTicks());
+        new NpcRunnable().runTaskTimer(ThePit.getInstance(), period, period);
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        if (!NewConfiguration.INSTANCE.getPerfNpcForceVisibleEnable()) {
+            return;
+        }
+        // Fallback: show NPCs on join even if PitProfileLoadedEvent is delayed/missed.
+        Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
+            Player player = event.getPlayer();
+            if (player == null || !player.isOnline()) {
+                return;
+            }
+            for (AbstractPitNPC pitNpc : pitNpc) {
+                try {
+                    if (!pitNpc.getNpc().isCreated()) {
+                        pitNpc.getNpc().create();
+                    }
+                    if (!pitNpc.getNpc().isShown(player)) {
+                        pitNpc.getNpc().show(player);
+                    }
+                } catch (Throwable t) {
+                    Bukkit.getLogger().warning("[ThePitPremium] Failed to show NPC '" + pitNpc.getNpcInternalName() + "' to " + player.getName() + ": " + t.getClass().getSimpleName() + " " + t.getMessage());
+                }
+            }
+        }, 10L);
     }
 
     @EventHandler
     @SneakyThrows
     public void onPlayerJoin(PitProfileLoadedEvent event) {
+        final long startNs = System.nanoTime();
         Player player = Bukkit.getPlayer(event.getPlayerProfile().getPlayerUuid());
         if (player == null || !player.isOnline()) {
             return;
         }
 
         for (AbstractPitNPC pitNpc : pitNpc) {
-            pitNpc.getNpc().create();
+            if (!pitNpc.getNpc().isCreated()) {
+                pitNpc.getNpc().create();
+            }
             if (!pitNpc.getNpc().isShown(player)) {
                 pitNpc.getNpc().show(player);
             }
             pitNpc.getNpc()
                     .setText(player, pitNpc.getNpcTextLine(player));
         }
+
+        PerfMetrics.addCount("npc.profileLoaded.players", 1);
+        PerfMetrics.addCount("npc.profileLoaded.npcs", pitNpc.size());
+        PerfMetrics.recordTime("npc.profileLoaded", System.nanoTime() - startNs);
 
     }
 

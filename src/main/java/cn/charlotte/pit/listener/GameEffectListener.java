@@ -15,6 +15,7 @@ import cn.charlotte.pit.event.PitDamageEvent;
 import cn.charlotte.pit.event.PitDamagePlayerEvent;
 import cn.charlotte.pit.events.EventFactory;
 import cn.charlotte.pit.game.Game;
+import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.parm.listener.*;
 import cn.charlotte.pit.parm.type.BowOnly;
 import cn.charlotte.pit.parm.type.ThrowOnly;
@@ -32,6 +33,7 @@ import net.minecraft.server.v1_8_R3.EnchantmentManager;
 import net.minecraft.server.v1_8_R3.EntityPlayer;
 import net.minecraft.server.v1_8_R3.GenericAttributes;
 import net.minecraft.server.v1_8_R3.MobEffectList;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
@@ -60,6 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Author: EmptyIrony
  * @Date: 2021/1/2 12:40
  */
+@AutoRegister
 public class GameEffectListener implements Listener {
     private final DecimalFormat numFormatTwo = new DecimalFormat("0.00");
 
@@ -106,10 +109,14 @@ public class GameEffectListener implements Listener {
         if (event.getEntity() instanceof Player && event.getCause().equals(EntityDamageEvent.DamageCause.FIRE_TICK)) {
             event.setCancelled(true);
             Player player = (Player) event.getEntity();
-            if (player.getHealth() <= event.getFinalDamage()) {
+            double damage = event.getFinalDamage();
+            if (damage <= 0 || Double.isNaN(damage) || Double.isInfinite(damage)) {
+                return;
+            }
+            if (player.getHealth() <= damage) {
                 player.damage(player.getMaxHealth() * 100);
             } else {
-                player.setHealth(player.getHealth() - event.getFinalDamage());
+                player.setHealth(Math.max(0.1, player.getHealth() - damage));
             }
 
             PlayerProfile.getPlayerProfileByUuid(player.getUniqueId())
@@ -470,10 +477,14 @@ public class GameEffectListener implements Listener {
                         player.setMetadata("mirror_latest_active", new FixedMetadataValue(ThePit.getInstance(), System.currentTimeMillis()));
                         damager = (Player) event.getDamager();
                         if (!player.getUniqueId().equals(damager.getUniqueId())) {
-                            damager.damage(0.01, player);
+                            float mirrorDamage = (float) (((enchantLevel * 25 - 25) * 0.01) * finalDamage.get());
+                            final Player mirrorTarget = damager;
+                            Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+                                if (mirrorTarget.isOnline() && !mirrorTarget.isDead()) {
+                                    mirrorTarget.damage(mirrorDamage, player);
+                                }
+                            });
                         }
-                        float mirrorDamage = (float) (((enchantLevel * 25 - 25) * 0.01) * finalDamage.get());
-                        damager.setHealth(Math.max(0.1, damager.getHealth() - mirrorDamage));
                     }
                 }
                 if (enchantLevel > 0 && finalDamage.get() > 0 && finalDamage.get() < 1000) {
@@ -486,11 +497,14 @@ public class GameEffectListener implements Listener {
                 ((CraftPlayer) player).getHandle().killer = ((CraftPlayer) damager).getHandle();
             }
 
-            if (player.getHealth() < finalDamage.get()) {
-                player.damage(500000.0);
-            } else {
-                player.setHealth(Math.max(player.getHealth() - finalDamage.get(), 0));
+            final double remainingHealth = player.getHealth() - finalDamage.get();
+            if (remainingHealth <= 0.0D) {
+                // Make the original EntityDamageByEntityEvent lethal so Bukkit handles the death/killer attribution.
+                // Avoid calling Player#damage() here (it creates a new damage event and can lose/override attribution).
+                event.setDamage(player.getHealth() + 10000.0D);
+                return;
             }
+            player.setHealth(remainingHealth);
         }
         if (event.getEntity() instanceof Player) {
             Player player = (Player) event.getEntity();

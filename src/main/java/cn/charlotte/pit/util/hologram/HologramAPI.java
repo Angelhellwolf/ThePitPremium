@@ -36,7 +36,6 @@ public abstract class HologramAPI {
      */
     public static Hologram createHologram(Location loc, String text) {
         Hologram hologram = ThePit.api.createHologram(loc, text);
-        holograms.add(hologram);
         return hologram;
     }
 

@@ -134,6 +134,12 @@ public class MongoDB {
 //        log.info("loaded!");
     }
 
+    public void close() {
+        if (mongoClient != null) {
+            mongoClient.close();
+        }
+    }
+
     public MongoClient getMongoClient() {
         return this.mongoClient;
     }

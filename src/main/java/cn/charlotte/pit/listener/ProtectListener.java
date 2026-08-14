@@ -88,6 +88,11 @@ public class ProtectListener implements Listener {
                 return;
             }
 
+            if (event.getBlockReplacedState() != null && event.getBlockReplacedState().getType() != Material.AIR) {
+                event.setCancelled(true);
+                return;
+            }
+
             for (int i = -3; i < 3; i++) {
                 for (int j = -3; j < 3; j++) {
                     for (int k = -3; k < 3; k++) {
@@ -207,6 +212,20 @@ public class ProtectListener implements Listener {
     }
 
     @EventHandler
+    public void onCreatureSpawn(CreatureSpawnEvent event) {
+        // Allow chickens to spawn naturally (needed for King's Quest egg crafting)
+        if (event.getEntityType() == EntityType.CHICKEN) {
+            return;
+        }
+        // Allow plugin-spawned entities (NPCs, MythicMobs, event mobs, etc.)
+        if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) {
+            return;
+        }
+        // Block all other natural/spawner/egg creature spawns
+        event.setCancelled(true);
+    }
+
+    @EventHandler
     public void onCraft(CraftItemEvent event) {
         event.setCancelled(true);
     }
@@ -311,9 +330,11 @@ public class ProtectListener implements Listener {
             }
         }
 
-        ClearRunnable.getClearRunnable().getPlacedBlock().remove(first.get());
+        ClearRunnable.getClearRunnable().removePlacedBlock(first.get());
         event.setCancelled(true);
-        block.setType(Material.AIR);
+        if (ClearRunnable.getClearRunnable().isTrackedPlacement(first.get())) {
+            block.setType(Material.AIR);
+        }
     }
 
 

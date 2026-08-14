@@ -7,6 +7,7 @@ import cn.charlotte.pit.buff.BuffFactory;
 import cn.charlotte.pit.config.PitConfig;
 import cn.charlotte.pit.data.FixedRewardData;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.data.sub.KillRecap;
 import cn.charlotte.pit.database.MongoDB;
 import cn.charlotte.pit.enchantment.EnchantmentFactor;
 import cn.charlotte.pit.event.OriginalTimeChangeEvent;
@@ -24,6 +25,8 @@ import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.PerkFactory;
 import cn.charlotte.pit.pet.PetFactory;
 import cn.charlotte.pit.quest.QuestFactory;
+import cn.charlotte.pit.hologram.HologramListener;
+import cn.charlotte.pit.listener.DataListener;
 import cn.charlotte.pit.runnable.*;
 import cn.charlotte.pit.util.bossbar.BossBarHandler;
 import cn.charlotte.pit.util.chat.CC;
@@ -35,6 +38,7 @@ import cn.charlotte.pit.util.dependencies.loaders.ReflectionClassLoader;
 import cn.charlotte.pit.util.inventory.InventoryUtil;
 import cn.charlotte.pit.util.menu.MenuUpdateTask;
 import cn.charlotte.pit.util.nametag.NametagHandler;
+import cn.charlotte.pit.util.perf.PerfMetrics;
 import cn.charlotte.pit.util.random.RandomStrUtil;
 import cn.charlotte.pit.util.rank.RankUtil;
 import cn.charlotte.pit.util.sign.SignGui;
@@ -104,6 +108,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
     private MiniGameController miniGameController;
     private SoundFactory soundFactory;
     private PetFactory petFactory;
+    private LeaderBoardRunnable leaderBoardRunnable;
 
     private PointsAPI pointsAPI;
 
@@ -173,7 +178,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         this.miniGameController.runTaskTimerAsynchronously(this, 1, 1);
 
         new DayNightCycleRunnable().runTaskTimerAsynchronously(this, 20, 20);
-        new Thread(new LeaderBoardRunnable(this)).start();
+        this.leaderBoardRunnable = new LeaderBoardRunnable(this);
         try {
             EventsHandler.INSTANCE.loadFromDatabase();
         } catch (Exception ignored) {
@@ -192,6 +197,70 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
 
     @Override
     public void onDisable() {
+        // Cancel all Bukkit scheduled tasks for this plugin
+        try {
+            Bukkit.getScheduler().cancelTasks(this);
+        } catch (Exception ignored) {
+        }
+
+        // Shutdown bounty executor
+        try {
+            java.util.concurrent.ScheduledThreadPoolExecutor bountyExec = PitHook.getBountyExecutor();
+            if (bountyExec != null) {
+                bountyExec.shutdownNow();
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Shutdown leaderboard runnable
+        try {
+            if (leaderBoardRunnable != null) {
+                leaderBoardRunnable.shutdown();
+            }
+        } catch (Exception ignored) {
+        }
+
+        // BossBarHandler no longer uses an executor pool — nothing to shut down
+
+        // Shutdown DataListener executor
+        try {
+            DataListener dataListener = DataListener.getInstance();
+            if (dataListener != null) {
+                dataListener.shutdown();
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Despawn and clear all player holograms
+        try {
+            for (HologramListener.PlayerHologram ph : HologramListener.hologramMap.values()) {
+                HologramListener.despawnPlayerHolograms(ph);
+            }
+            HologramListener.hologramMap.clear();
+        } catch (Exception ignored) {
+        }
+
+        // Clean up bounty animation holograms
+        try {
+            for (BountyRunnable.AnimationData data : BountyRunnable.getAnimationDataMap().values()) {
+                for (BountyRunnable.HologramDisplay holo : data.getHolograms()) {
+                    try {
+                        holo.getHologram().deSpawn();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+            BountyRunnable.getAnimationDataMap().clear();
+        } catch (Exception ignored) {
+        }
+
+        try {
+            if (ClearRunnable.getClearRunnable() != null) {
+                ClearRunnable.getClearRunnable().onPluginDisable();
+            }
+        } catch (Exception ignored) {
+        }
+
         synchronized (Bukkit.getOnlinePlayers()) {
             CC.boardCast("&6&l公告! &7正在关闭服务器...");
 
@@ -208,6 +277,33 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
                 }
             }
             CC.boardCast("&6&l公告! &7关闭服务器...");
+        }
+
+        // Close Redis connection pool
+        try {
+            if (jedis != null) {
+                jedis.close();
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Close MongoDB connection
+        try {
+            if (mongoDB != null) {
+                mongoDB.close();
+            }
+        } catch (Exception ignored) {
+        }
+
+        // Clear KillRecap static map
+        try {
+            KillRecap.recapMap.clear();
+        } catch (Exception ignored) {
+        }
+
+        try {
+            PerfMetrics.stop();
+        } catch (Exception ignored) {
         }
     }
 
@@ -298,7 +394,13 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
                     try {
                         return (Listener) clazz.newInstance();
                     } catch (Exception ignored) {
-                        return null;
+                        // Kotlin object singletons have private constructors;
+                        // access via the static INSTANCE field instead
+                        try {
+                            return (Listener) clazz.getField("INSTANCE").get(null);
+                        } catch (Exception ignored2) {
+                            return null;
+                        }
                     }
                 })
                 .filter(Objects::nonNull)
@@ -627,41 +729,6 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
                         "com.google.guava",
                         "guava",
                         "29.0-jre",
-                        LoaderType.REFLECTION
-                ),
-                new Dependency(
-                        "asm",
-                        "org.ow2.asm",
-                        "asm",
-                        "7.3.1",
-                        LoaderType.REFLECTION
-                ),
-                new Dependency(
-                        "asm-commons",
-                        "org.ow2.asm",
-                        "asm-commons",
-                        "7.3.1",
-                        LoaderType.REFLECTION
-                ),
-                new Dependency(
-                        "asm-tree",
-                        "org.ow2.asm",
-                        "asm-tree",
-                        "7.3.1",
-                        LoaderType.REFLECTION
-                ),
-                new Dependency(
-                        "asm-util",
-                        "org.ow2.asm",
-                        "asm-util",
-                        "7.3.1",
-                        LoaderType.REFLECTION
-                ),
-                new Dependency(
-                        "nashorn-core",
-                        "org.openjdk.nashorn",
-                        "nashorn-core",
-                        "15.3",
                         LoaderType.REFLECTION
                 )
         );

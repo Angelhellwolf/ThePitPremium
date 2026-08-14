@@ -446,9 +446,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
 
         }
 
-        for (data in ClearRunnable.getClearRunnable().placedBlock) {
-            data.location.block.type = Material.AIR
-        }
+        ClearRunnable.getClearRunnable().clearAllPlacedBlocks()
 
         for (self in Bukkit.getOnlinePlayers()) {
             for (target in Bukkit.getOnlinePlayers()) {
@@ -585,6 +583,13 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             entry.key.block.type = entry.value.material
             entry.key.block.data = entry.value.data
         }
+
+        // Clean up all event data
+        globalCache.clear()
+        locationToPlayer.clear()
+        cache.clear()
+        buffCache.clear()
+        quickTrail.clear()
     }
 
     override fun insert(player: Player): MutableList<String> {

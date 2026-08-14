@@ -23,9 +23,10 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
     var attachingEntity = -1
 
     var receivers = arrayListOf<Player>()
+    private var spawned = false
 
     override fun isSpawned(): Boolean {
-        return true
+        return spawned
     }
 
     override fun spawn(ticks: Long) {
@@ -47,11 +48,33 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
     }
 
     override fun spawn(): Boolean {
+        if (receivers.isEmpty()) {
+            hologram.isDefaultVisibleState = true
+            hologram.showAll()
+        } else {
+            hologram.isDefaultVisibleState = false
+            hologram.hideAll()
+            receivers.removeIf { !it.isOnline }
+            receivers.forEach {
+                hologram.setShowPlayer(it)
+            }
+        }
+        spawned = true
         return true
     }
 
     override fun deSpawn(): Boolean {
+        above?.let {
+            try {
+                if (it.isSpawned) {
+                    it.deSpawn()
+                }
+            } catch (_: Exception) {
+            }
+        }
+        above = null
         DHAPI.removeHologram(uuid.toString())
+        spawned = false
         return true
     }
 
@@ -63,13 +86,19 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
         val after = text ?: ""
         if (after == inputText) return
         inputText = after
-        for (page in hologram.pages) {
-            page.setLine(0, inputText)
-        }
+        // Use DHAPI stable API instead of hologram.getPages() which was removed in newer versions
+        DHAPI.setHologramLine(hologram, 0, 0, inputText)
 
-        hologram.hideAll()
-        receivers.forEach {
-            hologram.setShowPlayer(it)
+        if (spawned) {
+            if (receivers.isEmpty()) {
+                hologram.showAll()
+            } else {
+                hologram.hideAll()
+                receivers.removeIf { !it.isOnline }
+                receivers.forEach {
+                    hologram.setShowPlayer(it)
+                }
+            }
         }
     }
 
@@ -151,9 +180,16 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
     }
 
     override fun addLineAbove(text: String): Hologram {
-        return HologramAPI.createHologram(this.location.add(0.0, 0.25, 0.0), text).apply {
-            above = this
+        val line = HologramAPI.createHologram(this.loc.clone().add(0.0, 0.25, 0.0), text)
+        this.above = line
+        if (this.spawned) {
+            if (this.receivers.isEmpty()) {
+                line.spawn()
+            } else {
+                line.spawn(ArrayList(this.receivers))
+            }
         }
+        return line
     }
 
     override fun getLineAbove(): Hologram? {
@@ -161,8 +197,14 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
     }
 
     override fun removeLineAbove(): Boolean {
-        above?.deSpawn()
-
+        val line = above ?: return false
+        try {
+            if (line.isSpawned) {
+                line.deSpawn()
+            }
+        } catch (_: Exception) {
+        }
+        above = null
         return true
     }
 
@@ -191,11 +233,14 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
     }
 
     private fun sendAttach(player: Player) {
-        for (page in hologram.pages) {
+        try {
+            val page = DHAPI.getHologramPage(hologram, 0) ?: return
             for (line in page.lines) {
                 val lineId = line.entityIds[0]
                 NMS.getInstance().attachFakeEntity(player, lineId, attachingEntity)
             }
+        } catch (e: Exception) {
+            // Gracefully handle API changes in newer DecentHolograms versions
         }
     }
 }

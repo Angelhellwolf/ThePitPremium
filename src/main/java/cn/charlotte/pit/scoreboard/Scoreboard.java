@@ -25,15 +25,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class Scoreboard implements AssembleAdapter {
     public static String serverAddress = "&e天坑乱斗";
+    private static final ConcurrentHashMap<UUID, CachedLines> linesCache = new ConcurrentHashMap<>();
     private final SimpleDateFormat dateFormat = new SimpleDateFormat(NewConfiguration.INSTANCE.getDateFormat());
     private final DecimalFormat numFormat = new DecimalFormat("0.0");
     private final DecimalFormat numFormatTwo = new DecimalFormat("0.00");
     private final DecimalFormat df = new DecimalFormat(",###,###,###,###");
-    private final List<String> animationTitle = Arrays.asList("&e&l天坑乱斗",
+    private final List<String> animationTitle = CC.translate(Arrays.asList("&e&l天坑乱斗",
             "&6&l天&e&l坑乱斗",
             "&f&l天&6&l坑&e&l乱斗",
             "&f&l天坑&6&l乱&e&l斗",
@@ -51,21 +54,33 @@ public class Scoreboard implements AssembleAdapter {
             "&e&l天坑乱斗",
             "&e&l天坑乱斗",
             "&e&l天坑乱斗",
-            "&e&l天坑乱斗");
+            "&e&l天坑乱斗"));
     private long lastAnimationTime = 0;
     private int animationTick = 0;
+    private String cachedTitle = null;
+    private long cachedTitleValidUntilMs = 0L;
 
     @Override
     public String getTitle(Player player) {
-        String text = animationTitle.get(animationTick);
-        if (System.currentTimeMillis() - lastAnimationTime >= 125) {
+        final long now = System.currentTimeMillis();
+        if (cachedTitle != null && now < cachedTitleValidUntilMs) {
+            return cachedTitle;
+        }
+
+        // Don't animate faster than the scoreboard update interval (and never too fast).
+        final long frameMs = Math.max(250L, NewConfiguration.INSTANCE.getScoreboardUpdateTicks() * 50L);
+
+        if (now - lastAnimationTime >= frameMs) {
             animationTick++;
-            if (animationTick + 1 >= animationTitle.size()) {
+            if (animationTick >= animationTitle.size()) {
                 animationTick = 0;
             }
-            lastAnimationTime = System.currentTimeMillis();
+            lastAnimationTime = now;
         }
-        return text;
+
+        cachedTitle = animationTitle.get(animationTick);
+        cachedTitleValidUntilMs = now + frameMs;
+        return cachedTitle;
     }
 
     @Override
@@ -73,11 +88,28 @@ public class Scoreboard implements AssembleAdapter {
         serverAddress = ThePit.getInstance().getPitConfig().getServerName();
 
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (profile == null) {
+            return new ArrayList<>();
+        }
+
+        final long now = System.currentTimeMillis();
+        // Avoid extremely low refresh rates (e.g. 2 ticks) turning into a per-player hotspot.
+        final long cacheMs = Math.max(250L, NewConfiguration.INSTANCE.getScoreboardUpdateTicks() * 50L);
+        final CachedLines cached = linesCache.get(player.getUniqueId());
+        if (cached != null && now < cached.validUntilMs && cached.loaded == profile.isLoaded()) {
+            return cached.lines;
+        }
+
         List<String> lines = new ArrayList<>();
 
         if (!profile.isLoaded()) {
             lines.addAll(Arrays.asList("", "&c我们正在加载您的档案...", "&c请稍等片刻...", "", "&c如等待长时间仍在加载,", "&c请尝试重新进入服务器.", "", "&e{server-ip}"));
-            return lines.stream().map(s -> s.replace("{server-ip}", serverAddress)).collect(Collectors.toList());
+            List<String> result = lines.stream()
+                    .map(s -> s.replace("{server-ip}", serverAddress))
+                    .collect(Collectors.toList());
+            List<String> translated = CC.translate(result);
+            linesCache.put(player.getUniqueId(), new CachedLines(now + cacheMs, profile.isLoaded(), translated));
+            return translated;
         }
 
         int prestige = profile.getPrestige();
@@ -248,6 +280,25 @@ public class Scoreboard implements AssembleAdapter {
         } else {
             lines.add("&e" + serverAddress);
         }
-        return lines;
+        List<String> translated = CC.translate(lines);
+        linesCache.put(player.getUniqueId(), new CachedLines(now + cacheMs, profile.isLoaded(), translated));
+        return translated;
+    }
+
+    public static void invalidateCache(UUID uuid) {
+        if (uuid == null) return;
+        linesCache.remove(uuid);
+    }
+
+    private static final class CachedLines {
+        private final long validUntilMs;
+        private final boolean loaded;
+        private final List<String> lines;
+
+        private CachedLines(long validUntilMs, boolean loaded, List<String> lines) {
+            this.validUntilMs = validUntilMs;
+            this.loaded = loaded;
+            this.lines = lines;
+        }
     }
 }

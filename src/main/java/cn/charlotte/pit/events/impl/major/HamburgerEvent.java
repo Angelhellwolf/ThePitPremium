@@ -3,7 +3,6 @@ package cn.charlotte.pit.events.impl.major;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
-import cn.charlotte.pit.data.sub.PlacedBlockData;
 import cn.charlotte.pit.event.PitKillEvent;
 import cn.charlotte.pit.event.PitProfileLoadedEvent;
 import cn.charlotte.pit.events.IEpicEvent;
@@ -762,13 +761,12 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                 player.sendMessage(CC.translate("&c为了保证您的安全，我们已将您传送回出生点"));
             }
 
-            final ArrayList<PlacedBlockData> data = new ArrayList<>(ClearRunnable.getClearRunnable().getPlacedBlock());
-            for (PlacedBlockData blockData : data) {
-                if (blockData.getLocation().distance(location) <= 5) {
-                    ClearRunnable.getClearRunnable().getPlacedBlock().remove(blockData);
-                    blockData.getLocation().getBlock().setType(Material.AIR);
-                }
-            }
+            ClearRunnable.getClearRunnable().clearPlacedBlocks(blockData ->
+                    blockData.getLocation().getWorld() != null
+                            && location.getWorld() != null
+                            && blockData.getLocation().getWorld().equals(location.getWorld())
+                            && blockData.getLocation().distanceSquared(location) <= 25
+            );
         });
 
         FaweAPI.getTaskManager().async(() -> {
@@ -856,6 +854,11 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
     public void onPlace(BlockPlaceEvent event) {
         if (event.getBlockPlaced().getType() == Material.SKULL) {
             event.setCancelled(true);
+            return;
+        }
+        if (event.getBlockReplacedState() != null && event.getBlockReplacedState().getType() != Material.AIR) {
+            event.setCancelled(true);
+            return;
         }
         if (event.getBlockPlaced().getLocation().distance(location) < 8) {
             ClearRunnable.getClearRunnable().placeBlock(event.getBlock().getLocation(), new Cooldown(8, TimeUnit.SECONDS));
@@ -866,19 +869,37 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
     public void onInactive() {
         end = true;
         HandlerList.unregisterAll(this);
-        this.runnable.cancel();
-
-        hologram.deSpawn();
-        villager.remove();
-
-        FaweAPI.getTaskManager().async(() -> {
-            session.undo(session);
-            session.flushQueue();
-        });
-
-        for (Map.Entry<UUID, VillagerData> entry : this.villagerDataMap.entrySet()) {
-            entry.getValue().remove(this);
+        if (this.runnable != null) {
+            this.runnable.cancel();
+            this.runnable = null;
         }
+
+        if (hologram != null && hologram.isSpawned()) {
+            hologram.deSpawn();
+        }
+        hologram = null;
+
+        if (villager != null && !villager.isDead()) {
+            villager.remove();
+        }
+        villager = null;
+
+        if (session != null) {
+            FaweAPI.getTaskManager().async(() -> {
+                try {
+                    session.undo(session);
+                    session.flushQueue();
+                } catch (Exception e) {
+                    Bukkit.getOnlinePlayers().forEach(player -> CC.printError(player, e));
+                }
+            });
+        }
+
+        for (VillagerData villagerData : new ArrayList<>(this.villagerDataMap.values())) {
+            villagerData.remove(this);
+        }
+        this.villagerDataMap.clear();
+        this.spawnedLocations.clear();
 
         final List<PizzaData> list = pizzaDataMap.values()
                 .stream()
@@ -994,15 +1015,18 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
         final List<Location> configLoc = ThePit.getInstance().getPitConfig().getHamburgerNpcLocA();
         final List<Location> locations = new ArrayList<>(configLoc);
         locations.removeAll(spawnedLocations);
-        final Location location = locations.get(RandomUtil.random.nextInt(locations.size()));
+        final List<Location> available = new ArrayList<>();
+        for (Location candidate : locations) {
+            final Block upBlock = candidate.clone().add(0, 1, 0).getBlock();
+            if (candidate.getBlock().getType() == Material.AIR && upBlock.getType() == Material.AIR) {
+                available.add(candidate);
+            }
+        }
+        if (available.isEmpty()) {
+            return;
+        }
+        final Location location = available.get(RandomUtil.random.nextInt(available.size()));
         spawnedLocations.add(location);
-        if (location.getBlock().getType() != Material.AIR) {
-            location.getBlock().setType(Material.AIR);
-        }
-        final Block upBlock = location.clone().add(0, 1, 0).getBlock();
-        if (upBlock.getType() != Material.AIR) {
-            upBlock.setType(Material.AIR);
-        }
 
 //        for (Player player : Bukkit.getOnlinePlayers()) {
 //            createBeacon(player, location);
@@ -1061,33 +1085,33 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
     public void onRightClick(PlayerInteractEntityEvent event) {
         if (event.getRightClicked() instanceof Villager) {
             final Villager clicked = (Villager) event.getRightClicked();
-            final VillagerData villager = villagerDataMap.get(clicked.getUniqueId());
-            if (villager != null) {
+            final VillagerData deliveryVillager = villagerDataMap.get(clicked.getUniqueId());
+            if (deliveryVillager != null) {
                 event.setCancelled(true);
 
                 final Player player = event.getPlayer();
 
-                if (villager.getState() == VillagerState.DONE) {
+                if (deliveryVillager.getState() == VillagerState.DONE) {
                     CC.send(MessageType.EVENT, player, "&c这个村民已经拿到了他的外卖!");
                     return;
                 }
 
                 if ("ham".equals(ItemUtil.getInternalName(player.getItemInHand()))) {
                     PlayerUtil.takeOneItemInHand(player);
-                    villager.changeState(this, player);
+                    deliveryVillager.changeState(this, player);
 
                     final PizzaData playerData = pizzaDataMap.get(player.getUniqueId());
-                    playerData.money += villager.coins;
+                    playerData.money += deliveryVillager.coins;
                     playerData.hamburger--;
                     playerData.hamOrdered++;
 
                     for (Player target : Bukkit.getOnlinePlayers()) {
-                        redo(target, villager.getLocation());
+                        redo(target, deliveryVillager.getLocation());
                     }
 
                     done++;
                 }
-            } else if (clicked.getUniqueId().equals(clicked.getUniqueId())) {
+            } else if (villager != null && clicked.getUniqueId().equals(villager.getUniqueId())) {
                 event.setCancelled(true);
 
                 final Player player = event.getPlayer();
@@ -1112,7 +1136,7 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
             if (villagerDataMap.containsKey(event.getEntity().getUniqueId())) {
                 event.setCancelled(true);
             }
-            if (villager.getUniqueId().equals(event.getEntity().getUniqueId())) {
+            if (villager != null && villager.getUniqueId().equals(event.getEntity().getUniqueId())) {
                 event.setCancelled(true);
             }
         }

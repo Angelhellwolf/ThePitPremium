@@ -65,10 +65,13 @@ import org.bukkit.util.Vector;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.List;
 import java.util.UUID;
 
@@ -312,6 +315,23 @@ public class PitAdminCommand {
         ThePit.getInstance()
                 .getPitConfig()
                 .setMailNpcLocation(player.getLocation());
+
+        ThePit.getInstance()
+                .getPitConfig()
+                .save();
+
+        player.sendMessage(CC.translate("&aSuccessfully!"));
+    }
+
+    @Command(
+            names = "pitAdmin stashNpc",
+            permissionNode = "pit.admin",
+            async = true
+    )
+    public void setStashNpcLocation(Player player) {
+        ThePit.getInstance()
+                .getPitConfig()
+                .setStashNpcLocation(player.getLocation());
 
         ThePit.getInstance()
                 .getPitConfig()
@@ -840,6 +860,21 @@ public class PitAdminCommand {
     }
 
     @Command(
+            names = "pitadmin bakeMaster",
+            permissionNode = "pit.admin",
+            async = true
+    )
+    public void setBakeMasterLocation(Player player) {
+        ThePit.getInstance()
+                .getPitConfig()
+                .setBakeMasterNpcLocation(player.getLocation());
+        ThePit.getInstance()
+                .getPitConfig()
+                .save();
+        player.sendMessage(CC.translate("&a烘焙大师NPC位置已设置!"));
+    }
+
+    @Command(
             names = "pitadmin table",
             permissionNode = "pit.admin",
             async = true
@@ -1260,6 +1295,482 @@ public class PitAdminCommand {
         ThePit.getInstance().getPitConfig().save();
 
         player.sendMessage("ok");
+    }
+
+    @Command(names = "pitadmin eventcfg", permissionNode = "pit.admin")
+    public void eventConfigHelp(Player player) {
+        player.sendMessage(CC.translate("&6事件配置命令:"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg keys &7- 查看可配置键"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg show <key> &7- 查看当前值"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg set <key> &7- 设为当前位置(列表会覆盖为1个点)"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg add <key> &7- 追加当前位置(仅列表)"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg remove <key> <index> &7- 删除列表点(1开始)"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg clear <key> &7- 清空该键"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg clearevent <event> &7- 清空整组事件配置"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg setint <key> <value> &7- 设置整数配置(如rage半径/高度)"));
+        player.sendMessage(CC.translate("&e/pitadmin eventcfg save &7- 保存到config.yml"));
+        player.sendMessage(CC.translate("&c/pitadmin eventcfg overwrite &7- 仅清空 loc.events.* 事件配置(安全)"));
+        player.sendMessage(CC.translate("&4/pitadmin eventcfg overwriteall confirm &7- 清空事件+全局依赖键(危险)"));
+    }
+
+    @Command(names = "pitadmin eventcfg keys", permissionNode = "pit.admin")
+    public void eventConfigKeys(Player player) {
+        List<EventFieldBinding> bindings = getEventConfigBindings();
+        player.sendMessage(CC.translate("&6可配置事件键 (" + bindings.size() + "):"));
+        for (EventFieldBinding binding : bindings) {
+            player.sendMessage(CC.translate("&7- &e" + binding.alias + " &f(" + binding.path + ") &7[" + getTypeName(binding.type) + "]"));
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg show", permissionNode = "pit.admin")
+    public void eventConfigShow(Player player, @Parameter(name = "key") String key) {
+        EventFieldBinding binding = resolveEventField(key);
+        if (binding == null) {
+            player.sendMessage(CC.translate("&c未找到键: " + key + "，使用 /pitadmin eventcfg keys 查看可用键"));
+            return;
+        }
+
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        try {
+            if (binding.type == EventFieldType.LOCATION) {
+                Location location = (Location) binding.field.get(config);
+                player.sendMessage(CC.translate("&e" + binding.path + " &7= &f" + (location == null ? "null" : location.toString())));
+                return;
+            }
+            if (binding.type == EventFieldType.LOCATION_LIST) {
+                List<Location> list = getOrCreateLocationList(config, binding);
+                player.sendMessage(CC.translate("&e" + binding.path + " &7共 &f" + list.size() + " &7个点:"));
+                for (int i = 0; i < list.size(); i++) {
+                    player.sendMessage(CC.translate("&7  #" + (i + 1) + " &f" + list.get(i)));
+                }
+                return;
+            }
+            if (binding.type == EventFieldType.INT) {
+                player.sendMessage(CC.translate("&e" + binding.path + " &7= &f" + binding.field.get(config)));
+                return;
+            }
+            if (binding.type == EventFieldType.DOUBLE) {
+                player.sendMessage(CC.translate("&e" + binding.path + " &7= &f" + binding.field.get(config)));
+            }
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg set", permissionNode = "pit.admin")
+    public void eventConfigSet(Player player, @Parameter(name = "key") String key) {
+        EventFieldBinding binding = resolveEventField(key);
+        if (binding == null) {
+            player.sendMessage(CC.translate("&c未找到键: " + key + "，使用 /pitadmin eventcfg keys 查看可用键"));
+            return;
+        }
+
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        try {
+            if (binding.type == EventFieldType.LOCATION) {
+                binding.field.set(config, player.getLocation().clone());
+                config.save();
+                player.sendMessage(CC.translate("&a已设置: " + binding.path));
+                return;
+            }
+            if (binding.type == EventFieldType.LOCATION_LIST) {
+                List<Location> list = getOrCreateLocationList(config, binding);
+                list.clear();
+                list.add(player.getLocation().clone());
+                config.save();
+                player.sendMessage(CC.translate("&a已覆盖列表: " + binding.path + " (1个点)"));
+                return;
+            }
+            player.sendMessage(CC.translate("&c键 " + binding.path + " 不是坐标类型，当前类型: " + getTypeName(binding.type)));
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg add", permissionNode = "pit.admin")
+    public void eventConfigAdd(Player player, @Parameter(name = "key") String key) {
+        EventFieldBinding binding = resolveEventField(key);
+        if (binding == null) {
+            player.sendMessage(CC.translate("&c未找到键: " + key + "，使用 /pitadmin eventcfg keys 查看可用键"));
+            return;
+        }
+        if (binding.type != EventFieldType.LOCATION_LIST) {
+            player.sendMessage(CC.translate("&c仅支持列表键 add，当前类型: " + getTypeName(binding.type)));
+            return;
+        }
+
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        try {
+            List<Location> list = getOrCreateLocationList(config, binding);
+            list.add(player.getLocation().clone());
+            config.save();
+            player.sendMessage(CC.translate("&a已添加到 " + binding.path + "，当前数量: " + list.size()));
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg remove", permissionNode = "pit.admin")
+    public void eventConfigRemove(Player player, @Parameter(name = "key") String key, @Parameter(name = "index") int index) {
+        EventFieldBinding binding = resolveEventField(key);
+        if (binding == null) {
+            player.sendMessage(CC.translate("&c未找到键: " + key + "，使用 /pitadmin eventcfg keys 查看可用键"));
+            return;
+        }
+        if (binding.type != EventFieldType.LOCATION_LIST) {
+            player.sendMessage(CC.translate("&c仅支持列表键 remove，当前类型: " + getTypeName(binding.type)));
+            return;
+        }
+
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        try {
+            List<Location> list = getOrCreateLocationList(config, binding);
+            if (index <= 0 || index > list.size()) {
+                player.sendMessage(CC.translate("&c索引超出范围，当前范围: 1-" + list.size()));
+                return;
+            }
+            list.remove(index - 1);
+            config.save();
+            player.sendMessage(CC.translate("&a已删除 " + binding.path + " 第 " + index + " 个点，剩余: " + list.size()));
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg clear", permissionNode = "pit.admin")
+    public void eventConfigClear(Player player, @Parameter(name = "key") String key) {
+        EventFieldBinding binding = resolveEventField(key);
+        if (binding == null) {
+            player.sendMessage(CC.translate("&c未找到键: " + key + "，使用 /pitadmin eventcfg keys 查看可用键"));
+            return;
+        }
+
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        try {
+            clearEventField(config, binding);
+            config.save();
+            player.sendMessage(CC.translate("&a已清空: " + binding.path));
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg clearevent", permissionNode = "pit.admin")
+    public void eventConfigClearEvent(Player player, @Parameter(name = "event") String eventName) {
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        int clearedCount = 0;
+
+        try {
+            for (EventFieldBinding binding : getEventConfigBindings()) {
+                if (!matchesEventGroup(eventName, binding.path)) {
+                    continue;
+                }
+                clearEventField(config, binding);
+                clearedCount++;
+            }
+            if (clearedCount == 0) {
+                player.sendMessage(CC.translate("&c未匹配到事件组: " + eventName));
+                return;
+            }
+            config.save();
+            player.sendMessage(CC.translate("&a已清空事件组 " + eventName + "，共 " + clearedCount + " 项"));
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg setint", permissionNode = "pit.admin")
+    public void eventConfigSetInt(Player player, @Parameter(name = "key") String key, @Parameter(name = "value") int value) {
+        EventFieldBinding binding = resolveEventField(key);
+        if (binding == null) {
+            player.sendMessage(CC.translate("&c未找到键: " + key + "，使用 /pitadmin eventcfg keys 查看可用键"));
+            return;
+        }
+        if (binding.type != EventFieldType.INT) {
+            player.sendMessage(CC.translate("&c该键不是整型，当前类型: " + getTypeName(binding.type)));
+            return;
+        }
+
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        try {
+            if (binding.field.getType() == int.class) {
+                binding.field.setInt(config, value);
+            } else {
+                binding.field.set(config, value);
+            }
+            config.save();
+            player.sendMessage(CC.translate("&a已设置: " + binding.path + " = " + value));
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+        }
+    }
+
+    @Command(names = "pitadmin eventcfg save", permissionNode = "pit.admin")
+    public void eventConfigSave(Player player) {
+        ThePit.getInstance().getPitConfig().save();
+        player.sendMessage(CC.translate("&a事件配置已保存到 config.yml"));
+    }
+
+    @Command(names = "pitadmin eventcfg overwrite", permissionNode = "pit.admin")
+    public void eventConfigOverwrite(Player player) {
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        int clearedCount = 0;
+        try {
+            for (EventFieldBinding binding : getEventConfigBindings()) {
+                if (!binding.path.startsWith("loc.events.")) {
+                    continue;
+                }
+                clearEventField(config, binding);
+                clearedCount++;
+            }
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+            return;
+        }
+
+        config.save();
+        player.sendMessage(CC.translate("&a已清空 loc.events.* 事件配置，共 " + clearedCount + " 项。"));
+        player.sendMessage(CC.translate("&7提示: spawn/portal/packages/squads/blockHead/Genesis 等全局依赖键已保留。"));
+    }
+
+    @Command(names = "pitadmin eventcfg overwriteall", permissionNode = "pit.admin")
+    public void eventConfigOverwriteAll(Player player, @Parameter(name = "confirm", defaultValue = "") String confirm) {
+        if (!"confirm".equalsIgnoreCase(confirm)) {
+            player.sendMessage(CC.translate("&c危险操作被拦截。"));
+            player.sendMessage(CC.translate("&7如需继续，请执行: &e/pitadmin eventcfg overwriteall confirm"));
+            return;
+        }
+
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        int clearedCount = 0;
+        try {
+            for (EventFieldBinding binding : getEventConfigBindings()) {
+                clearEventField(config, binding);
+                clearedCount++;
+            }
+        } catch (Exception exception) {
+            CC.printError(player, exception);
+            return;
+        }
+
+        config.save();
+        player.sendMessage(CC.translate("&c已清空事件相关全部配置(含全局依赖键)，共 " + clearedCount + " 项。"));
+    }
+
+    private List<EventFieldBinding> getEventConfigBindings() {
+        List<EventFieldBinding> bindings = new ArrayList<>();
+
+        for (Field field : PitConfig.class.getDeclaredFields()) {
+            ConfigData configData = field.getAnnotation(ConfigData.class);
+            if (configData == null) {
+                continue;
+            }
+            String path = configData.path();
+            if (!isEventConfigPath(path)) {
+                continue;
+            }
+
+            EventFieldType type = resolveEventFieldType(field);
+            if (type == null) {
+                continue;
+            }
+
+            field.setAccessible(true);
+            bindings.add(new EventFieldBinding(path, createEventAlias(path), field, type));
+        }
+        return bindings;
+    }
+
+    private EventFieldBinding resolveEventField(String key) {
+        String normalized = normalizeEventKey(key);
+        if (normalized.isEmpty()) {
+            return null;
+        }
+
+        for (EventFieldBinding binding : getEventConfigBindings()) {
+            if (normalizeEventKey(binding.path).equals(normalized)
+                    || normalizeEventKey(binding.alias).equals(normalized)
+                    || normalizeEventKey(binding.path.replace('.', '_')).equals(normalized)) {
+                return binding;
+            }
+        }
+        return null;
+    }
+
+    private EventFieldType resolveEventFieldType(Field field) {
+        ConfigSerializer serializer = field.getAnnotation(ConfigSerializer.class);
+        if (serializer != null && serializer.serializer() == LocationSerializer.class) {
+            if (List.class.isAssignableFrom(field.getType())) {
+                Type genericType = field.getGenericType();
+                if (genericType instanceof ParameterizedType) {
+                    Type[] actualTypes = ((ParameterizedType) genericType).getActualTypeArguments();
+                    if (actualTypes.length > 0 && actualTypes[0] != Location.class) {
+                        return null;
+                    }
+                }
+                return EventFieldType.LOCATION_LIST;
+            }
+            if (field.getType() == Location.class) {
+                return EventFieldType.LOCATION;
+            }
+            return null;
+        }
+
+        if (field.getType() == int.class || field.getType() == Integer.class) {
+            return EventFieldType.INT;
+        }
+        if (field.getType() == double.class || field.getType() == Double.class) {
+            return EventFieldType.DOUBLE;
+        }
+        return null;
+    }
+
+    private boolean isEventConfigPath(String path) {
+        return path.startsWith("loc.events.")
+                || "loc.spawn".equals(path)
+                || path.startsWith("loc.portal.")
+                || "loc.packages".equals(path)
+                || path.startsWith("loc.Sewers.")
+                || "loc.squads".equals(path)
+                || "loc.blockHead".equals(path)
+                || path.startsWith("loc.Genesis.");
+    }
+
+    private String createEventAlias(String path) {
+        String alias = path;
+        if (path.startsWith("loc.events.")) {
+            alias = path.substring("loc.events.".length());
+        } else if (path.startsWith("loc.")) {
+            alias = path.substring("loc.".length());
+        }
+        return alias.replace('.', '_').toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeEventKey(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        return raw.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Location> getOrCreateLocationList(PitConfig config, EventFieldBinding binding) throws IllegalAccessException {
+        Object object = binding.field.get(config);
+        if (object instanceof List) {
+            return (List<Location>) object;
+        }
+        List<Location> list = new ArrayList<>();
+        binding.field.set(config, list);
+        return list;
+    }
+
+    private void clearEventField(PitConfig config, EventFieldBinding binding) throws IllegalAccessException {
+        if (binding.type == EventFieldType.LOCATION) {
+            binding.field.set(config, null);
+            return;
+        }
+        if (binding.type == EventFieldType.LOCATION_LIST) {
+            getOrCreateLocationList(config, binding).clear();
+            return;
+        }
+        if (binding.type == EventFieldType.INT) {
+            if (binding.field.getType() == int.class) {
+                binding.field.setInt(config, 0);
+            } else {
+                binding.field.set(config, 0);
+            }
+            return;
+        }
+        if (binding.type == EventFieldType.DOUBLE) {
+            if (binding.field.getType() == double.class) {
+                binding.field.setDouble(config, 0D);
+            } else {
+                binding.field.set(config, 0D);
+            }
+        }
+    }
+
+    private boolean matchesEventGroup(String rawEventName, String path) {
+        String eventName = normalizeEventKey(rawEventName);
+        if (eventName.isEmpty()) {
+            return false;
+        }
+
+        if ("ham".equals(eventName) || "hamburger".equals(eventName)) {
+            return path.startsWith("loc.events.hamburger.");
+        }
+        if ("spire".equals(eventName)) {
+            return path.startsWith("loc.events.spire.")
+                    || path.startsWith("loc.portal.");
+        }
+        if ("rage".equals(eventName) || "ragepit".equals(eventName)) {
+            return path.startsWith("loc.events.rage.");
+        }
+        if ("egg".equals(eventName) || "dragonegg".equals(eventName)) {
+            return path.startsWith("loc.events.egg.");
+        }
+        if ("koth".equals(eventName) || "kingofthehill".equals(eventName)) {
+            return path.startsWith("loc.events.koth.");
+        }
+        if ("cake".equals(eventName)) {
+            return path.startsWith("loc.events.cake.");
+        }
+        if ("package".equals(eventName) || "carepackage".equals(eventName) || "airdrop".equals(eventName)) {
+            return "loc.packages".equals(path);
+        }
+        if ("sewers".equals(eventName) || "sewer".equals(eventName)) {
+            return path.startsWith("loc.Sewers.");
+        }
+        if ("squads".equals(eventName)) {
+            return "loc.squads".equals(path);
+        }
+        if ("blockhead".equals(eventName) || "bh".equals(eventName)) {
+            return "loc.blockHead".equals(path);
+        }
+        if ("genesis".equals(eventName)) {
+            return path.startsWith("loc.Genesis.");
+        }
+        if ("spawn".equals(eventName)) {
+            return "loc.spawn".equals(path);
+        }
+        return normalizeEventKey(path).contains(eventName);
+    }
+
+    private String getTypeName(EventFieldType type) {
+        if (type == EventFieldType.LOCATION) {
+            return "location";
+        }
+        if (type == EventFieldType.LOCATION_LIST) {
+            return "location_list";
+        }
+        if (type == EventFieldType.INT) {
+            return "int";
+        }
+        if (type == EventFieldType.DOUBLE) {
+            return "double";
+        }
+        return "unknown";
+    }
+
+    private enum EventFieldType {
+        LOCATION,
+        LOCATION_LIST,
+        INT,
+        DOUBLE
+    }
+
+    private static class EventFieldBinding {
+        private final String path;
+        private final String alias;
+        private final Field field;
+        private final EventFieldType type;
+
+        private EventFieldBinding(String path, String alias, Field field, EventFieldType type) {
+            this.path = path;
+            this.alias = alias;
+            this.field = field;
+            this.type = type;
+        }
     }
 
     @Command(

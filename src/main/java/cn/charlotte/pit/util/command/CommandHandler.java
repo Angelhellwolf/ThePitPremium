@@ -80,9 +80,14 @@ public final class CommandHandler implements Listener {
 
                     // The knownCommands field is final,
                     // so to be able to set it in the new command map we have to remove it.
-                    final Field modifiersField = Field.class.getDeclaredField("modifiers");
-                    modifiersField.setAccessible(true);
-                    modifiersField.setInt(knownCommandsField, knownCommandsField.getModifiers() & ~Modifier.FINAL);
+                    try {
+                        // Java 8–11 had this field; newer Java versions removed it.
+                        final Field modifiersField = Field.class.getDeclaredField("modifiers");
+                        modifiersField.setAccessible(true);
+                        modifiersField.setInt(knownCommandsField, knownCommandsField.getModifiers() & ~Modifier.FINAL);
+                    } catch (NoSuchFieldException ignored) {
+                        // Java 12+: best-effort; reflective set below often still works.
+                    }
 
                     knownCommandsField.set(newCommandMap, knownCommandsField.get(oldCommandMap));
                     // End copying the knownCommands field over

@@ -12,16 +12,12 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-
 /**
  * @Author: EmptyIrony
  * @Date: 2021/1/11 23:50
  */
 @AutoRegister
 public class BossBarHandler implements Listener {
-    private final ExecutorService executorService = new ScheduledThreadPoolExecutor(6);
     private final BossBar bossBar;
 
     public BossBarHandler() {
@@ -43,7 +39,7 @@ public class BossBarHandler implements Listener {
                     }
                 }
             }
-        }.runTaskTimerAsynchronously(ThePit.getInstance(), 5, 5);
+        }.runTaskTimer(ThePit.getInstance(), 5, 5);
     }
 
 
@@ -57,14 +53,9 @@ public class BossBarHandler implements Listener {
         this.bossBar.removePlayer(event.getPlayer());
     }
 
-
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
-        executorService.execute(() -> this.bossBar.update(event.getPlayer()));
-    }
-
-    public ExecutorService getExecutorService() {
-        return this.executorService;
+        this.bossBar.update(event.getPlayer());
     }
 
     public BossBar getBossBar() {

@@ -11,7 +11,10 @@ import org.bukkit.scheduler.BukkitRunnable;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 public class DefaultHologram extends CraftHologram {
 
@@ -25,6 +28,7 @@ public class DefaultHologram extends CraftHologram {
     private Entity attachedTo;
     private Hologram lineBelow;
     private Hologram lineAbove;
+    private final Set<UUID> receiverIds = new HashSet<>();
 
     private BukkitRunnable updater;
 
@@ -64,6 +68,12 @@ public class DefaultHologram extends CraftHologram {
                 e.printStackTrace();
             }
         }
+        this.receiverIds.clear();
+        for (Player receiver : receivers) {
+            if (receiver != null) {
+                this.receiverIds.add(receiver.getUniqueId());
+            }
+        }
         try {
             this.spawned = HologramAPI.spawn(this, new ArrayList<>(receivers));
         } catch (Exception e) {
@@ -74,14 +84,24 @@ public class DefaultHologram extends CraftHologram {
 
     @Override
     public boolean spawn() {
-        return spawn(this.getLocation().getWorld().getPlayers());
+        Collection<? extends Player> worldPlayers = this.getLocation().getWorld().getPlayers();
+        this.receiverIds.clear();
+        for (Player player : worldPlayers) {
+            this.receiverIds.add(player.getUniqueId());
+        }
+        return spawn(worldPlayers);
     }
 
     @Override
     public boolean deSpawn() {
         this.validateSpawned();
+        List<Player> receivers = resolveReceivers();
         try {
-            this.spawned = !HologramAPI.despawn(this, this.getLocation().getWorld().getPlayers());
+            if (!receivers.isEmpty()) {
+                HologramAPI.despawn(this, receivers);
+            }
+            this.spawned = false;
+            this.receiverIds.clear();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -112,7 +132,7 @@ public class DefaultHologram extends CraftHologram {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            this.sendNamePackets(this.getLocation().getWorld().getPlayers());
+            this.sendNamePackets(this.resolveReceivers());
         }
     }
 
@@ -162,7 +182,7 @@ public class DefaultHologram extends CraftHologram {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            this.sendTeleportPackets(this.getLocation().getWorld().getPlayers(), true, true);
+            this.sendTeleportPackets(this.resolveReceivers(), true, true);
         }
     }
 
@@ -184,7 +204,7 @@ public class DefaultHologram extends CraftHologram {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            this.sendSpawnPackets(this.getLocation().getWorld().getPlayers(), false, true);
+            this.sendSpawnPackets(this.resolveReceivers(), false, true);
         }
     }
 
@@ -249,7 +269,7 @@ public class DefaultHologram extends CraftHologram {
         this.lineBelow = hologram;
         ((DefaultHologram) hologram).lineAbove = this;
 
-        hologram.spawn();
+        hologram.spawn(this.resolveReceivers());
         return hologram;
     }
 
@@ -290,7 +310,7 @@ public class DefaultHologram extends CraftHologram {
         this.lineAbove = hologram;
         ((DefaultHologram) hologram).lineBelow = this;
 
-        hologram.spawn();
+        hologram.spawn(this.resolveReceivers());
         return hologram;
     }
 
@@ -353,7 +373,7 @@ public class DefaultHologram extends CraftHologram {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            this.sendAttachPacket(this.getLocation().getWorld().getPlayers());
+            this.sendAttachPacket(this.resolveReceivers());
         }
         //Wait for the packet to send (in 1.9), since it requires the attached's entity-id
         this.attachedTo = attachedTo;
@@ -377,6 +397,28 @@ public class DefaultHologram extends CraftHologram {
         if (!HologramAPI.packetsEnabled()) {
             throw new IllegalStateException("ViewHandlers are not enabled");
         }
+    }
+
+    private List<Player> resolveReceivers() {
+        List<Player> receivers = new ArrayList<>();
+        if (this.location.getWorld() == null) {
+            return receivers;
+        }
+        if (this.receiverIds.isEmpty()) {
+            receivers.addAll(this.location.getWorld().getPlayers());
+            return receivers;
+        }
+        for (UUID uuid : this.receiverIds) {
+            Player player = org.bukkit.Bukkit.getPlayer(uuid);
+            if (player == null || !player.isOnline()) {
+                continue;
+            }
+            if (!player.getWorld().equals(this.location.getWorld())) {
+                continue;
+            }
+            receivers.add(player);
+        }
+        return receivers;
     }
 
     private void validateSpawned() {

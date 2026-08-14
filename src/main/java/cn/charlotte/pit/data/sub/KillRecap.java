@@ -272,7 +272,15 @@ public class KillRecap {
         this.completeTime = System.currentTimeMillis();
         profile.setKillRecap(new KillRecap());
 
+        // Replace previous recap for this player (old one gets GC'd)
         recapMap.put(player.getUniqueId(), this);
+    }
+
+    /**
+     * Remove a player's recap entry on quit to prevent memory leak.
+     */
+    public static void removeRecap(UUID uuid) {
+        recapMap.remove(uuid);
     }
 
     public static class DamageData {

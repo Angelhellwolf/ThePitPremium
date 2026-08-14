@@ -11,6 +11,7 @@ public class AssembleBoardEntry {
     private final int position;
     private String text, identifier;
     private Team team;
+    private int lastScore = Integer.MIN_VALUE;
 
     /**
      * Assemble Board Entry
@@ -102,6 +103,7 @@ public class AssembleBoardEntry {
 
         Score score = this.board.getObjective().getScore(this.identifier);
         score.setScore(position);
+        this.lastScore = position;
     }
 
     /**
@@ -118,5 +120,13 @@ public class AssembleBoardEntry {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public int getLastScore() {
+        return lastScore;
     }
 }

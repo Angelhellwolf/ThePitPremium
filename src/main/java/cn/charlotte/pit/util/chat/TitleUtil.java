@@ -13,13 +13,17 @@ public class TitleUtil {
 
 
     public static void sendTitle(Player player, String title, String sub, int fadeIn, int fadeOut, int duration) {
-        if (title != null) {
-            PacketPlayOutTitle packet = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, new ChatComponentText(CC.translate(title)), fadeIn, fadeOut, duration);
-            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
-        }
-        if (sub != null) {
-            PacketPlayOutTitle packet = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, new ChatComponentText(CC.translate(sub)), fadeIn, fadeOut, duration);
-            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+        try {
+            if (title != null) {
+                PacketPlayOutTitle packet = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.TITLE, new ChatComponentText(CC.translate(title)), fadeIn, fadeOut, duration);
+                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+            }
+            if (sub != null) {
+                PacketPlayOutTitle packet = new PacketPlayOutTitle(PacketPlayOutTitle.EnumTitleAction.SUBTITLE, new ChatComponentText(CC.translate(sub)), fadeIn, fadeOut, duration);
+                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+            }
+        } catch (Exception ignored) {
+            // Prevent cross-version packet translation errors from kicking players
         }
     }
 }

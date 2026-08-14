@@ -20,7 +20,8 @@ class JSEnchantment(
     val enchantName0: String,
     val internalName0: String,
     val rarity0: EnchantmentRarity,
-    private val desc: List<String>,
+    private val maxLevel0: Int,
+    private val descProvider: (Int) -> List<String>,
     allowedItems: Set<String>,
     private val attackFunc: ((Int, Player, Entity, Double, AtomicDouble, AtomicDouble, AtomicBoolean) -> Unit)?,
     private val playerKilledFunc: ((Int, Player, Entity, AtomicDouble, AtomicDouble) -> Unit)?,
@@ -50,7 +51,7 @@ class JSEnchantment(
     }
 
     override fun getMaxEnchantLevel(): Int {
-        return 3
+        return maxLevel0.coerceAtLeast(1)
     }
 
     override fun getNbtName(): String {
@@ -66,7 +67,11 @@ class JSEnchantment(
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return desc.joinToString("/s")
+        return try {
+            descProvider.invoke(enchantLevel).joinToString("/s")
+        } catch (_: Exception) {
+            "&7暂无描述"
+        }
     }
 
     override fun handleAttackEntity(

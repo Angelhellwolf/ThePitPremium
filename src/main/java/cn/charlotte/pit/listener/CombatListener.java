@@ -97,9 +97,19 @@ public class CombatListener implements Listener {
             return;
         }
 
-        //debug code
+        // Dynamic streak broadcast interval: raise threshold when many players are online
+        // to reduce chat spam. 5 at low pop, 10 at medium, 15 at high.
+        int online = Bukkit.getOnlinePlayers().size();
+        int streakInterval;
+        if (online >= 80) {
+            streakInterval = 15;
+        } else if (online >= 50) {
+            streakInterval = 10;
+        } else {
+            streakInterval = 5;
+        }
 
-        if (Math.floor(event.getFrom()) % 5 != 0 && Math.floor(event.getTo()) % 5 == 0 && event.getTo() > 0 && Math.floor(event.getFrom()) != Math.floor(event.getTo())) {
+        if (Math.floor(event.getFrom()) % streakInterval != 0 && Math.floor(event.getTo()) % streakInterval == 0 && event.getTo() > 0 && Math.floor(event.getFrom()) != Math.floor(event.getTo())) {
             CC.boardCast(MessageType.STREAK, "&c&l连杀! " + profile.getFormattedName() + " &7已经 &c" + intFormat.format(Math.floor(event.getTo())) + "&7 连杀了!");
         }
     }
@@ -205,6 +215,8 @@ public class CombatListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        recentKillTracker.remove(player.getUniqueId());
+        recentKillTimestamps.remove(player.getUniqueId());
         ProfileLoadRunnable.getInstance().handleQuit(player);
         if (PlayerProfile.getCacheProfile().containsKey(player.getUniqueId()) && !PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getCombatTimer().hasExpired()) {
             handlePlayerDeath(player, null, false);
@@ -368,6 +380,43 @@ public class CombatListener implements Listener {
         //handle kill recap - end
     }
 
+    // Tracks recent kills: killer UUID -> (victim UUID -> kill count within time window)
+    // Used to reduce rewards for repeatedly killing the same player (anti-boosting)
+    private static final Map<UUID, Map<UUID, int[]>> recentKillTracker = new HashMap<>();
+    // Timestamp tracker for auto-cleanup
+    private static final Map<UUID, Map<UUID, Long>> recentKillTimestamps = new HashMap<>();
+    private static final long REPEAT_KILL_WINDOW_MS = 10 * 60 * 1000L; // 10 minutes
+
+    /**
+     * Returns a reward multiplier (0.0 ~ 1.0) based on how many times
+     * the killer has killed the same victim recently.
+     * 1st kill: 100%, 2nd: 75%, 3rd: 50%, 4th: 25%, 5th+: 5%
+     */
+    private double getRepeatKillMultiplier(UUID killerUuid, UUID victimUuid) {
+        long now = System.currentTimeMillis();
+
+        // Cleanup expired entries
+        Map<UUID, Long> timestamps = recentKillTimestamps.computeIfAbsent(killerUuid, k -> new HashMap<>());
+        Long lastTime = timestamps.get(victimUuid);
+        if (lastTime != null && now - lastTime > REPEAT_KILL_WINDOW_MS) {
+            recentKillTracker.computeIfAbsent(killerUuid, k -> new HashMap<>()).remove(victimUuid);
+            timestamps.remove(victimUuid);
+        }
+
+        Map<UUID, int[]> kills = recentKillTracker.computeIfAbsent(killerUuid, k -> new HashMap<>());
+        int[] count = kills.computeIfAbsent(victimUuid, k -> new int[]{0});
+        count[0]++;
+        timestamps.put(victimUuid, now);
+
+        switch (count[0]) {
+            case 1: return 1.0;
+            case 2: return 0.75;
+            case 3: return 0.50;
+            case 4: return 0.25;
+            default: return 0.05;
+        }
+    }
+
     public void handleKill(Player killer, PlayerProfile killerProfile, LivingEntity player, PlayerProfile playerProfile) {
         try {
             boolean isNight = isNight();
@@ -428,6 +477,13 @@ public class CombatListener implements Listener {
 
             totalCoins = tempCoins.get();
             totalXp = tempExp.get();
+
+            // Apply repeat-kill penalty (anti-boosting) - only for player victims
+            if (player instanceof Player) {
+                double repeatMultiplier = getRepeatKillMultiplier(killer.getUniqueId(), player.getUniqueId());
+                totalCoins *= repeatMultiplier;
+                totalXp *= repeatMultiplier;
+            }
 
             if (isNight) {
                 totalCoins = totalCoins * 0.01;

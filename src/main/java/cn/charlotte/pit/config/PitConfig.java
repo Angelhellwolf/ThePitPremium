@@ -127,6 +127,11 @@ public class PitConfig extends Configuration {
     @ConfigSerializer(serializer = LocationSerializer.class)
     private Location mailNpcLocation;
     @ConfigData(
+            path = "loc.npc.stash"
+    )
+    @ConfigSerializer(serializer = LocationSerializer.class)
+    private Location stashNpcLocation;
+    @ConfigData(
             path = "loc.npc.genesis_demon"
     )
     @ConfigSerializer(serializer = LocationSerializer.class)
@@ -315,6 +320,11 @@ public class PitConfig extends Configuration {
             path = "debug.ienchantNpcLoc"
     )
     private Location enchantNpcLocation;
+    @ConfigData(
+            path = "npc.bakeMasterNpcLoc"
+    )
+    @ConfigSerializer(serializer = LocationSerializer.class)
+    private Location bakeMasterNpcLocation;
     @ConfigData(
             path = "booster"
     )

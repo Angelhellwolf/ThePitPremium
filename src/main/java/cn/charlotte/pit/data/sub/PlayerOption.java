@@ -32,6 +32,7 @@ public class PlayerOption {
             profileVisibility = true,
             inventoryVisibility = true,
             enderChestVisibility = true,
+            stashVisibility = true,
             supporterStarDisplay = true;
 
     public boolean isBountyNotify() {
@@ -146,6 +147,14 @@ public class PlayerOption {
 
     public void setEnderChestVisibility(boolean enderChestVisibility) {
         this.enderChestVisibility = enderChestVisibility;
+    }
+
+    public boolean isStashVisibility() {
+        return stashVisibility;
+    }
+
+    public void setStashVisibility(boolean stashVisibility) {
+        this.stashVisibility = stashVisibility;
     }
 
     public boolean isSupporterStarDisplay() {

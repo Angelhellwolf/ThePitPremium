@@ -152,15 +152,13 @@ public class InventoryUtil {
     public static PlayerInv playerInventoryFromPlayer(Player player) {
         final PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (profile.isTempInvUsing()) {
-            return profile.getInventory();
+            PlayerInv cached = profile.getInventory();
+            if (cached != null) {
+                return new PlayerInv(cached.getContents(), cached.getArmorContents());
+            }
         }
 
-        PlayerInv inv = new PlayerInv();
-
-        inv.setContents(player.getInventory().getContents());
-        inv.setArmorContents(player.getInventory().getArmorContents());
-
-        return inv;
+        return PlayerInv.fromPlayerInventory(player.getInventory());
     }
 
     public static String itemsToString(ItemStack[] items) {

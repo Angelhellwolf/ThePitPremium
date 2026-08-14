@@ -23,8 +23,11 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -50,12 +53,19 @@ public class PetFactory implements Listener {
                 }
             }
         }
+
+        // Defensive self-healing: clean stale/orphan pet entities and holograms.
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                cleanupInvalidPets();
+            }
+        }.runTaskTimer(ThePit.getInstance(), 20L * 30L, 20L * 30L);
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent e){
-        final LivingEntity entity = e.getPlayer();
-        final PetData data = entityToPetData.get(entity.getUniqueId());
+        final PetData data = petMap.get(e.getPlayer().getUniqueId());
         if (data == null) {
             return;
         }
@@ -71,6 +81,11 @@ public class PetFactory implements Listener {
                 return;
             }
 
+            final PetData old = this.petMap.get(owner.getUniqueId());
+            if (old != null) {
+                old.removeThis();
+            }
+
             final IPet pet = clazz.newInstance();
             pet.setOwner(owner);
 
@@ -83,9 +98,12 @@ public class PetFactory implements Listener {
             final Hologram hologram = HologramAPI.createHologram(location, CC.translate(pet.getCustomName().get(0)));
             hologram.spawn();
             hologram.setAttachedTo(entity);
+            final List<Hologram> extraHolograms = new ArrayList<>();
             if (pet.getCustomName().size() > 1) {
+                Hologram current = hologram;
                 for (int i = 1; i < pet.getCustomName().size(); i++) {
-                    hologram.addLineAbove(CC.translate(pet.getCustomName().get(i)));
+                    current = current.addLineAbove(CC.translate(pet.getCustomName().get(i)));
+                    extraHolograms.add(current);
                 }
             }
 
@@ -95,6 +113,7 @@ public class PetFactory implements Listener {
             data.entityUuid = entity.getUniqueId();
             data.ownerUuid = owner.getUniqueId();
             data.hologram = hologram;
+            data.extraHolograms = extraHolograms;
 
             this.petMap.put(owner.getUniqueId(), data);
             this.entityToPetData.put(entity.getUniqueId(), data);
@@ -231,11 +250,26 @@ public class PetFactory implements Listener {
         return this.entityToPetData;
     }
 
+    private void cleanupInvalidPets() {
+        for (PetData data : new ArrayList<>(petMap.values())) {
+            if (data == null) {
+                continue;
+            }
+
+            final Entity petEntity = data.entity;
+            final Player owner = data.ownerUuid == null ? null : Bukkit.getPlayer(data.ownerUuid);
+            if (petEntity == null || petEntity.isDead() || owner == null || !owner.isOnline()) {
+                data.removeThis();
+            }
+        }
+    }
+
 
     public static class PetData {
         private UUID ownerUuid;
         private UUID entityUuid;
         private Hologram hologram;
+        private List<Hologram> extraHolograms = new ArrayList<>();
         private Entity entity;
         private IPet pet;
 
@@ -244,7 +278,21 @@ public class PetFactory implements Listener {
             if (entity != null && !entity.isDead()) {
                 entity.remove();
             }
-            if (hologram.isSpawned()) {
+            if (extraHolograms != null) {
+                for (Hologram line : extraHolograms) {
+                    if (line == null) {
+                        continue;
+                    }
+                    try {
+                        if (line.isSpawned()) {
+                            line.deSpawn();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+                extraHolograms.clear();
+            }
+            if (hologram != null && hologram.isSpawned()) {
                 hologram.deSpawn();
             }
 

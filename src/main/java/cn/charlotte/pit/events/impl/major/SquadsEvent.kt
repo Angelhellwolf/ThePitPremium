@@ -63,6 +63,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
     private val unFullTeams = HashSet<TeamData>()
 
     private val banners = ArrayList<BannerData>()
+    private val placedBannerLocations = HashSet<Location>()
 
     private var state = State.PREPARE
 
@@ -102,14 +103,19 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
     override fun onActive() {
         val config = ThePit.getInstance().pitConfig
         for (location in config.squadsLocations) {
-            location.block.type = Material.STANDING_BANNER
-            val blockState = location.block.state
+            val bannerLocation = location.block.location
+            if (bannerLocation.block.type != Material.AIR) {
+                continue
+            }
+            bannerLocation.block.type = Material.STANDING_BANNER
+            val blockState = bannerLocation.block.state
             val banner = blockState as org.bukkit.block.Banner
             banner.baseColor = DyeColor.WHITE
             banner.update()
 
-            val bannerData = BannerData(location)
+            val bannerData = BannerData(bannerLocation)
             banners.add(bannerData)
+            placedBannerLocations.add(bannerLocation)
         }
 
         for (player in Bukkit.getOnlinePlayers()) {
@@ -160,7 +166,10 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
 
     override fun onInactive() {
         for (banner in banners) {
-            banner.location.block.type = Material.AIR
+            val bannerLocation = banner.location.block.location
+            if (placedBannerLocations.remove(bannerLocation) && bannerLocation.block.type == Material.STANDING_BANNER) {
+                bannerLocation.block.type = Material.AIR
+            }
 
 //            if (banner.firstLine.isSpawned) {
 //                banner.firstLine.deSpawn()
@@ -172,6 +181,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
 //                banner.thirdLine.deSpawn()
 //            }
         }
+        placedBannerLocations.clear()
 
         logicRunnable.cancel()
         effectRunnable.cancel()
@@ -255,6 +265,13 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
             }
         }
         Bukkit.broadcastMessage(CC.CHAT_BAR)
+
+        // Clean up all event data
+        playerMap.clear()
+        teamMap.clear()
+        unFullTeams.clear()
+        banners.clear()
+        usedChars.clear()
     }
 
     override fun onPreActive() {

@@ -1,5 +1,6 @@
 package cn.charlotte.pit.util.scoreboard;
 
+import cn.charlotte.pit.scoreboard.Scoreboard;
 import cn.charlotte.pit.util.scoreboard.events.AssembleBoardCreateEvent;
 import cn.charlotte.pit.util.scoreboard.events.AssembleBoardDestroyEvent;
 import org.bukkit.Bukkit;
@@ -44,6 +45,7 @@ public class AssembleListener implements Listener {
         }
 
         getAssemble().getBoards().remove(event.getPlayer().getUniqueId());
+        Scoreboard.invalidateCache(event.getPlayer().getUniqueId());
         event.getPlayer().setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
     }
 

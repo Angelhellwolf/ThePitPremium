@@ -4,6 +4,7 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.data.sub.PerkData;
 import cn.charlotte.pit.menu.perk.normal.buy.button.BoostButton;
+import cn.charlotte.pit.menu.perk.normal.choose.button.BattleFuryAttributeButton;
 import cn.charlotte.pit.menu.perk.normal.choose.button.KillStreakMainButton;
 import cn.charlotte.pit.menu.perk.normal.choose.button.PerkButton;
 import cn.charlotte.pit.perk.PerkFactory;
@@ -47,6 +48,9 @@ public class PerkChooseMenu extends Menu {
         button.put(32, new BoostButton(perkFactory.getPerkMap().get("DmgReduceBoost"), -5));
         button.put(33, new BoostButton(perkFactory.getPerkMap().get("BuilderBattleBoost"), -6));
         button.put(34, new BoostButton(perkFactory.getPerkMap().get("ElGatoBoost"), -7));
+        if (perkFactory.getPerkMap().get("battle_fury_perk") != null) {
+            button.put(35, new BattleFuryAttributeButton(perkFactory.getPerkMap().get("battle_fury_perk")));
+        }
 
         return button;
     }

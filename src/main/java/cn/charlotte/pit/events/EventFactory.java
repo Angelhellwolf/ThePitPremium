@@ -45,7 +45,7 @@ public class EventFactory {
     }
 
     public void pushEvent(IEpicEvent event, boolean force) {
-        if (Bukkit.getOnlinePlayers().size() >= ((IEvent) event).requireOnline()) {
+        if (Bukkit.getOnlinePlayers().size() >= getRequiredOnlineSafe((IEvent) event)) {
             readyEpicEvent(event);
         }
     }
@@ -55,7 +55,7 @@ public class EventFactory {
     }
 
     public void pushEvent(INormalEvent event, boolean force) {
-        if (Bukkit.getOnlinePlayers().size() >= ((IEvent) event).requireOnline()) {
+        if (Bukkit.getOnlinePlayers().size() >= getRequiredOnlineSafe((IEvent) event)) {
             activeEvent(event);
         }
     }
@@ -103,7 +103,13 @@ public class EventFactory {
         this.activeNormalEvent = event;
         IEvent iEvent = (IEvent) event;
         this.normalEnd = new Cooldown(5, TimeUnit.MINUTES);
-        iEvent.onActive();
+        try {
+            iEvent.onActive();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            this.activeNormalEvent = null;
+            return;
+        }
 
         new BukkitRunnable() {
             int tick = 0;
@@ -217,7 +223,22 @@ public class EventFactory {
         this.activeEpicEvent = event;
         IEvent iEvent = (IEvent) event;
         this.normalEnd = new Cooldown(5, TimeUnit.MINUTES);
-        iEvent.onActive();
+        try {
+            iEvent.onActive();
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            this.activeEpicEvent = null;
+        }
+    }
+
+    private int getRequiredOnlineSafe(IEvent event) {
+        try {
+            Integer required = event.requireOnline();
+            return required == null ? 0 : required;
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            return 0;
+        }
     }
 
     public void inactiveEvent(IEpicEvent event) {

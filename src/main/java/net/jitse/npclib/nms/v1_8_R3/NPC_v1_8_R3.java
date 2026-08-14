@@ -80,29 +80,37 @@ public class NPC_v1_8_R3 extends NPCBase {
         this.packetPlayOutEntityDestroy = new PacketPlayOutEntityDestroy(entityId); // First packet to send.
     }
 
+    private static void sendPacketSafe(PlayerConnection conn, Packet<?> packet) {
+        try {
+            conn.sendPacket(packet);
+        } catch (Exception ignored) {
+            // Prevent cross-version packet translation errors from kicking players
+        }
+    }
+
     @Override
     public void sendShowPackets(Player player) {
         PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
 
         if (hasTeamRegistered.add(player.getUniqueId()))
-            playerConnection.sendPacket(packetPlayOutScoreboardTeamRegister);
-        playerConnection.sendPacket(packetPlayOutPlayerInfoAdd);
-        playerConnection.sendPacket(packetPlayOutNamedEntitySpawn);
-        playerConnection.sendPacket(packetPlayOutEntityHeadRotation);
+            sendPacketSafe(playerConnection, packetPlayOutScoreboardTeamRegister);
+        sendPacketSafe(playerConnection, packetPlayOutPlayerInfoAdd);
+        sendPacketSafe(playerConnection, packetPlayOutNamedEntitySpawn);
+        sendPacketSafe(playerConnection, packetPlayOutEntityHeadRotation);
 
         getHologram(player).show(player);
 
         // Removing the player info after 10 seconds.
         Bukkit.getScheduler().runTaskLater(instance.getPlugin(), () ->
-                playerConnection.sendPacket(packetPlayOutPlayerInfoRemove), 200);
+                sendPacketSafe(playerConnection, packetPlayOutPlayerInfoRemove), 200);
     }
 
     @Override
     public void sendHidePackets(Player player) {
         PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
 
-        playerConnection.sendPacket(packetPlayOutEntityDestroy);
-        playerConnection.sendPacket(packetPlayOutPlayerInfoRemove);
+        sendPacketSafe(playerConnection, packetPlayOutEntityDestroy);
+        sendPacketSafe(playerConnection, packetPlayOutPlayerInfoRemove);
 
         getHologram(player).hide(player);
     }
@@ -112,7 +120,7 @@ public class NPC_v1_8_R3 extends NPCBase {
         PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
         PacketPlayOutEntityMetadata packet = new PacketPlayOutEntityMetadataWrapper().create(activeStates, entityId);
 
-        playerConnection.sendPacket(packet);
+        sendPacketSafe(playerConnection, packet);
     }
 
     @Override
@@ -129,7 +137,7 @@ public class NPC_v1_8_R3 extends NPCBase {
         ItemStack item = getItem(slot);
 
         PacketPlayOutEntityEquipment packet = new PacketPlayOutEntityEquipment(entityId, slot.getSlot(), CraftItemStack.asNMSCopy(item));
-        playerConnection.sendPacket(packet);
+        sendPacketSafe(playerConnection, packet);
     }
 
     @Override
@@ -141,7 +149,7 @@ public class NPC_v1_8_R3 extends NPCBase {
         PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
 
         PacketPlayOutAnimation packet = new PacketPlayOutAnimationWrapper().create(animation, entityId);
-        playerConnection.sendPacket(packet);
+        sendPacketSafe(playerConnection, packet);
     }
 
     @Override
@@ -152,10 +160,10 @@ public class NPC_v1_8_R3 extends NPCBase {
         this.packetPlayOutPlayerInfoAdd = new PacketPlayOutPlayerInfoWrapper().create(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, newProfile, name);
         for (Player player : Bukkit.getOnlinePlayers()) {
             PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
-            playerConnection.sendPacket(packetPlayOutPlayerInfoRemove);
-            playerConnection.sendPacket(packetPlayOutEntityDestroy);
-            playerConnection.sendPacket(packetPlayOutPlayerInfoAdd);
-            playerConnection.sendPacket(packetPlayOutNamedEntitySpawn);
+            sendPacketSafe(playerConnection, packetPlayOutPlayerInfoRemove);
+            sendPacketSafe(playerConnection, packetPlayOutEntityDestroy);
+            sendPacketSafe(playerConnection, packetPlayOutPlayerInfoAdd);
+            sendPacketSafe(playerConnection, packetPlayOutNamedEntitySpawn);
         }
     }
 
@@ -172,8 +180,8 @@ public class NPC_v1_8_R3 extends NPCBase {
             float yaw = npcLocation.getYaw();
             float pitch = npcLocation.getPitch();
 
-            connection.sendPacket(new PacketPlayOutEntity.PacketPlayOutEntityLook(getEntityId(), (byte) ((yaw % 360.) * 256 / 360), (byte) ((pitch % 360.) * 256 / 360), false));
-            connection.sendPacket(new PacketPlayOutEntityHeadRotationWrapper().create(npcLocation, entityId));
+            sendPacketSafe(connection, new PacketPlayOutEntity.PacketPlayOutEntityLook(getEntityId(), (byte) ((yaw % 360.) * 256 / 360), (byte) ((pitch % 360.) * 256 / 360), false));
+            sendPacketSafe(connection, new PacketPlayOutEntityHeadRotationWrapper().create(npcLocation, entityId));
         }
     }
 }

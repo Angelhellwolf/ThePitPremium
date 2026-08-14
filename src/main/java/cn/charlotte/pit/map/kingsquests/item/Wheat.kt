@@ -4,6 +4,7 @@ import cn.charlotte.pit.item.AbstractPitItem
 import cn.charlotte.pit.util.countItem
 import cn.charlotte.pit.util.item.ItemBuilder
 import cn.charlotte.pit.util.takeItem
+import cn.charlotte.pit.parm.AutoRegister
 import org.bukkit.CropState
 import org.bukkit.Effect
 import org.bukkit.Material
@@ -18,6 +19,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.material.Crops
 import kotlin.random.Random
 
+@AutoRegister
 object Wheat: AbstractPitItem(), Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)

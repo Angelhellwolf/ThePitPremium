@@ -3,7 +3,6 @@ package cn.charlotte.pit.events.impl.major;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
-import cn.charlotte.pit.data.sub.PlacedBlockData;
 import cn.charlotte.pit.event.PitDamageEvent;
 import cn.charlotte.pit.event.PitKillEvent;
 import cn.charlotte.pit.events.IEpicEvent;
@@ -110,10 +109,7 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
             });
 
 
-            for (PlacedBlockData blockData : ClearRunnable.getClearRunnable().getPlacedBlock()) {
-                blockData.getLocation().getBlock().setType(Material.AIR);
-            }
-            ClearRunnable.getClearRunnable().getPlacedBlock().clear();
+            ClearRunnable.getClearRunnable().clearAllPlacedBlocks();
 
             //build wall - end
 

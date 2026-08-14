@@ -50,6 +50,8 @@ public class PrestigePerkBuyMenu extends Menu {
         perks.removeIf(perk -> perk.requirePrestige() == 0);
 
         perks.removeIf(perk -> perk.getPerkType() != PerkType.PERK);
+        // battle_fury_perk 归类到属性入口，不在精通商店展示
+        perks.removeIf(perk -> "battle_fury_perk".equalsIgnoreCase(perk.getInternalPerkName()));
 
 
         int num = 36 * page;

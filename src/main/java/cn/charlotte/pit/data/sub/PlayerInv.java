@@ -24,8 +24,8 @@ public class PlayerInv {
     }
 
     public PlayerInv(ItemStack[] contents, ItemStack[] armorContents) {
-        this.contents = contents;
-        this.armorContents = armorContents;
+        this.contents = cloneItems(contents, 36);
+        this.armorContents = cloneItems(armorContents, 4);
     }
 
     public static PlayerInv fromPlayerInventory(org.bukkit.inventory.PlayerInventory inv) {
@@ -37,8 +37,8 @@ public class PlayerInv {
     }
 
     public void applyItemToPlayer(Player player) {
-        player.getInventory().setArmorContents(armorContents);
-        player.getInventory().setContents(contents);
+        player.getInventory().setArmorContents(cloneItems(armorContents, 4));
+        player.getInventory().setContents(cloneItems(contents, 36));
         player.setItemOnCursor(null);
     }
 
@@ -47,7 +47,7 @@ public class PlayerInv {
     }
 
     public void setContents(ItemStack[] contents) {
-        this.contents = contents;
+        this.contents = cloneItems(contents, 36);
     }
 
     public ItemStack[] getArmorContents() {
@@ -55,7 +55,7 @@ public class PlayerInv {
     }
 
     public void setArmorContents(ItemStack[] armorContents) {
-        this.armorContents = armorContents;
+        this.armorContents = cloneItems(armorContents, 4);
     }
 
     public ItemStack getHelmet() {
@@ -78,8 +78,21 @@ public class PlayerInv {
         return InventoryUtil.playerInvToString(this);
     }
 
+    private static ItemStack[] cloneItems(ItemStack[] source, int expectedSize) {
+        ItemStack[] target = new ItemStack[expectedSize];
+        if (source == null) {
+            return target;
+        }
+
+        int len = Math.min(expectedSize, source.length);
+        for (int i = 0; i < len; i++) {
+            ItemStack item = source[i];
+            target[i] = item == null ? null : item.clone();
+        }
+        return target;
+    }
+
     public String toString() {
         return "PlayerInv(contents=" + java.util.Arrays.deepToString(this.getContents()) + ", armorContents=" + java.util.Arrays.deepToString(this.getArmorContents()) + ")";
     }
 }
-

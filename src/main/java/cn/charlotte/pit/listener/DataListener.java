@@ -3,6 +3,7 @@ package cn.charlotte.pit.listener;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.FixedRewardData;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.data.sub.KillRecap;
 import cn.charlotte.pit.data.sub.PlayerInv;
 import cn.charlotte.pit.event.PitProfileLoadedEvent;
 import cn.charlotte.pit.parm.AutoRegister;
@@ -39,11 +40,18 @@ import java.util.concurrent.TimeUnit;
  */
 @AutoRegister
 public class DataListener implements Listener {
+    private static DataListener instance;
+
     private final ScheduledExecutorService executor;
 
     private final Map<UUID, BukkitRunnable> loadingMap = new ConcurrentHashMap<>();
 
+    public static DataListener getInstance() {
+        return instance;
+    }
+
     public DataListener() {
+        instance = this;
         this.executor = Executors.newSingleThreadScheduledExecutor();
         JedisPool jedisPool = ThePit.getInstance().getJedis();
         if (jedisPool != null) {
@@ -78,7 +86,7 @@ public class DataListener implements Listener {
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!player.isOnline()) {
+                if (!ThePit.getInstance().isEnabled() || !player.isOnline()) {
                     cancel();
                     return;
                 }
@@ -92,7 +100,7 @@ public class DataListener implements Listener {
             }
         };
 
-        runnable.runTaskTimerAsynchronously(ThePit.getInstance(), 1L, 1L);
+        runnable.runTaskTimerAsynchronously(ThePit.getInstance(), 1L, 20L);
 
         loadingMap.put(player.getUniqueId(), runnable);
 
@@ -111,6 +119,7 @@ public class DataListener implements Listener {
             } catch (Exception ignored) {
 
             }
+            loadingMap.remove(event.getPlayer().getUniqueId());
             return;
         }
 
@@ -156,6 +165,7 @@ public class DataListener implements Listener {
                     }
                 }
                 BountyRunnable.getAnimationDataMap().remove(event.getPlayer().getUniqueId());
+                KillRecap.removeRecap(event.getPlayer().getUniqueId());
             }
         }
     }
@@ -195,6 +205,25 @@ public class DataListener implements Listener {
         return true;
     }
 
+    public void shutdown() {
+        for (BukkitRunnable runnable : loadingMap.values()) {
+            try {
+                runnable.cancel();
+            } catch (Exception ignored) {
+            }
+        }
+        loadingMap.clear();
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public void load(Player player) {
         if (Bukkit.getPlayer(player.getUniqueId()) == player && player.isOnline()) {
             PlayerProfile profile = new PlayerProfile(player.getUniqueId(), player.getName());
@@ -219,9 +248,11 @@ public class DataListener implements Listener {
                 PitProfileUpdater.updateVersion0(load);
             }
 
-            Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
-                new PitProfileLoadedEvent(PlayerProfile.getPlayerProfileByUuid(player.getUniqueId())).callEvent();
-            });
+            if (ThePit.getInstance().isEnabled()) {
+                Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+                    new PitProfileLoadedEvent(PlayerProfile.getPlayerProfileByUuid(player.getUniqueId())).callEvent();
+                });
+            }
 
             if (player.isOnline()) {
                 FixedRewardData.Companion.sendMail(load, player);

@@ -16,6 +16,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Author: EmptyIrony
@@ -23,32 +24,39 @@ import java.util.*;
  */
 @AutoRegister
 public class HologramListener implements Listener {
-    protected static final Map<UUID, PlayerHologram> hologramMap = new HashMap<>();
+    public static final Map<UUID, PlayerHologram> hologramMap = new ConcurrentHashMap<>();
 
     @EventHandler
     @SneakyThrows
     public void onLoad(PitProfileLoadedEvent event) {
         Bukkit.getScheduler()
-                .runTaskAsynchronously(ThePit.getInstance(), () -> {
+                .runTask(ThePit.getInstance(), () -> {
                     Player player = Bukkit.getPlayer(event.getPlayerProfile().getPlayerUuid());
                     if (player != null && player.isOnline()) {
+                        PlayerHologram old = hologramMap.remove(player.getUniqueId());
+                        despawnPlayerHolograms(old);
+
                         PlayerHologram playerHologram = new PlayerHologram(new ArrayList<>());
-                        hologramMap.put(player.getUniqueId(), playerHologram);
                         for (AbstractHologram hologram : (ThePit.getInstance().getHologramFactory()).loopHologram) {
                             handleHologramCreate(player, playerHologram, hologram);
                         }
                         for (AbstractHologram hologram : (ThePit.getInstance().getHologramFactory()).normalHologram) {
                             handleHologramCreate(player, playerHologram, hologram);
                         }
+                        hologramMap.put(player.getUniqueId(), playerHologram);
                     }
                 });
     }
 
     private void handleHologramCreate(Player player, PlayerHologram playerHologram, AbstractHologram hologram) {
-        List<Hologram> holograms = new ArrayList<>();
-        for (int i = 0; i < hologram.getText(player).size(); i++) {
-            String text = hologram.getText(player).get(i);
-            Hologram holo = HologramAPI.createHologram(hologram.getLocation().clone().add(0.0D, -i * hologram.getHologramHighInterval(), 0.0D), CC.translate(text));
+        List<Hologram> holograms = Collections.synchronizedList(new ArrayList<>());
+        List<String> text = hologram.getText(player);
+        if (text == null) {
+            text = Collections.emptyList();
+        }
+        for (int i = 0; i < text.size(); i++) {
+            String line = text.get(i);
+            Hologram holo = HologramAPI.createHologram(hologram.getLocation().clone().add(0.0D, -i * hologram.getHologramHighInterval(), 0.0D), CC.translate(line));
             holo.spawn(Collections.singletonList(player));
             holograms.add(holo);
         }
@@ -58,25 +66,39 @@ public class HologramListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Bukkit.getScheduler()
-                .runTaskAsynchronously(ThePit.getInstance(), () -> {
-                    PlayerHologram playerHologram = hologramMap.get(event.getPlayer().getUniqueId());
-                    if (playerHologram == null) {
-                        return;
-                    }
-                    for (HologramData datum : playerHologram.hologramData.values()) {
-                        for (Hologram hologram : datum.holograms) {
-                            if (hologram.isSpawned()) {
-                                hologram.deSpawn();
-                            }
-                        }
-                    }
-                    hologramMap.remove(event.getPlayer().getUniqueId());
+                .runTask(ThePit.getInstance(), () -> {
+                    PlayerHologram playerHologram = hologramMap.remove(event.getPlayer().getUniqueId());
+                    despawnPlayerHolograms(playerHologram);
                 });
+    }
+
+    public static void despawnPlayerHolograms(PlayerHologram playerHologram) {
+        if (playerHologram == null) {
+            return;
+        }
+
+        for (HologramData datum : playerHologram.hologramData.values()) {
+            List<Hologram> holograms = datum.holograms;
+            if (holograms == null) {
+                continue;
+            }
+            synchronized (holograms) {
+                for (Hologram hologram : holograms) {
+                    try {
+                        if (hologram.isSpawned()) {
+                            hologram.deSpawn();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+                holograms.clear();
+            }
+        }
     }
 
     @Getter
     public static class PlayerHologram {
-        private final Map<String, HologramListener.HologramData> hologramData = new HashMap<>();
+        private final Map<String, HologramListener.HologramData> hologramData = new ConcurrentHashMap<>();
 
         public PlayerHologram(List<HologramListener.HologramData> hologramData) {
             for (HologramListener.HologramData data : hologramData) {
@@ -175,4 +197,3 @@ public class HologramListener implements Listener {
         }
     }
 }
-

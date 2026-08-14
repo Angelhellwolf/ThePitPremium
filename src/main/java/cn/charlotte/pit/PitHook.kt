@@ -66,6 +66,7 @@ import cn.charlotte.pit.sound.impl.*
 import cn.charlotte.pit.util.command.CommandHandler
 import cn.charlotte.pit.util.nametag.NametagHandler
 import cn.charlotte.pit.util.scoreboard.Assemble
+import cn.charlotte.pit.util.perf.PerfMetrics
 import com.comphenix.protocol.ProtocolLibrary
 import org.bukkit.Bukkit
 import org.bukkit.event.Listener
@@ -129,6 +130,8 @@ object PitHook {
         Bukkit.getPluginManager().registerEvents(SewersRunnable, ThePit.getInstance())
         SewersRunnable.runTaskTimer(ThePit.getInstance(), 20L, 20L)
 
+        PerfMetrics.start(ThePit.getInstance())
+
         println("Loading complete.")
         isLoaded = true
     }
@@ -146,6 +149,10 @@ object PitHook {
         CommandHandler.registerClass(CleanupNoDupeItemCommand::class.java)
     }
 
+    @JvmStatic
+    var bountyExecutor: ScheduledThreadPoolExecutor? = null
+        private set
+
     private fun loadRunnable() {
         GameRunnable()
             .runTaskTimer(ThePit.getInstance(), 1L, 1L)
@@ -158,7 +165,9 @@ object PitHook {
         NightVisionRunnable().runTaskTimer(ThePit.getInstance(), 20, 20)
 //        NiggerRunnable().runTaskTimerAsynchronously(ThePit.getInstance(), 20, 20)
         /*        AntiCollateralRunnable().runTaskTimerAsynchronously(ThePit.getInstance(), 1 * 20 * 60, 60L)*/
-        ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(BountyRunnable(), 100, 100, TimeUnit.MILLISECONDS)
+        bountyExecutor = ScheduledThreadPoolExecutor(1).also {
+            it.scheduleWithFixedDelay(BountyRunnable(), 100, 100, TimeUnit.MILLISECONDS)
+        }
     }
 
     private fun loadItems() {
@@ -308,6 +317,7 @@ object PitHook {
             SniperEnchant::class.java,
             SpeedyKillEnchant::class.java,
             SprintDrainEnchant::class.java,
+            SwiftSprintEnchant::class.java,
             StrikeGoldEnchant::class.java,
             ThornsEnchant::class.java,
             ThumpEnchant::class.java,
@@ -377,16 +387,10 @@ object PitHook {
                 val enchantName =
                     enchantNameMethod.invoke(enchantClass.getDeclaredConstructor().newInstance()) as String
 
-                if (pitConfig.disableEnchants.isEmpty()) {
-                    println("未禁用任何附魔")
-                    return
-                }
                 if (pitConfig.disableEnchants.contains(enchantName)) {
-                    println("移除附魔: $enchantName")
-                    iterator.remove()
-                } else {
-                    enchantNames.add(enchantName)
+                    println("附魔启用覆盖: 忽略配置中的禁用项 $enchantName")
                 }
+                enchantNames.add(enchantName)
             }
         }
 
@@ -496,6 +500,7 @@ object PitHook {
             HighlanderBundlePerk::class.java,
             ImpatientPerk::class.java,
             IronPackShopPerk::class.java,
+            AllArmedPerk::class.java,
             JumpBoostShopPerk::class.java,
 //            KungFuKnowledgePerk::class.java,
             MarathonPerk::class.java,
@@ -518,6 +523,9 @@ object PitHook {
             TenacityPerk::class.java,
             TheWayPerk::class.java,
             ThickPerk::class.java,
+            ArmorBreakPerk::class.java,
+            BattleFuryPerk::class.java,
+            StashPerk::class.java,
             ToTheMoonBundle::class.java,
             YummyPerk::class.java,
             ArrowRecoveryPerk::class.java,
@@ -595,12 +603,14 @@ object PitHook {
                 GenesisDemonNpc::class.java,
                 KeeperNPC::class.java,
                 MailNpc::class.java,
+                StashNpc::class.java,
                 PerkNPC::class.java,
                 PrestigeNPC::class.java,
                 QuestNpc::class.java,
                 ShopNPC::class.java,
                 StatusNPC::class.java,
-                LeaderNPC::class.java
+                LeaderNPC::class.java,
+                BakeMasterNpc::class.java
             )
         )
     }
@@ -655,7 +665,6 @@ object PitHook {
         ThePit.getInstance().actionBarManager = actionBarManager;
         Bukkit.getScheduler().runTaskTimerAsynchronously(ThePit.getInstance(), {
             actionBarManager.tick();
-        }, 1, 1)
+        }, 1, 2)
     }
 }
-

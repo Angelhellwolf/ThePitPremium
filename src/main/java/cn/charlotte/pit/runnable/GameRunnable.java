@@ -10,6 +10,7 @@ import cn.charlotte.pit.util.Utils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -36,6 +37,11 @@ public class GameRunnable extends BukkitRunnable {
         final Map<String, ITickTask> ticksPerk = ThePit.getInstance().getPerkFactory().getTickTasks();
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            CraftPlayer craftPlayer = (CraftPlayer) player;
+            if (craftPlayer.getHandle().getAbsorptionHearts() > 40.0F) {
+                craftPlayer.getHandle().setAbsorptionHearts(40.0F);
+            }
+
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
 
             for (Map.Entry<Integer, PerkData> entry : profile.getChosePerk().entrySet()) {

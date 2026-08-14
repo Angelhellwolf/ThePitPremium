@@ -117,6 +117,7 @@ public class PlayerProfile {
     private double respawnTime;
     private PlayerInv inventory;
     private PlayerEnderChest enderChest;
+    private PlayerStash stash;
     private int enderChestRow;
 
     //每次都遍历查询，效率低下
@@ -229,6 +230,7 @@ public class PlayerProfile {
     public PlayerProfile() {
         this.inventory = new PlayerInv();
         this.enderChest = new PlayerEnderChest();
+        this.stash = new PlayerStash();
         this.killRecap = new KillRecap();
         this.buffData = new BuffData();
         this.combatTimer = new Cooldown(0);
@@ -514,26 +516,28 @@ public class PlayerProfile {
 
         profile.loaded = true;
 
-        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
-            try {
-                final Player player = Bukkit.getPlayer(profile.getPlayerUuid());
-                if (player != null) {
-                    if (!player.getName().equals(player.getDisplayName())) {
-                        profile.nicked = true;
-                        if (profile.prestige <= 0) {
-                            profile.nickPrestige = 0;
-                        } else {
-                            profile.nickPrestige = RandomUtil.random.nextInt(profile.getPrestige()) + 1;
-                        }
+        if (ThePit.getInstance().isEnabled()) {
+            Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+                try {
+                    final Player player = Bukkit.getPlayer(profile.getPlayerUuid());
+                    if (player != null) {
+                        if (!player.getName().equals(player.getDisplayName())) {
+                            profile.nicked = true;
+                            if (profile.prestige <= 0) {
+                                profile.nickPrestige = 0;
+                            } else {
+                                profile.nickPrestige = RandomUtil.random.nextInt(profile.getPrestige()) + 1;
+                            }
 
-                        profile.nickLevel = RandomUtil.random.nextInt(profile.getLevel() + 1);
+                            profile.nickLevel = RandomUtil.random.nextInt(profile.getLevel() + 1);
+                        }
                     }
+                } catch (Exception e) {
+                    Bukkit.getOnlinePlayers()
+                            .forEach(player -> CC.printError(player, e));
                 }
-            } catch (Exception e) {
-                Bukkit.getOnlinePlayers()
-                        .forEach(player -> CC.printError(player, e));
-            }
-        });
+            });
+        }
 
         return profile;
     }
@@ -1089,6 +1093,17 @@ public class PlayerProfile {
 
     public void setEnderChest(PlayerEnderChest enderChest) {
         this.enderChest = enderChest;
+    }
+
+    public PlayerStash getStash() {
+        if (this.stash == null) {
+            this.stash = new PlayerStash();
+        }
+        return this.stash;
+    }
+
+    public void setStash(PlayerStash stash) {
+        this.stash = stash;
     }
 
     public int getEnderChestRow() {

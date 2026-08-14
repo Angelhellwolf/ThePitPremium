@@ -1,0 +1,33 @@
+# Fetch started: 2026-02-05T13:13:38+08:00
+URL=https://timin.gs/?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+
+## curl HTML
+
+HTTP_CODE=200
+FINAL_URL=https://timin.gs/?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+SIZE=1472
+CONTENT_TYPE=text/html;charset=UTF-8
+
+## curl https://timin.gs/dist/timings.js?1616888413 -> perf_case/
+
+## curl https://timin.gs/dist/vendor.js?1616888413 -> perf_case/
+
+HTTP_CODE=200 SIZE=1256707 CONTENT_TYPE=application/javascript URL=https://timin.gs/dist/timings.js?1616888413
+HTTP_CODE=200 SIZE=289480 CONTENT_TYPE=application/javascript URL=https://timin.gs/dist/vendor.js?1616888413
+HTTP_CODE=200 SIZE=10827395 CONTENT_TYPE=application/octet-stream
+
+## curl API https://timin.gs/data.php?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+HTTP_CODE=000 SIZE=0 CONTENT_TYPE= URL=https://timin.gs/data.php?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+
+
+## curl API (no proxy) https://timin.gs/data.php?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+HTTP_CODE=000 SIZE=0 CONTENT_TYPE= URL=https://timin.gs/data.php?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+
+
+## curl API (escalated, no proxy) https://timin.gs/data.php?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+HTTP_CODE=200 SIZE=93531 CONTENT_TYPE=application/json URL=https://timin.gs/data.php?id=dc6bb4c3b7fd4c95b81e8b23e82351b2
+
+
+## curl API history ids=0,1,2,3,4,5,6,7,8,9,10,11,12
+HTTP_CODE=200 SIZE=1813759 CONTENT_TYPE=application/json URL=https://timin.gs/data.php?id=dc6bb4c3b7fd4c95b81e8b23e82351b2&history=0,1,2,3,4,5,6,7,8,9,10,11,12
+

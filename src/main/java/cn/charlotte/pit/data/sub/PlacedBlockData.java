@@ -3,6 +3,7 @@ package cn.charlotte.pit.data.sub;
 
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import org.bukkit.Location;
+import org.bukkit.Material;
 
 /**
  * @Author: EmptyIrony
@@ -11,10 +12,18 @@ import org.bukkit.Location;
 public class PlacedBlockData {
     private final Location location;
     private final Cooldown cooldown;
+    private final Material placedType;
+    private final byte placedData;
 
     public PlacedBlockData(Location location, Cooldown cooldown) {
+        this(location, cooldown, null, (byte) 0);
+    }
+
+    public PlacedBlockData(Location location, Cooldown cooldown, Material placedType, byte placedData) {
         this.location = location;
         this.cooldown = cooldown;
+        this.placedType = placedType;
+        this.placedData = placedData;
     }
 
     public Location getLocation() {
@@ -23,6 +32,14 @@ public class PlacedBlockData {
 
     public Cooldown getCooldown() {
         return this.cooldown;
+    }
+
+    public Material getPlacedType() {
+        return this.placedType;
+    }
+
+    public byte getPlacedData() {
+        return this.placedData;
     }
 
     public boolean equals(final Object o) {

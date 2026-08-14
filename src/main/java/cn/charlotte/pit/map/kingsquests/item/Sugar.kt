@@ -1,6 +1,7 @@
 package cn.charlotte.pit.map.kingsquests.item
 
 import cn.charlotte.pit.item.AbstractPitItem
+import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.util.item.ItemBuilder
 import cn.charlotte.pit.util.submit
 import org.bukkit.Material
@@ -11,6 +12,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.inventory.ItemStack
 
+@AutoRegister
 object Sugar: AbstractPitItem(), Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)

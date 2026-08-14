@@ -7,8 +7,6 @@ import cn.charlotte.pit.util.toMythicItem
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 object ActionBarDisplayRunnable {
 
@@ -17,30 +15,36 @@ object ActionBarDisplayRunnable {
     }
 
     fun start() {
-        val scheduler = Executors.newSingleThreadScheduledExecutor()
-        scheduler.scheduleAtFixedRate({
+        // Use Bukkit scheduler instead of Java ExecutorService to ensure
+        // packets are sent on the main thread, avoiding ViaVersion/PacketEvents
+        // race conditions that kick 1.21 clients with "Internal Error".
+        Bukkit.getScheduler().runTaskTimer(ThePit.getInstance(), Runnable {
             val currentTime = System.currentTimeMillis()
 
             Bukkit.getOnlinePlayers().forEach { player ->
-                val metadata = player.getMetadata("showing_damage_data")
-                val lastShownTime = metadata.firstOrNull()?.asLong() ?: 0L
+                try {
+                    val metadata = player.getMetadata("showing_damage_data")
+                    val lastShownTime = metadata.firstOrNull()?.asLong() ?: 0L
 
-                if (currentTime - lastShownTime > 1000L) {
-                    val message = buildString {
-                        player.itemInHand?.let { item ->
-                            append(player.createActionDisplay(item))
+                    if (currentTime - lastShownTime > 1000L) {
+                        val message = buildString {
+                            player.itemInHand?.let { item ->
+                                append(player.createActionDisplay(item))
+                            }
+                            player.inventory.armorContents.forEach { armorItem ->
+                                append(player.createActionDisplay(armorItem))
+                            }
                         }
-                        player.inventory.armorContents.forEach { armorItem ->
-                            append(player.createActionDisplay(armorItem))
+
+                        if (message.isNotBlank() || message.isNotEmpty()) {
+                            ActionBarUtil.sendActionBar(player, CC.translate(message))
                         }
                     }
-
-                    if (message.isNotBlank() || message.isNotEmpty()) {
-                        ActionBarUtil.sendActionBar(player, CC.translate(message))
-                    }
+                } catch (e: Exception) {
+                    // Silently ignore per-player errors to avoid kicking
                 }
             }
-        }, 5000L, 50L, TimeUnit.MILLISECONDS)
+        }, 100L, 4L) // 100 tick delay, 4 tick interval (200ms)
     }
 
     private fun Player.createActionDisplay(itemStack: ItemStack?): String {

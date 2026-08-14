@@ -17,10 +17,13 @@ public class ActionBarUtil {
     }
 
     public static void sendActionBar0(Player player, String message) {
-        ChatComponentText components = new ChatComponentText(CC.translate(message));
-        PacketPlayOutChat packet = new PacketPlayOutChat(components, (byte) 2);
-
-        ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+        try {
+            ChatComponentText components = new ChatComponentText(CC.translate(message));
+            PacketPlayOutChat packet = new PacketPlayOutChat(components, (byte) 2);
+            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+        } catch (Exception ignored) {
+            // Prevent cross-version packet translation errors from kicking players
+        }
     }
 
 }

@@ -16,8 +16,7 @@ service:
     #不需要直接删除即可
     password: admin
 enchants: # 输入附魔名称 关闭不需要的附魔
-  disable:
-    - "111"
+  disable: []
 #建筑高度限制
 arenaHighestY: 75
 #位置档案

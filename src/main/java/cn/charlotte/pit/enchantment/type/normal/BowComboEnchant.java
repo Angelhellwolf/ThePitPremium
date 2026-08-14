@@ -1,6 +1,7 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.ThePit;
+import cn.charlotte.pit.UtilKt;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
 import cn.charlotte.pit.enchantment.param.item.BowOnly;
@@ -11,6 +12,8 @@ import cn.charlotte.pit.util.chat.RomanUtil;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import cn.charlotte.pit.util.time.TimeUtil;
 import com.google.common.util.concurrent.AtomicDouble;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -20,6 +23,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -28,6 +32,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import net.minecraft.server.v1_8_R3.NBTTagCompound;
+import net.minecraft.server.v1_8_R3.NBTTagList;
+import net.minecraft.server.v1_8_R3.ItemStack;
 
 /**
  * @Author: Misoryan
@@ -37,7 +44,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @BowOnly
 public class BowComboEnchant extends AbstractEnchantment implements IPlayerShootEntity, Listener, IActionDisplayEnchant {
 
-    public static final HashMap<UUID, Long> hitCheck = new HashMap<>();
+    private static final String UUID_META = "bow_combo_enchant_uuid";
+    private static final String HIT_META = "bow_combo_enchant_hit";
     public static final HashMap<UUID, Integer> combo = new HashMap<>();
 
     @Override
@@ -63,6 +71,15 @@ public class BowComboEnchant extends AbstractEnchantment implements IPlayerShoot
     @Override
     public Cooldown getCooldown() {
         return null;
+    }
+
+    @Override
+    public int getItemEnchantLevel(org.bukkit.inventory.ItemStack item) {
+        int level = super.getItemEnchantLevel(item);
+        if (level != -1) {
+            return level;
+        }
+        return getLegacyEnchantLevel(item, "bow_combo");
     }
 
     @Override
@@ -94,42 +111,75 @@ public class BowComboEnchant extends AbstractEnchantment implements IPlayerShoot
         if (level == -1) {
             return;
         }
-        event.getProjectile().setMetadata("bow_combo_enchant_uuid", new FixedMetadataValue(ThePit.getInstance(), UUID.randomUUID().toString()));
+        event.getProjectile().setMetadata(UUID_META, new FixedMetadataValue(ThePit.getInstance(), UUID.randomUUID().toString()));
     }
 
     @EventHandler
     public void onBowHit(ProjectileHitEvent event) {
-        if (event.getEntity().hasMetadata("bow_combo_enchant_uuid") && event.getEntity().getShooter() != null) {
-            if (event.getEntity().getShooter() instanceof Player) {
-                Player player = (Player) event.getEntity().getShooter();
-                UUID uuid = UUID.fromString(event.getEntity().getMetadata("bow_combo_enchant_uuid").get(0).asString());
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        if (hitCheck.get(uuid) == null) {
-                            combo.put(player.getUniqueId(), 0);
-                        } else {
-                            combo.put(player.getUniqueId(), combo.getOrDefault(player.getUniqueId(), 0) + 1);
-                            hitCheck.remove(uuid);
-                        }
-                    }
-                }.runTaskLater(ThePit.getInstance(), 1L);
+        if (!(event.getEntity().getShooter() instanceof Player)) {
+            return;
+        }
+        if (!event.getEntity().hasMetadata(UUID_META)) {
+            return;
+        }
+        Player player = (Player) event.getEntity().getShooter();
+        if (!event.getEntity().hasMetadata(HIT_META)) {
+            Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
+                if (!event.getEntity().hasMetadata(HIT_META)) {
+                    combo.put(player.getUniqueId(), 0);
+                }
+            }, 1L);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onPlayerDamagePlayer(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Projectile && ((Projectile) event.getDamager()).getShooter() instanceof Player) {
+            if (event.getDamager().hasMetadata(UUID_META)) {
+                Player player = (Player) ((Projectile) event.getDamager()).getShooter();
+                combo.put(player.getUniqueId(), combo.getOrDefault(player.getUniqueId(), 0) + 1);
+                event.getDamager().setMetadata(HIT_META, new FixedMetadataValue(ThePit.getInstance(), true));
             }
         }
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onPlayerDamagePlayer(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Projectile && ((Projectile) event.getDamager()).getShooter() instanceof Player) {
-            if (event.getDamager().hasMetadata("bow_combo_enchant_uuid")) {
-                UUID uuid = UUID.fromString(event.getDamager().getMetadata("bow_combo_enchant_uuid").get(0).asString());
-                hitCheck.put(uuid, System.currentTimeMillis());
-            }
-        }
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        combo.remove(event.getPlayer().getUniqueId());
     }
 
     @Override
     public String getText(int level, Player player) {
         return "&e&l" + combo.getOrDefault(player.getUniqueId(), 0) + "/" + (level >= 2 ? 2 : 3);
+    }
+
+    private int getLegacyEnchantLevel(org.bukkit.inventory.ItemStack item, String legacyNbtName) {
+        if (item == null || item.getType() == Material.AIR) {
+            return -1;
+        }
+        ItemStack nmsItem = UtilKt.reflectGetNmsItem(item);
+        if (nmsItem == null) {
+            return -1;
+        }
+        NBTTagCompound tag = nmsItem.getTag();
+        if (tag == null || !tag.hasKey("extra") || !tag.getCompound("extra").hasKey("ench")) {
+            return -1;
+        }
+        NBTTagList list = tag.getCompound("extra").getList("ench", 8);
+        for (int i = 0; i < list.size(); i++) {
+            String string = list.getString(i);
+            String[] split = string.split(":");
+            if (split.length != 2) {
+                continue;
+            }
+            if (legacyNbtName.equals(split[0])) {
+                try {
+                    return Integer.parseInt(split[1]);
+                } catch (NumberFormatException ignored) {
+                    return -1;
+                }
+            }
+        }
+        return -1;
     }
 }

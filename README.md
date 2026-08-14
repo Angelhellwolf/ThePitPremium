@@ -14,7 +14,10 @@ A Minecraft mini-game plugin, based on the Spigot 1.8.8 implementation.
 
 ### [`command.yml`](.github/docs/command.yml)
 
+## Docs
+
+- [Event Config Guide](EVENT_CONFIG_GUIDE.md)
+
 ## Developer talk
 
 ### The program will be updated continuously afterward and will never be charged, so you can ask Issues if you have any questions.
-

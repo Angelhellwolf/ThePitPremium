@@ -42,7 +42,8 @@ mongodb = { group = "org.mongodb", name = "mongo-java-driver", version.ref = "mo
 
 spigot_8 = { group = "org.spigotmc", name = "spigot", version.ref = "server_8" }
 
-protocollib = { group = "com.comphenix.protocol", name = "ProtocolLib", version.ref = "protocolLib" }
+# ProtocolLib is hosted on repo.dmulloy2.net; using this coordinate avoids some flaky mirrors.
+protocollib = { group = "net.dmulloy2", name = "ProtocolLib", version.ref = "protocolLib" }
 
 scoreboardlibrary-api = { group = "net.megavex", name = "scoreboard-library-api", version.ref = "scoreboard-library" }
 scoreboardlibrary-impl = { group = "net.megavex", name = "scoreboard-library-implementation", version.ref = "scoreboard-library" }

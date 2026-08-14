@@ -5,6 +5,7 @@ package cn.charlotte.pit.perk.type.streak.uber
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.event.*
 import cn.charlotte.pit.getPitProfile
+import cn.charlotte.pit.item.type.GlobalAttentionGem
 import cn.charlotte.pit.item.type.UberDrop
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.perk.AbstractPerk
@@ -24,6 +25,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.potion.PotionEffect
+import org.bukkit.inventory.ItemStack
 import java.util.*
 
 
@@ -184,6 +186,11 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
                     1.5f
                 )
             }
+
+            // Give diamond helmet (head) and Global Attention Gem on Uber activation
+            player.inventory.helmet = ItemStack(Material.DIAMOND_HELMET)
+            player.inventory.addItem(GlobalAttentionGem().toItemStack())
+            player.sendMessage(CC.translate("&d登峰造极! &7你获得了钻石头盔和 &b举世瞩目的宝石&7!"))
         }
 
         if (event.from < 200 && event.to >= 200) {

@@ -55,7 +55,7 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if ("koth".equals(ThePit.getInstance().getEventFactory().getActiveNormalEventName())) {
+        if ("koth".equals(ThePit.getInstance().getEventFactory().getActiveNormalEventName()) && hillData != null) {
             hillData.spawnHologramsForPlayer(event.getPlayer());
         }
     }
@@ -173,8 +173,8 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
         }
 
         public void spawnAllHolograms() {
-            firstHologram.spawn();
-            secondHologram.spawn();
+            if (firstHologram != null) firstHologram.spawn();
+            if (secondHologram != null) secondHologram.spawn();
         }
 
         public void despawnAllHolograms() {
@@ -183,8 +183,8 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
         }
 
         public void spawnHologramsForPlayer(Player player) {
-            firstHologram.spawn(Collections.singletonList(player));
-            secondHologram.spawn(Collections.singletonList(player));
+            if (firstHologram != null) firstHologram.spawn(Collections.singletonList(player));
+            if (secondHologram != null) secondHologram.spawn(Collections.singletonList(player));
         }
     }
 }
