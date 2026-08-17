@@ -24,12 +24,21 @@ public class iSpigot implements Listener {
     public void onMove(PlayerMoveEvent event) {
         Location from = event.getFrom();
         Location to = event.getTo();
+        if (to == null) {
+            return;
+        }
+
+        boolean rotationChanged = from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw();
+        boolean locationChanged = from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
+        if (!rotationChanged && !locationChanged) {
+            return;
+        }
 
         for (MovementHandler move : movementHandlers) {
-            if (from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw()) {
+            if (rotationChanged) {
                 move.handleUpdateRotation(event.getPlayer(), from, to, null);
             }
-            if (from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ()) {
+            if (locationChanged) {
                 move.handleUpdateLocation(event.getPlayer(), from, to, null);
             }
         }
@@ -39,12 +48,21 @@ public class iSpigot implements Listener {
     public void onMove(PlayerTeleportEvent event) {
         Location from = event.getFrom();
         Location to = event.getTo();
+        if (to == null) {
+            return;
+        }
+
+        boolean rotationChanged = from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw();
+        boolean locationChanged = from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
+        if (!rotationChanged && !locationChanged) {
+            return;
+        }
 
         for (MovementHandler move : movementHandlers) {
-            if (from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw()) {
+            if (rotationChanged) {
                 move.handleUpdateRotation(event.getPlayer(), from, to, null);
             }
-            if (from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ()) {
+            if (locationChanged) {
                 move.handleUpdateLocation(event.getPlayer(), from, to, null);
             }
         }

@@ -155,7 +155,16 @@ public class Assemble {
     }
 
     public void setTicks(long ticks) {
-        this.ticks = ticks;
+        long sanitizedTicks = Math.max(1L, ticks);
+        if (this.ticks == sanitizedTicks) {
+            return;
+        }
+
+        this.ticks = sanitizedTicks;
+        if (this.thread != null) {
+            Bukkit.getScheduler().cancelTask(this.thread.taskId);
+            this.thread = new AssembleThread(this);
+        }
     }
 
     public boolean isHook() {

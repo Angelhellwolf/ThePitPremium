@@ -25,13 +25,13 @@ public class EventFactory {
 
 
 
-    private INormalEvent activeNormalEvent;
-    private IEpicEvent activeEpicEvent;
+    private volatile INormalEvent activeNormalEvent;
+    private volatile IEpicEvent activeEpicEvent;
     private Cooldown normalEnd;
 
     private long lastNormalEvent;
 
-    private IEpicEvent nextEpicEvent;
+    private volatile IEpicEvent nextEpicEvent;
     private Cooldown nextEpicEventTimer;
 
     public EventFactory() {
@@ -80,7 +80,7 @@ public class EventFactory {
         }
 
         Bukkit.getScheduler()
-                .runTaskTimerAsynchronously(ThePit.getInstance(), new EventTimer(), 20, 20);
+                .runTaskTimer(ThePit.getInstance(), new EventTimer(), 20, 20);
 
     }
 
@@ -157,7 +157,7 @@ public class EventFactory {
 
                 tick++;
             }
-        }.runTaskTimerAsynchronously(ThePit.getInstance(), 10, 10);
+        }.runTaskTimer(ThePit.getInstance(), 10, 10);
     }
 
     public void inactiveEvent(INormalEvent event) {
@@ -215,7 +215,7 @@ public class EventFactory {
 
                 tick++;
             }
-        }.runTaskTimerAsynchronously(ThePit.getInstance(), 10, 10);
+        }.runTaskTimer(ThePit.getInstance(), 10, 10);
     }
 
     public void activeEvent(IEpicEvent event) {

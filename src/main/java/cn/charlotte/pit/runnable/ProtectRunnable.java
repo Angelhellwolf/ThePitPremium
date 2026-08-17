@@ -21,18 +21,23 @@ public class ProtectRunnable extends BukkitRunnable {
 
     @Override
     public void run() {
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        final AxisAlignedBB arenaBounds = new AxisAlignedBB(
+                config.getPitLocA().getX(), config.getPitLocA().getY(), config.getPitLocA().getZ(),
+                config.getPitLocB().getX(), config.getPitLocB().getY(), config.getPitLocB().getZ());
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+            if (profile == null) {
+                continue;
+            }
             if (!profile.isEditingMode() || !PlayerUtil.isStaffSpectating(player)) {
                 if (!profile.isInArena()) {
-                    PitConfig config = ThePit.getInstance().getPitConfig();
-                    final AxisAlignedBB aabb = new AxisAlignedBB(config.getPitLocA().getX(), config.getPitLocA().getY(), config.getPitLocA().getZ(), config.getPitLocB().getX(), config.getPitLocB().getY(), config.getPitLocB().getZ());
-
                     Location location = player.getLocation();
                     final AxisAlignedBB playerAABB = new AxisAlignedBB(location.getX(), location.getY(), location.getZ(), location.getX() + 0.8, location.getY() + 2, location.getZ() + 0.8);
-                    final boolean inArena = !aabb.intersectsWith(playerAABB);
+                    final boolean inArena = !arenaBounds.intersectsWith(playerAABB);
                     if (player.getGameMode() == GameMode.ADVENTURE) {
-                        if (BlockUtil.isBlockNearby(player.getLocation(), 5)) {
+                        if (BlockUtil.isBlockNearby(location, 5)) {
                             player.setGameMode(GameMode.SURVIVAL);
                             return;
                         }

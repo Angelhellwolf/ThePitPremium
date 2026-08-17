@@ -449,7 +449,7 @@ object PitHook {
 
     private fun loadScoreBoard() {
         val assemble = Assemble(ThePit.getInstance(), Scoreboard())
-        assemble.ticks = 4
+        assemble.ticks = NewConfiguration.scoreboardUpdateTicks.toLong()
     }
 
     private fun loadNameTag() {

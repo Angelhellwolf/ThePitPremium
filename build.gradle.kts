@@ -47,6 +47,13 @@ dependencies {
     compileOnly(libs.httpcore)
     compileOnly(libs.decentholograms)
 
+    val localPacketEvents = fileTree("libs").matching {
+        include("packetevents-spigot-*.jar", "PacketEvents-*.jar")
+    }.files.firstOrNull()
+    if (localPacketEvents == null) {
+        compileOnly(libs.packetevents)
+    }
+
     // Network-stable fallback: if a matching ProtocolLib jar is present under libs/, use it and skip remote resolution.
     // Prefer any local ProtocolLib jar to avoid network/metadata issues and Java version variant mismatch.
     // Accepted filenames: libs/ProtocolLib-*.jar or libs/ProtocolLib*.jar

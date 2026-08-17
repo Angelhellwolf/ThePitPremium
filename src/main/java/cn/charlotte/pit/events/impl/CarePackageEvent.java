@@ -42,15 +42,15 @@ import java.util.concurrent.TimeUnit;
 
 public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreBoardInsert {
     @Getter
-    private static Location chest;
+    private static volatile Location chest;
     @Getter
-    private static ChestData chestData;
+    private static volatile ChestData chestData;
     private static Material chestOriginalType = Material.AIR;
     private static byte chestOriginalData = 0;
 
     private static BukkitRunnable runnable;
 
-    private static Cooldown endTimer;
+    private static volatile Cooldown endTimer;
 
     @Override
     public String getEventInternalName() {
@@ -199,14 +199,14 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
                             .inactiveEvent(CarePackageEvent.this);
                 }
             };
-            runnable.runTaskLaterAsynchronously(ThePit.getInstance(), 20 * 60 * 5);
             endTimer = new Cooldown(5, TimeUnit.MINUTES);
+            runnable.runTaskLater(ThePit.getInstance(), 20 * 60 * 5);
         });
     }
 
     @Override
     public void onInactive() {
-        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+        Runnable cleanup = () -> {
             HandlerList.unregisterAll(this);
             if (chestData != null) {
                 if (chestData.getFirstHologram() != null) {
@@ -223,36 +223,54 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
             }
             chestData = null;
             chest = null;
+            endTimer = null;
             chestOriginalType = Material.AIR;
             chestOriginalData = 0;
             if (runnable != null) {
                 runnable.cancel();
                 runnable = null;
             }
-        });
+        };
+
+        if (Bukkit.isPrimaryThread()) {
+            cleanup.run();
+        } else {
+            Bukkit.getScheduler().runTask(ThePit.getInstance(), cleanup);
+        }
     }
 
     @Override
     public List<String> insert(Player player) {
-        if (chest == null) return null;
-
-        List<String> lines = new ArrayList<>();
-        String targetDirection = DirectionUtil.getTargetDirection(player, chest);
-        int distance = (int) player.getLocation().distance(chest);
-
-        if (endTimer.getRemaining() > 2 * 60 * 1000L) {
-            lines.add("&f剩余: &a" + TimeUtil.millisToTimer(endTimer.getRemaining()));
-        } else if (endTimer.getRemaining() >= 60 * 1000L) {
-            lines.add("&f剩余: &e" + TimeUtil.millisToTimer(endTimer.getRemaining()));
-        } else {
-            lines.add("&f剩余: &c" + TimeUtil.millisToTimer(endTimer.getRemaining()));
+        Location currentChest = chest;
+        ChestData currentChestData = chestData;
+        Cooldown currentEndTimer = endTimer;
+        if (currentChest == null || currentChestData == null || currentEndTimer == null) {
+            return Collections.emptyList();
         }
 
-        if (!chestData.getRewarded().contains(player.getUniqueId())) {
-            if (chestData.getNum() == 200) {
+        List<String> lines = new ArrayList<>();
+        long remaining = currentEndTimer.getRemaining();
+
+        if (remaining > 2 * 60 * 1000L) {
+            lines.add("&f剩余: &a" + TimeUtil.millisToTimer(remaining));
+        } else if (remaining >= 60 * 1000L) {
+            lines.add("&f剩余: &e" + TimeUtil.millisToTimer(remaining));
+        } else {
+            lines.add("&f剩余: &c" + TimeUtil.millisToTimer(remaining));
+        }
+
+        if (currentChest.getWorld() == null || !player.getWorld().equals(currentChest.getWorld())) {
+            return lines;
+        }
+
+        String targetDirection = DirectionUtil.getTargetDirection(player, currentChest);
+        int distance = (int) player.getLocation().distance(currentChest);
+
+        if (!currentChestData.getRewarded().contains(player.getUniqueId())) {
+            if (currentChestData.getNum() == 200) {
                 lines.add("&f追踪: &c&l? &f" + distance + "m");
 
-            } else if (chestData.getNum() > 0) {
+            } else if (currentChestData.getNum() > 0) {
                 lines.add("&f追踪: &c&l" + targetDirection + " &f" + distance + "m");
             } else {
                 lines.add("&f追踪: &a&l" + targetDirection + " &f" + distance + "m");

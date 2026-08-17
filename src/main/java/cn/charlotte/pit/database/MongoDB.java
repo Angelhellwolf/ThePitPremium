@@ -24,6 +24,7 @@ import org.slf4j.Logger;
  */
 public class MongoDB {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(MongoDB.class);
+    private static final UuidRepresentation UUID_REPRESENTATION = UuidRepresentation.JAVA_LEGACY;
 
     private MongoClient mongoClient;
     private MongoDatabase database;
@@ -54,12 +55,15 @@ public class MongoDB {
         }
 
         final ServerAddress serverAddress = new ServerAddress(address, port);
+        final MongoClientOptions options = new MongoClientOptions.Builder()
+                .uuidRepresentation(UUID_REPRESENTATION)
+                .build();
         if (mongoUser != null && mongoPassword != null) {
             final MongoCredential credential = MongoCredential.createCredential(mongoUser, databaseName, mongoPassword.toCharArray());
 
-            this.mongoClient = new MongoClient(serverAddress, credential, new MongoClientOptions.Builder().build());
+            this.mongoClient = new MongoClient(serverAddress, credential, options);
         } else {
-            this.mongoClient = new MongoClient(serverAddress);
+            this.mongoClient = new MongoClient(serverAddress, options);
         }
 
         this.database = mongoClient.getDatabase(databaseName);

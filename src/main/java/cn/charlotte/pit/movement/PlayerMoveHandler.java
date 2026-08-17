@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BlockIterator;
@@ -26,15 +27,20 @@ import spg.lgdev.handler.MovementHandler;
 import xyz.upperlevel.spigot.book.BookUtil;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * @Author: EmptyIrony
  * @Date: 2021/1/16 23:49
  */
 public class PlayerMoveHandler implements MovementHandler, Listener {
+    private static final long NEARBY_BLOCK_SCAN_COOLDOWN_MS = 250L;
     private static final Set<Player> cantMoveList = Collections.synchronizedSet(new HashSet<>());
+    private static final Map<UUID, Long> nearbyBlockScanCooldown = new HashMap<>();
 
     public PlayerMoveHandler() {
         Bukkit.getServer().getPluginManager().registerEvents(this, ThePit.getInstance());
@@ -46,9 +52,16 @@ public class PlayerMoveHandler implements MovementHandler, Listener {
 
     public static void checkMove(Location to, Location from, Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (profile == null) {
+            return;
+        }
+
+        final boolean horizontalBlockChanged = to.getBlockX() != from.getBlockX()
+                || to.getBlockZ() != from.getBlockZ();
+        final boolean blockChanged = horizontalBlockChanged || to.getBlockY() != from.getBlockY();
 
         //when X/Z Loc change
-        if (to.getBlockX() != from.getBlockX() || to.getBlockZ() != from.getBlockZ()) {
+        if (horizontalBlockChanged) {
             if (!profile.isLoaded() && ProfileLoadRunnable.getInstance() != null && ProfileLoadRunnable.getInstance().getCooldownMap() != null && ProfileLoadRunnable.getInstance().getCooldownMap().containsKey(player.getUniqueId())) {
                 ActionBarUtil.sendActionBar(player, "&c正在加载您的游戏数据,如长时间等待请尝试重新进入...");
 
@@ -59,10 +72,13 @@ public class PlayerMoveHandler implements MovementHandler, Listener {
             }
         }
 
-        profile.setLastActionTimestamp(System.currentTimeMillis());
-        if (to.getBlockX() != from.getBlockX() ||
-                to.getBlockY() != from.getBlockY() ||
-                to.getBlockZ() != from.getBlockZ()) {
+        final long now = System.currentTimeMillis();
+        profile.setLastActionTimestamp(now);
+        if (!blockChanged) {
+            return;
+        }
+
+        if (blockChanged) {
 
             if (profile.isScreenShare()) {
                 BookUtil.openPlayer(player,
@@ -175,9 +191,13 @@ public class PlayerMoveHandler implements MovementHandler, Listener {
             profile.setInArena(isInArena);
 
             if (!profile.isEditingMode()) {
-                if (BlockUtil.isBlockNearby(player.getLocation(),3) && player.getGameMode() == GameMode.ADVENTURE){
-                    player.setGameMode(GameMode.SURVIVAL);
-                    return;
+                if (player.getGameMode() == GameMode.ADVENTURE
+                        && now >= nearbyBlockScanCooldown.getOrDefault(player.getUniqueId(), 0L)) {
+                    nearbyBlockScanCooldown.put(player.getUniqueId(), now + NEARBY_BLOCK_SCAN_COOLDOWN_MS);
+                    if (BlockUtil.isBlockNearby(to, 3)) {
+                        player.setGameMode(GameMode.SURVIVAL);
+                        return;
+                    }
                 }
                 if (profile.isInArena()) {
                     if (player.getGameMode() == GameMode.ADVENTURE) {
@@ -205,7 +225,8 @@ public class PlayerMoveHandler implements MovementHandler, Listener {
         }
 
 
-        if (to.clone().add(0, -1, 0).getBlock().getType() == Material.SLIME_BLOCK) {
+        if (to.getWorld() != null
+                && to.getWorld().getBlockAt(to.getBlockX(), to.getBlockY() - 1, to.getBlockZ()).getType() == Material.SLIME_BLOCK) {
             BlockIterator blockIterator = new BlockIterator(player.getLocation());
             for (int i = 0; i < 30; i++) {
                 blockIterator.next();
@@ -235,9 +256,15 @@ public class PlayerMoveHandler implements MovementHandler, Listener {
         }
     }
 
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        cantMoveList.remove(event.getPlayer());
+        nearbyBlockScanCooldown.remove(event.getPlayer().getUniqueId());
+    }
+
     @Override
-    public void handleUpdateLocation(Player player, Location location, Location location1, PacketPlayInFlying packetPlayInFlying) {
-        checkMove(location, location1, player.getPlayer());
+    public void handleUpdateLocation(Player player, Location from, Location to, PacketPlayInFlying packetPlayInFlying) {
+        checkMove(to, from, player);
     }
 
     @Override

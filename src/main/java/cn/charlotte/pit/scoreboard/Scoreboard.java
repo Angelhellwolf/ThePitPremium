@@ -137,7 +137,7 @@ public class Scoreboard implements AssembleAdapter {
             } else if (event instanceof IScoreBoardInsert) {
 
                 IScoreBoardInsert insert = (IScoreBoardInsert) event;
-                lines.addAll(insert.insert(player));
+                addEventLines(lines, insert, player);
 
             }
         } else if (ThePit.getInstance().getEventFactory().getActiveNormalEvent() != null) {
@@ -146,7 +146,7 @@ public class Scoreboard implements AssembleAdapter {
                 IScoreBoardInsert insert = (IScoreBoardInsert) event;
                 lines.add(" ");
                 lines.add("&f事件: &a" + ((IEvent) event).getEventName());
-                lines.addAll(insert.insert(player));
+                addEventLines(lines, insert, player);
             }
         }
         lines.add("");
@@ -283,6 +283,13 @@ public class Scoreboard implements AssembleAdapter {
         List<String> translated = CC.translate(lines);
         linesCache.put(player.getUniqueId(), new CachedLines(now + cacheMs, profile.isLoaded(), translated));
         return translated;
+    }
+
+    private static void addEventLines(List<String> lines, IScoreBoardInsert insert, Player player) {
+        List<String> eventLines = insert.insert(player);
+        if (eventLines != null) {
+            lines.addAll(eventLines);
+        }
     }
 
     public static void invalidateCache(UUID uuid) {

@@ -3,9 +3,8 @@ package cn.charlotte.pit.util;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -13,12 +12,7 @@ import java.util.Set;
  * @since 2025/1/22
  */
 public class BlockUtil {
-    public static Set<Material> blockType = new HashSet<>();
-
-    static {
-        blockType.add(Material.CACTUS);
-        blockType.add(Material.ENDER_PORTAL);
-    }
+    public static Set<Material> blockType = EnumSet.of(Material.CACTUS, Material.ENDER_PORTAL);
 
     public static boolean isBlockNearby(Location location, int range) {
         World world = location.getWorld();
@@ -26,11 +20,14 @@ public class BlockUtil {
         int baseY = location.getBlockY();
         int baseZ = location.getBlockZ();
 
+        int minY = Math.max(0, baseY - range);
+        int maxY = Math.min(world.getMaxHeight() - 1, baseY + range);
+
         for (int x = -range; x <= range; x++) {
-            for (int y = -range; y <= range; y++) {
+            for (int y = minY; y <= maxY; y++) {
                 for (int z = -range; z <= range; z++) {
-                    Block block = world.getBlockAt(baseX + x, baseY + y, baseZ + z);
-                    if (blockType.contains(block.getType())) {
+                    Material material = Material.getMaterial(world.getBlockTypeIdAt(baseX + x, y, baseZ + z));
+                    if (material != null && blockType.contains(material)) {
                         return true;
                     }
                 }

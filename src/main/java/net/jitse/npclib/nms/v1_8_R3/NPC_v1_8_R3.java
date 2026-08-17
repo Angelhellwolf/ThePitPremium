@@ -4,6 +4,9 @@
 
 package net.jitse.npclib.nms.v1_8_R3;
 
+import com.github.retrooper.packetevents.PacketEvents;
+import com.github.retrooper.packetevents.protocol.player.ClientVersion;
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerPlayerInfoRemove;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import net.jitse.npclib.NPCLib;
@@ -24,11 +27,17 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Jitse Boonstra
  */
 public class NPC_v1_8_R3 extends NPCBase {
+
+    private static final long TAB_LIST_REMOVE_DELAY_TICKS = 20L;
+    private static final long TAB_LIST_REMOVE_RETRY_TICKS = 100L;
+    private static final AtomicBoolean PACKET_EVENTS_WARNING_LOGGED = new AtomicBoolean();
 
     private PacketPlayOutNamedEntitySpawn packetPlayOutNamedEntitySpawn;
     private PacketPlayOutScoreboardTeam packetPlayOutScoreboardTeamRegister;
@@ -88,6 +97,51 @@ public class NPC_v1_8_R3 extends NPCBase {
         }
     }
 
+    private void scheduleTabListRemoval(Player player) {
+        UUID viewerUuid = player.getUniqueId();
+        Bukkit.getScheduler().runTaskLater(instance.getPlugin(),
+                () -> removeFromTabList(viewerUuid), TAB_LIST_REMOVE_DELAY_TICKS);
+        Bukkit.getScheduler().runTaskLater(instance.getPlugin(),
+                () -> removeFromTabList(viewerUuid), TAB_LIST_REMOVE_RETRY_TICKS);
+    }
+
+    private void removeFromTabList(UUID viewerUuid) {
+        Player player = Bukkit.getPlayer(viewerUuid);
+        if (player == null || !player.isOnline()) {
+            return;
+        }
+
+        if (sendModernTabListRemove(player)) {
+            return;
+        }
+
+        PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
+        sendPacketSafe(playerConnection, packetPlayOutPlayerInfoRemove);
+    }
+
+    private boolean sendModernTabListRemove(Player player) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("packetevents")) {
+            return false;
+        }
+
+        try {
+            ClientVersion clientVersion = PacketEvents.getAPI().getPlayerManager().getClientVersion(player);
+            if (clientVersion == null || clientVersion.isOlderThan(ClientVersion.V_1_19_3)) {
+                return false;
+            }
+
+            PacketEvents.getAPI().getPlayerManager().sendPacket(
+                    player, new WrapperPlayServerPlayerInfoRemove(uuid));
+            return true;
+        } catch (RuntimeException | LinkageError exception) {
+            if (PACKET_EVENTS_WARNING_LOGGED.compareAndSet(false, true)) {
+                Bukkit.getLogger().warning("[ThePitPremium] PacketEvents NPC tab cleanup failed; "
+                        + "falling back to the legacy PlayerInfo packet: " + exception.getMessage());
+            }
+            return false;
+        }
+    }
+
     @Override
     public void sendShowPackets(Player player) {
         PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
@@ -100,9 +154,8 @@ public class NPC_v1_8_R3 extends NPCBase {
 
         getHologram(player).show(player);
 
-        // Removing the player info after 10 seconds.
-        Bukkit.getScheduler().runTaskLater(instance.getPlugin(), () ->
-                sendPacketSafe(playerConnection, packetPlayOutPlayerInfoRemove), 200);
+        // Keep the profile briefly for skin loading, then remove it from the viewer's tab list.
+        scheduleTabListRemoval(player);
     }
 
     @Override
@@ -110,7 +163,7 @@ public class NPC_v1_8_R3 extends NPCBase {
         PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
 
         sendPacketSafe(playerConnection, packetPlayOutEntityDestroy);
-        sendPacketSafe(playerConnection, packetPlayOutPlayerInfoRemove);
+        removeFromTabList(player.getUniqueId());
 
         getHologram(player).hide(player);
     }
@@ -160,10 +213,11 @@ public class NPC_v1_8_R3 extends NPCBase {
         this.packetPlayOutPlayerInfoAdd = new PacketPlayOutPlayerInfoWrapper().create(PacketPlayOutPlayerInfo.EnumPlayerInfoAction.ADD_PLAYER, newProfile, name);
         for (Player player : Bukkit.getOnlinePlayers()) {
             PlayerConnection playerConnection = ((CraftPlayer) player).getHandle().playerConnection;
-            sendPacketSafe(playerConnection, packetPlayOutPlayerInfoRemove);
+            removeFromTabList(player.getUniqueId());
             sendPacketSafe(playerConnection, packetPlayOutEntityDestroy);
             sendPacketSafe(playerConnection, packetPlayOutPlayerInfoAdd);
             sendPacketSafe(playerConnection, packetPlayOutNamedEntitySpawn);
+            scheduleTabListRemoval(player);
         }
     }
 
