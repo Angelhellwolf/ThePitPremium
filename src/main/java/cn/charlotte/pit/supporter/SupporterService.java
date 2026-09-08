@@ -48,7 +48,9 @@ public final class SupporterService implements Listener {
             thread.setDaemon(true);
             return thread;
         });
-        this.store = new SupporterStore(new ValueConnections(), plugin.getPitConfig().getDatabaseName());
+        // Gameplay database forks must not fork paid entitlements or purchase history.
+        this.store = new SupporterStore(new ValueConnections(), plugin.getConfig().getString(
+                "supporter-commerce-scope", plugin.getPitConfig().getDatabaseName()));
     }
 
     public static SupporterService get() { return instance; }

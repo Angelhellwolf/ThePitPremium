@@ -110,7 +110,7 @@ public class ArquebusierKillStreak extends AbstractPerk implements Listener {
         //trigger check (every X streak)
         int streak = 3;
         if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
-            RewardService.grant(profile, RewardSource.STREAK, 7, 0);
+            cn.charlotte.pit.reward.EconomyV2.streak(profile, 3, 7, 0);
             myself.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 10, 0), true);
             int count = 0;
             for (ItemStack item : myself.getInventory()) {

@@ -45,7 +45,7 @@ public class CoinDisplayButton extends DisplayButton {
             tradeManager.openMenu(tradeManager.getPlayerA());
         }
 
-        profile.setCoins(profile.getCoins() + coins);
+        cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() + coins, cn.charlotte.pit.reward.CoinLedger.Flow.REFUND, "trade_offer_remove");
 
         tradeManager.getPlayerA().playSound(tradeManager.getPlayerA().getLocation(), Sound.VILLAGER_HAGGLE, 1, 1);
         tradeManager.getPlayerB().playSound(tradeManager.getPlayerB().getLocation(), Sound.VILLAGER_HAGGLE, 1, 1);

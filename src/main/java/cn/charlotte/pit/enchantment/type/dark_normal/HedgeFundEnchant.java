@@ -77,6 +77,6 @@ public class HedgeFundEnchant extends AbstractEnchantment implements IPlayerKill
     @PlayerOnly
     public void handlePlayerBeKilledByEntity(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         cn.charlotte.pit.data.PlayerProfile profile = cn.charlotte.pit.data.PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
-        profile.setCoins(Math.max(0, profile.getCoins() - 50));
+        cn.charlotte.pit.reward.CoinLedger.set(profile, Math.max(0, profile.getCoins() - 50), cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "hedge_fund_death");
     }
 }

@@ -92,16 +92,23 @@ object SewersRunnable: BukkitRunnable(), Listener {
 
 
         val id = randomList.random() ?: return
+        cn.charlotte.pit.reward.GrowthProgress.action(profile, cn.charlotte.pit.reward.GrowthProgress.Goal.EXPLORING, 1.0)
         player.playSound(player.location, Sound.LEVEL_UP, 1f, 1f)
         player.sendMessage(CC.translate("&9下水道! &7你领取了下水道奖励."))
         when(id) {
             "xp" -> {
-                val reward = RewardService.grant(profile, RewardSource.LOOT, 0.0, 100.0)
+                val scale = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.prestige)
+                val reward = cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.SEWER_XP,
+                    0.0, 100.0, 50 * scale, 800 * scale)
                 player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&9下水道! &b+%.2f &7经验", reward.experience)))
+                if (reward.coins > 0) player.sendMessage(CC.translate("&9下水道! &6+${reward.coins} &7硬币"))
             }
             "gold" -> {
-                val reward = RewardService.grant(profile, RewardSource.LOOT, 200.0, 0.0)
+                val scale = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.prestige)
+                val reward = cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.SEWER_GOLD,
+                    200.0, 0.0, 200 * scale, 200 * scale)
                 player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&9下水道! &6+%.2f &7硬币", reward.coins)))
+                if (reward.experience > 0) player.sendMessage(CC.translate("&9下水道! &b+${reward.experience} &7经验"))
             }
             "diamond_chestplate" -> {
                 player.inventory.addItem(

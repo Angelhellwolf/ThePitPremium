@@ -189,8 +189,10 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
 
             // Give diamond helmet (head) and Global Attention Gem on Uber activation
             player.inventory.helmet = ItemStack(Material.DIAMOND_HELMET)
-            player.inventory.addItem(GlobalAttentionGem().toItemStack())
-            player.sendMessage(CC.translate("&d登峰造极! &7你获得了钻石头盔和 &b举世瞩目的宝石&7!"))
+            if (cn.charlotte.pit.reward.CombatEconomy.claimRecent(event.playerProfile, "uber_activation_gem", 100.0)) {
+                player.inventory.addItem(GlobalAttentionGem().toItemStack())
+                player.sendMessage(CC.translate("&d登峰造极! &7你获得了钻石头盔和 &b举世瞩目的宝石&7!"))
+            } else player.sendMessage(CC.translate("&d登峰造极! &7钻石头盔已装备，宝石奖励计入训练积累。"))
         }
 
         if (event.from < 200 && event.to >= 200) {
@@ -214,7 +216,10 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
 
         val profile = victim.getPitProfile()
         if (profile.streakKills >= 400) {
-
+            if (!cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "uber_completion", 400.0)) {
+                victim.sendMessage(CC.translate("&d登峰造极! &7本次掉落计入训练积累，本次不扣取额外声望。"))
+                return
+            }
 
             val refreshedTime = profile.todayCompletedUberLastRefreshed
             val todayCalendar = Calendar.getInstance()

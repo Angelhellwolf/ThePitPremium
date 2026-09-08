@@ -1,4 +1,6 @@
 
+# Paid account scope is stable when gameplay data moves to a new Mongo database.
+supporter-commerce-scope: thePit
 service:
   mongodb:
     ip: 127.0.0.1
@@ -233,7 +235,9 @@ server-name: "&e天坑乱斗"
 #时间戳网址↑
 genesis-start-date: 1675339795842
 public-simulated-players:
-  # 固定三名；全天运行。身份持久化到 public-player-identities.dat，不按死亡/区块重载新增身份。
+  # 大厅公共 Bot 总开关；默认关闭，修改后重启生效。不影响军需处私人训练。
+  enabled: false
+  # 开启后最多三名。身份持久化到 public-player-identities.dat，不按死亡/区块重载新增身份。
   # 名称会检查本服 Mongo 玩家记录和 usercache.json；重名自动换用可用后缀。
   # 皮肤数据首次复制为 public-player-skins.properties，可修改 value/signature 后重启。
   respawn-delay-ticks: 30

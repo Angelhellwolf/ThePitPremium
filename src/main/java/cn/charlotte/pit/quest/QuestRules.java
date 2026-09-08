@@ -27,6 +27,19 @@ public final class QuestRules {
         return level >= 3 ? 2 : level == 2 ? 1.6 : level == 1 ? 1.3 : 1;
     }
 
+    public static double previewCoins(PlayerProfile profile, Player player, int level, boolean night) {
+        if (!cn.charlotte.pit.reward.EconomyV2.active()) return night ? 0 : level * 100 * coinMultiplier(player);
+        return (night ? 100 : 150) * level * coinMultiplier(player)
+                * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige())
+                * cn.charlotte.pit.reward.ProgressionV2.newcomer(profile.getPrestige());
+    }
+
+    public static double previewExperience(PlayerProfile profile, int level, boolean night) {
+        if (!cn.charlotte.pit.reward.EconomyV2.active()) return level * (night ? 250 : 40);
+        return level * (night ? 800 : 600) * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige())
+                * cn.charlotte.pit.reward.ProgressionV2.newcomer(profile.getPrestige());
+    }
+
     public static double trueDamageMultiplier(Player attacker) {
         if (attacker == null) return 1;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());

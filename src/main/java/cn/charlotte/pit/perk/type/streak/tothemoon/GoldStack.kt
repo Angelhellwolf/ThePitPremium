@@ -79,7 +79,7 @@ class GoldStack : AbstractPerk(), Listener {
     fun assist(event: PitKillEvent) {
         if (!event.isProgressionEligible) return
         val profile = PlayerProfile.getPlayerProfileByUuid(event.killer.uniqueId) ?: return
-        event.coins += profile.goldStackAddon
+        event.coins += profile.goldStackAddon * cn.charlotte.pit.reward.EconomyV2.sideScale(profile)
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

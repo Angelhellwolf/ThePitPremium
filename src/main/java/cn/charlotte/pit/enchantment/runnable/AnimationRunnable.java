@@ -28,23 +28,8 @@ public class AnimationRunnable extends BukkitRunnable {
     public AnimationRunnable() {
         final PitConfig pitConfig = ThePit.getInstance().getPitConfig();
         final Location loc = pitConfig.getEnchantLocation();
-        final Location center;
-        if (loc == null) {
-            center = new Location(Bukkit.getWorlds().get(0), 0, 0, 0);
-        } else {
-            center = loc.clone().add(0.0, -1.0, 0.0);
-        }
-        //12 -2 中心
-        this.animationLocations = Arrays.asList(
-                center.clone().add(0, 0, -1),
-                center.clone().add(1, 0, -1),
-                center.clone().add(1, 0, 0),
-                center.clone().add(1, 0, 1),
-                center.clone().add(0, 0, 1),
-                center.clone().add(-1, 0, 1),
-                center.clone().add(-1, 0, 0),
-                center.clone().add(-1, 0, -1)
-        );
+        Location anchor = loc == null ? new Location(Bukkit.getWorlds().get(0), 0, 1, 0) : loc;
+        this.animationLocations = ringBelow(resolveTable(anchor));
 
         this.runTaskTimer(ThePit.getInstance(), 20, 2);
 
@@ -56,6 +41,7 @@ public class AnimationRunnable extends BukkitRunnable {
             AnimationData animationData = entry.getValue();
             if (!animationData.getPlayer().isOnline()
                     || !(Menu.currentlyOpenedMenus.get(animationData.getPlayer().getName()) instanceof MythicWellMenu)) {
+                if (animationData.getPlayer().isOnline()) sendReset(animationData.getPlayer());
                 animations.remove(entry.getKey(), animationData);
             }
         }
@@ -150,10 +136,30 @@ public class AnimationRunnable extends BukkitRunnable {
         cn.charlotte.pit.junxu.JunxuManager manager = ThePit.getInstance().getJunxuManager();
         cn.charlotte.pit.junxu.JunxuRoom room = manager == null ? null : manager.at(player.getLocation());
         if (room == null) return animationLocations;
-        List<Location> local = new ArrayList<>();
+        Location first = room.at(14, 24, 13, 0), second = room.at(18, 24, 13, 0);
+        Location nearest = first.distanceSquared(player.getLocation()) < second.distanceSquared(player.getLocation()) ? first : second;
+        return ringBelow(resolveTable(nearest));
+    }
+
+    /** The configured anchor may be above the actual block for the floating item display. */
+    static Location resolveTable(Location anchor) {
+        Location found = null;
+        double distance = Double.MAX_VALUE;
+        for (int x = -2; x <= 2; x++) for (int y = -3; y <= 1; y++) for (int z = -2; z <= 2; z++) {
+            Location candidate = anchor.getBlock().getLocation().add(x, y, z);
+            if (candidate.getBlock().getType() != Material.ENCHANTMENT_TABLE) continue;
+            double here = candidate.distanceSquared(anchor);
+            if (here < distance) { distance = here; found = candidate; }
+        }
+        return found == null ? anchor.getBlock().getLocation().add(0, -1, 0) : found;
+    }
+
+    static List<Location> ringBelow(Location table) {
+        Location center = new Location(table.getWorld(), table.getBlockX(), table.getBlockY() - 1, table.getBlockZ());
+        List<Location> result = new ArrayList<>();
         for (int[] offset : new int[][]{{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}})
-            local.add(room.at(18 + offset[0], 22, 18 + offset[1], 0));
-        return local;
+            result.add(center.clone().add(offset[0], 0, offset[1]));
+        return result;
     }
 
     @Getter

@@ -335,6 +335,7 @@ public class SpireEvent implements IEvent, IEpicEvent, Listener, IPrepareEvent, 
             }
             data.soul = data.soul + this.getKillRewardSouls(data);
             data.kills++;
+            cn.charlotte.pit.reward.MajorEventRewards.mark("spire", killer);
             TitleUtil.sendTitle(killer, CC.translate("&a击杀!"), this.getFloorColor(data.floor) + "第" + (data.floor + 1) + "层", 5, 20, 10);
             killer.playSound(killer.getLocation(), Sound.LEVEL_UP, 1, 1.5F);
 
@@ -575,7 +576,7 @@ public class SpireEvent implements IEvent, IEpicEvent, Listener, IPrepareEvent, 
             if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) {
                 enchantBoostLevel = 0;
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += 0.5 * enchantBoostLevel * rewardCoins;
                 rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown);
                 MythicLeggingsItem mythicLeggings = new MythicLeggingsItem();
@@ -602,7 +603,11 @@ public class SpireEvent implements IEvent, IEpicEvent, Listener, IPrepareEvent, 
                 rewardCoins = 100;
                 rewardRenown = 0;
             }
-            rewardCoins = RewardService.grant(profile, RewardSource.EVENT, rewardCoins, 0).getCoins();
+            Map<UUID, Integer> economicRanks = new HashMap<>();
+            rankMap.forEach((id, value) -> economicRanks.put(id, value + 1));
+            cn.charlotte.pit.reward.MajorEventRewards.Result payout = cn.charlotte.pit.reward.MajorEventRewards.settle(
+                    player, "spire", rewardCoins, rewardRenown, rank, economicRanks, data != null && data.reachedSixFloor, enchantBoostLevel);
+            rewardCoins = payout.coins; rewardRenown = payout.renown;
             profile.setRenown(profile.getRenown() + rewardRenown);
 
             profile.kingsQuestsData.checkUpdate();

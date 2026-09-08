@@ -96,7 +96,7 @@ public class FishClubPerk extends AbstractPerk implements Listener {
     public List<String> getDescription(Player player) {
         return Arrays.asList(
                 "&7I -> 您将可以在水中找到鲑鱼和鲽鱼.",
-                "&7II -> 钓鱼时增加25经验",
+                cn.charlotte.pit.reward.EconomyV2.active() ? "&7II -> 钓鱼时额外增加100基础经验（随精通成长）" : "&7II -> 钓鱼时增加25经验",
                 "&7III -> 钓鱼时有概率掉落钻石盔甲",
                 "&7IV -> 钓鱼速度增加20%",
                 "&7V -> 您可以在水中找到 &b青色神话之甲"
@@ -212,7 +212,10 @@ public class FishClubPerk extends AbstractPerk implements Listener {
             }
 
             if (level >= 2) {
-                RewardService.grant(profile, RewardSource.FISHING, 0, 25);
+                if (cn.charlotte.pit.reward.EconomyV2.active() || cn.charlotte.pit.reward.EconomyV2.observing())
+                    cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.FISH_CLUB,
+                            0, 25, 0, 100 * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige()));
+                else RewardService.grant(profile, RewardSource.FISHING, 0, 25);
             }
 
             if (level >= 3) {

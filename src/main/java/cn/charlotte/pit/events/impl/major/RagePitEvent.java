@@ -173,6 +173,7 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
         damageMap.putIfAbsent(attacker.getUniqueId(), new DamageData(attacker.getUniqueId(), 0));
         DamageData data = damageMap.get(attacker.getUniqueId());
         data.setDamage(data.getDamage() + damage);
+        cn.charlotte.pit.reward.MajorEventRewards.mark("rage_pit", attacker);
     }
 
     @Override
@@ -232,7 +233,7 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
             if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) {
                 enchantBoostLevel = 0;
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += 0.5 * enchantBoostLevel * rewardCoins;
                 rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown);
                 MythicLeggingsItem mythicLeggings = new MythicLeggingsItem();
@@ -255,7 +256,11 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
                     rewardCoins += 1000;
                 }
             }
-            rewardCoins = RewardService.grant(profile, RewardSource.EVENT, rewardCoins, 0).getCoins();
+            Map<UUID, Integer> economicRanks = new HashMap<>();
+            for (int index = 0; index < collect.size(); index++) economicRanks.put(collect.get(index).getUuid(), index + 1);
+            cn.charlotte.pit.reward.MajorEventRewards.Result payout = cn.charlotte.pit.reward.MajorEventRewards.settle(
+                    player, "rage_pit", rewardCoins, rewardRenown, rank, economicRanks, killed >= 600, enchantBoostLevel);
+            rewardCoins = payout.coins; rewardRenown = payout.renown;
             profile.setRenown(profile.getRenown() + rewardRenown);
             profile.kingsQuestsData.checkUpdate();
             if (profile.kingsQuestsData.getAccepted()) {

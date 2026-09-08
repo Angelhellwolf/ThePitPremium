@@ -79,7 +79,8 @@ public abstract class AbstractShopButton extends Button {
                 player.sendMessage(CC.translate("&c&l背包已满! &7你的背包已满,暂时无法购买物品."));
                 return;
             }
-            profile.setCoins(profile.getCoins() - getDiscountPrice(player, getPrice(player)));
+            cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - getDiscountPrice(player, getPrice(player)),
+                    cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "shop." + getInternalName());
             player.getInventory().addItem(result);
             player.sendMessage(CC.translate("&a购买成功!"));
             player.playSound(player.getLocation(), Sound.NOTE_PLING, 1, 1);

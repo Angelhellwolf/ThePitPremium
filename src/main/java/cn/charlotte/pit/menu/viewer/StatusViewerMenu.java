@@ -182,7 +182,7 @@ public class StatusViewerMenu extends Menu {
                             List<String> lores = new ArrayList<>();
                             lores.add("&7携带天赋: &a" + perk.getDisplayName());
                             lores.add(" ");
-                            lores.addAll(perk.getDescription(player));
+                            lores.addAll(perk.getEconomyDescription(player));
                             return perk.getIconWithNameAndLore("&e天赋栏 #" + (finalI + 1), lores, 0, finalI + 1);
                         }
                     }

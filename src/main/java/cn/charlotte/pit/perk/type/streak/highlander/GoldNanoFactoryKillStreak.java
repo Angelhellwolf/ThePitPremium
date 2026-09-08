@@ -112,11 +112,23 @@ public class GoldNanoFactoryKillStreak extends AbstractPerk implements Listener 
         if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             double coinMultiplier = KillRewardContext.bonusMultiplier(myself.getUniqueId(), RewardSource.LOOT);
-            for (int i = 0; coinMultiplier > 0 && i < 7; i++) {
+            double humanRatio = cn.charlotte.pit.reward.CombatEconomy.recentHumanRatio(event.getPlayerProfile(), 7);
+            boolean spawnCoins = cn.charlotte.pit.reward.EconomyV2.active() ? humanRatio > 0 : coinMultiplier > 0;
+            if (cn.charlotte.pit.reward.EconomyV2.observing() && !spawnCoins && humanRatio > 0) {
+                int bonus = PlayerUtil.isPlayerChosePerk(myself, "trickle_down_perk") ? 10 : 0;
+                if (!PlayerUtil.shouldIgnoreEnchant(myself)) bonus += 10 * Math.max(0,
+                        cn.charlotte.pit.util.Utils.getEnchantLevel(myself.getInventory().getLeggings(), "pebble_enchant"));
+                double scale = cn.charlotte.pit.reward.ProgressionV2.sideScale(event.getPlayerProfile().getPrestige()) * humanRatio;
+                cn.charlotte.pit.reward.EconomyV2.grant(event.getPlayerProfile(), cn.charlotte.pit.reward.RewardDetail.NANO,
+                        0, 0, 7 * (6.5 + bonus) * scale, 7 * 26 * scale);
+            }
+            for (int i = 0; spawnCoins && i < 7; i++) {
                 Bukkit.getScheduler().runTask(ThePit.getInstance(), KillRewardContext.wrap(() ->
                 {
                     Item item = myself.getWorld().dropItemNaturally(myself.getLocation(), new ItemStack(Material.GOLD_INGOT, 1));
                     item.setMetadata("gold", new FixedMetadataValue(ThePit.getInstance(), RandomUtil.random.nextInt(3) + 3));
+                    if (cn.charlotte.pit.reward.EconomyV2.active() || cn.charlotte.pit.reward.EconomyV2.observing())
+                        item.setMetadata("pit_nano_human_ratio", new FixedMetadataValue(ThePit.getInstance(), humanRatio));
                     Bukkit.getPluginManager().callEvent(new PlayerPickupItemEvent(myself, item, 1));
                 }));
             }

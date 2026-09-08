@@ -25,7 +25,7 @@ public class BattleFuryAttributeButton extends Button {
     @Override
     public ItemStack getButtonItem(Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-        List<String> lore = new ArrayList<>(perk.getDescription(player));
+        List<String> lore = new ArrayList<>(perk.getEconomyDescription(player));
         lore.add(" ");
 
         PerkData data = profile.getUnlockedPerkMap().get(perk.getInternalPerkName());

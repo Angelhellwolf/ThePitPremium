@@ -112,10 +112,11 @@ public class GrandFinaleMegaStreak extends AbstractPerk implements Listener, Meg
         int trigger = 50;
         //trigger check (get X streak)
         if (event.getFrom() < trigger && event.getTo() >= trigger) {
-            myself.sendMessage(CC.translate("&c&l杰作! &7你自爆了并获得 &e1 声望 &7."));
+            boolean renownEarned = cn.charlotte.pit.reward.CombatEconomy.claimRecent(event.getPlayerProfile(), "finale_renown", 50);
+            myself.sendMessage(CC.translate(renownEarned ? "&c&l杰作! &7你自爆了并获得 &e1 声望 &7." : "&c&l杰作! &7谢幕完成，声望奖励已计入训练积累。"));
             cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.getPlayerProfile().getPlayerUuid(), "&c&l杰作! " + event.getPlayerProfile().getFormattedName() + " &7达到了 &c50 &7连杀并谢幕了!");
             PlayerUtil.deadPlayer(myself);
-            event.getPlayerProfile().setRenown(event.getPlayerProfile().getRenown() + 1);
+            if (renownEarned) event.getPlayerProfile().setRenown(event.getPlayerProfile().getRenown() + 1);
             Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
                 event.getPlayerProfile().setStreakKills(0.0);
             });

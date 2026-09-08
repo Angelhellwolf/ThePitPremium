@@ -39,6 +39,7 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
     private var isActive = false
     private var isClickable = false
     private var endTask: BukkitTask? = null
+    private val lastEconomicClick = HashMap<UUID, Long>()
 
     companion object {
         private const val MAX_CLICKS = 230
@@ -162,7 +163,12 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
         }
 
         if (clicks >= MAX_CLICKS) return
-        val reward = RewardService.grant(profile, RewardSource.EVENT, coins.toDouble(), exp.toDouble())
+        val now = System.currentTimeMillis()
+        val eligible = now - (lastEconomicClick[player.uniqueId] ?: 0L) >= 250
+        if (eligible) lastEconomicClick[player.uniqueId] = now
+        val v2Gold = if (eligible) (8 + random.nextInt(5)) * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.prestige) else 0.0
+        val reward = cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.DRAGON_EGG,
+            coins.toDouble(), exp.toDouble(), v2Gold, v2Gold * 4)
 
         player.playSound(player.location, Sound.CLICK, 1.5f, 1.5f)
         player.sendMessage(CC.translate(String.format(Locale.ROOT, "&5&l龙蛋！ &7点击龙蛋 获得 &e%.2f &6金币 &e%.2f &b经验&7", reward.coins, reward.experience)))

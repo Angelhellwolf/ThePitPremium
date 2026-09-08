@@ -16,8 +16,11 @@ public final class PrestigeProgression {
     private PrestigeProgression() {}
 
     public static boolean eligible(PlayerProfile profile, int limit) {
-        return profile.getLevel() >= 120 && profile.getPrestige() < limit
-                && profile.getGrindedCoins() >= 16000.0 * (profile.getPrestige() + 1);
+        cn.charlotte.pit.reward.EconomyV2.migrate(profile);
+        int effectiveLimit = cn.charlotte.pit.reward.EconomyV2.active() ? Math.min(limit, 50) : limit;
+        return profile.getLevel() >= 120 && profile.getPrestige() < effectiveLimit
+                && (profile.getGrindedCoins() >= cn.charlotte.pit.reward.EconomyV2.goldRequired(profile.getPrestige())
+                    || cn.charlotte.pit.reward.EconomyV2.active() && profile.getEconomyData().legacyEligible);
     }
 
     public static int renownAward(int newPrestige) {
@@ -26,13 +29,14 @@ public final class PrestigeProgression {
 
     public static boolean advanceData(PlayerProfile profile, int limit) {
         if (!eligible(profile, limit)) return false;
-        profile.setCoins(0);
+        cn.charlotte.pit.reward.CoinLedger.set(profile, 0, cn.charlotte.pit.reward.CoinLedger.Flow.PRESTIGE_RESET, "prestige");
         profile.setExperience(0);
         profile.setGrindedCoins(0);
         profile.setPrestige(profile.getPrestige() + 1);
         profile.setBoughtPerk(new ArrayList<>());
         profile.getBoughtPerkMap().clear();
-        profile.setAutoBuyButtons(new ArrayList<>());
+        profile.getEconomyData().deployment = null;
+        if (!cn.charlotte.pit.reward.EconomyV2.active()) profile.setAutoBuyButtons(new ArrayList<>());
         if (profile.getUnlockedPerkMap().containsKey("gold_stack")) {
             profile.setGoldStackAddon(0.0);
             profile.setGoldStackMax(profile.getGoldStackMax() + 0.1);
@@ -43,6 +47,14 @@ public final class PrestigeProgression {
         }
         if (profile.getUnlockedPerkMap().containsKey("FastPass")) {
             profile.setExperience(LevelUtil.getLevelTotalExperience(profile.getPrestige(), 50));
+        }
+        if (cn.charlotte.pit.reward.EconomyV2.active()) {
+            double reserve = Math.min(profile.getEconomyData().experienceReserve,
+                    cn.charlotte.pit.reward.ProgressionV2.totalExperience(profile.getPrestige()) * cn.charlotte.pit.reward.EconomyV2.reserveFraction());
+            profile.getEconomyData().experienceReserve = 0;
+            profile.getEconomyData().legacyEligible = false;
+            profile.getEconomyData().newLife();
+            profile.setExperience(profile.getExperience() + reserve);
         }
         profile.getChosePerk().clear();
         profile.getChosePerk().put(5, new PerkData("over_drive", 1));

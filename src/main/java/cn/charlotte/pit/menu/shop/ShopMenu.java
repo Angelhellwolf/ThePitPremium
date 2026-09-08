@@ -35,6 +35,7 @@ public class ShopMenu extends Menu {
         button.put(19, new CombatSpadeShopButton());
         button.put(20, new DiamongLeggingsShopButton());
         button.put(21, new IronPackShopButton());
+        button.put(22, new TacticalDeploymentShopButton());
 
         button.put(23, new FirstAidEggShopButton());
         button.put(24, new JumpBoostShopButton());

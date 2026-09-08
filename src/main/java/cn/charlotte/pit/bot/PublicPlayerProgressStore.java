@@ -69,6 +69,7 @@ public final class PublicPlayerProgressStore {
         int prestige, renown, kills, assists, deaths, highestStreaks;
         Map<String, PerkData> bought, unlocked;
         Map<Integer, PerkData> chosen;
+        cn.charlotte.pit.data.sub.EconomyData economyData;
 
         public static Progress capture(PlayerProfile profile) {
             Progress result = new Progress();
@@ -77,6 +78,7 @@ public final class PublicPlayerProgressStore {
             result.grindedCoins = profile.getGrindedCoins(); result.prestige = profile.getPrestige(); result.renown = profile.getRenown();
             result.kills = profile.getKills(); result.assists = profile.getAssists(); result.deaths = profile.getDeaths();
             result.highestStreaks = profile.getHighestStreaks();
+            result.economyData = profile.getEconomyData().copy();
             result.bought = copy(profile.getBoughtPerkMap()); result.unlocked = copy(profile.getUnlockedPerkMap());
             result.chosen = copy(profile.getChosePerk());
             result.validate();
@@ -89,6 +91,7 @@ public final class PublicPlayerProgressStore {
             profile.setLoaded(false);
             profile.setPrestige(prestige); profile.setExperience(experience); profile.setCoins(coins);
             profile.setGrindedCoins(grindedCoins); profile.setRenown(renown);
+            profile.setEconomyData(economyData);
             profile.setKills(kills); profile.setAssists(assists); profile.setDeaths(deaths); profile.setHighestStreaks(highestStreaks);
             profile.setBoughtPerkMap(copy(bought)); profile.setUnlockedPerkMap(copy(unlocked)); profile.setChosePerk(copy(chosen));
         }

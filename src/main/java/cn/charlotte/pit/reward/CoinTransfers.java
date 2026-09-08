@@ -13,8 +13,8 @@ public final class CoinTransfers {
                 || from.getPlayerUuid().equals(to.getPlayerUuid())) return 0;
         double amount = Math.min(RewardMath.positive(from.getCoins()), RewardMath.positive(requested));
         if (amount <= 0 || !Double.isFinite(to.getCoins() + amount)) return 0;
-        from.setCoins(from.getCoins() - amount);
-        to.setCoins(to.getCoins() + amount);
+        CoinLedger.set(from, from.getCoins() - amount, CoinLedger.Flow.TRANSFER, "pit_pocket");
+        CoinLedger.set(to, to.getCoins() + amount, CoinLedger.Flow.TRANSFER, "pit_pocket");
         EconomyAudit.transfer(from, to, amount);
         return amount;
     }

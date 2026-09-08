@@ -86,6 +86,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * 4
  */
 public class PitAdminCommand {
+    @Command(names = {"pitadmin economycheck"}, permissionNode = "pit.admin")
+    public void economyCheck(CommandSender sender) {
+        sender.sendMessage("ECONOMY_V2 mode=" + cn.charlotte.pit.reward.EconomyV2.mode()
+                + " maximumPrestige=50 referenceHours=" + cn.charlotte.pit.reward.ProgressionV2.referenceHoursTo(50)
+                + " details=" + cn.charlotte.pit.reward.RewardDetail.values().length
+                + " commerceScope=" + ThePit.getInstance().getConfig().getString("supporter-commerce-scope", ThePit.getInstance().getPitConfig().getDatabaseName()));
+        for (int p : new int[]{0, 4, 9, 19, 29, 34, 39, 44, 49, 50})
+            sender.sendMessage("P" + p + " gold=" + cn.charlotte.pit.reward.ProgressionV2.goldRequired(p)
+                    + " xp=" + cn.charlotte.pit.reward.ProgressionV2.totalExperience(p));
+    }
     @Command(names = "pitadmin gameplaycheck", permissionNode = "pit.admin")
     public void gameplayCheck(CommandSender sender) {
         cn.charlotte.pit.util.combat.GameplayRuntimeCheck.report(ThePit.getInstance()).forEach(sender::sendMessage);
@@ -575,7 +585,7 @@ public class PitAdminCommand {
     public void setPlayerLevel(CommandSender sender, @Parameter(name = "target", defaultValue = "self") Player target, @Parameter(name = "type") String type, @Parameter(name = "amount") int amount) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
         if ("coin".equalsIgnoreCase(type)) {
-            profile.setCoins(amount);
+            cn.charlotte.pit.reward.CoinLedger.set(profile, amount, cn.charlotte.pit.reward.CoinLedger.Flow.ADMIN, "admin_set");
         }
         if ("prestige".equalsIgnoreCase(type)) {
             profile.setPrestige(amount);

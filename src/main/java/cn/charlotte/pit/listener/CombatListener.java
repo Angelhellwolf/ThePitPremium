@@ -1,5 +1,11 @@
 package cn.charlotte.pit.listener;
 
+import cn.charlotte.pit.reward.CombatEconomy;
+import cn.charlotte.pit.reward.EconomyV2;
+import cn.charlotte.pit.reward.ProgressionV2;
+import cn.charlotte.pit.reward.RewardModifiers;
+import cn.charlotte.pit.reward.TrainingBudget;
+
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.UtilKt;
 import cn.charlotte.pit.buff.impl.BountySolventBuff;
@@ -447,12 +453,16 @@ public class CombatListener implements Listener {
     }
 
     private RepeatKillResult trackRepeatKill(UUID killerUuid, UUID victimUuid) {
+        if (EconomyV2.active()) return new RepeatKillResult(
+                CombatEconomy.deathMultiplier(PlayerProfile.getPlayerProfileByUuid(victimUuid)), true);
         PassiveDeathTracker.Result result = deathRewardPolicies.get(victimUuid);
         if (result == null) result = passiveDeaths.finishLife(victimUuid, true, System.currentTimeMillis());
         return new RepeatKillResult(result.getMultiplier(), true);
     }
 
     private RepeatKillResult getAssistPolicy(UUID assisterUuid, UUID victimUuid) {
+        if (EconomyV2.active()) return new RepeatKillResult(
+                CombatEconomy.deathMultiplier(PlayerProfile.getPlayerProfileByUuid(victimUuid)), true);
         PassiveDeathTracker.Result result = deathRewardPolicies.get(victimUuid);
         if (result == null) result = passiveDeaths.current(victimUuid, System.currentTimeMillis());
         return new RepeatKillResult(result.getMultiplier(), true);
@@ -542,6 +552,7 @@ public class CombatListener implements Listener {
         PlayerProfile attackingProfile = PlayerProfile.getCacheProfile().get(attacker);
         if (!victim.isBot() && attackingProfile != null && !attackingProfile.isBot()) {
             noteBountyDamage(attacker, victim.getPlayerUuid(), amount);
+            CombatEconomy.humanDamage(attackingProfile, victim, amount);
         }
         DamageData data = victim.getDamageMap().computeIfAbsent(attacker, DamageData::new);
         data.setDamage(data.getTimer().hasExpired() ? amount : data.getDamage() + amount);
@@ -562,9 +573,12 @@ public class CombatListener implements Listener {
     public void handleKill(Player killer, PlayerProfile killerProfile, LivingEntity player, PlayerProfile playerProfile) {
         try {
             if (!killerProfile.isLoaded() || !playerProfile.isLoaded()) return;
+            EconomyV2.migrate(killerProfile);
+            EconomyV2.migrate(playerProfile);
             if (killerProfile.isBot() && (playerProfile.isBot() || ThePit.getInstance().getPitBotManager() == null
                     || !ThePit.getInstance().getPitBotManager().ownsProfile(killerProfile))) return;
             boolean botTarget = playerProfile.isBot();
+            double botVariableFactor = BotRewards.variableFactor(playerProfile);
             double botReward = botTarget ? BotRewards.amount(killerProfile.getPrestige(), BotRewards.multiplier(eventBoost)) : 0;
             boolean isNight = isNight();
             boolean playerOperatedTarget = player instanceof Player && !playerProfile.isBot();
@@ -572,15 +586,30 @@ public class CombatListener implements Listener {
                     ? trackRepeatKill(killer.getUniqueId(), player.getUniqueId())
                     : RepeatKillResult.FULL_REWARD;
             boolean progressionEligible = repeatKill.progressionEligible;
+            boolean economyRunning = EconomyV2.active() || EconomyV2.observing();
+            boolean extraRewards = !economyRunning || CombatEconomy.allowExtras(killerProfile, playerProfile,
+                    System.currentTimeMillis(), true);
+            boolean trainingTarget = botTarget || economyRunning && !extraRewards;
+            double rewardUnits = 1;
+            if (economyRunning) {
+                rewardUnits = trainingTarget ? CombatEconomy.trainingUnits(playerProfile, player)
+                        * (botTarget ? 1 : CombatEconomy.deathMultiplier(playerProfile)) : CombatEconomy.deathMultiplier(playerProfile);
+                if (trainingTarget) rewardUnits = TrainingBudget.consume(CombatEconomy.state(killerProfile), rewardUnits, System.currentTimeMillis());
+            }
+            long rewardLife = CombatEconomy.state(killerProfile).lifeSerial;
             // This is a reward policy for low-interaction deaths, not a bot identity.
             boolean inactiveTarget = repeatKill.multiplier < 1;
             double rareDropMultiplier = repeatKill.multiplier;
+            if (EconomyV2.active()) rareDropMultiplier = extraRewards || trainingTarget ? rewardUnits : 0;
             boolean competitiveKill = playerOperatedTarget && !killerProfile.isBot()
+                    && (!EconomyV2.active() || extraRewards)
                     && repeatKill.multiplier >= 1
                     && bountyTracker.hasRealFight(killer.getUniqueId(), player.getUniqueId(), System.currentTimeMillis());
             try (KillRewardContext context = botTarget ? KillRewardContext.openBot(killer.getUniqueId())
                     : KillRewardContext.open(killer.getUniqueId(), repeatKill.multiplier)) {
             context.setPreviousStreak(killerProfile.getStreakKills());
+            context.setEconomy(rewardUnits, trainingTarget, extraRewards);
+            CombatEconomy.contribution(killerProfile, 1, extraRewards || trainingTarget ? rewardUnits : 0);
 
             final String coloredName = botTarget ? "§7" + playerProfile.getPlayerName()
                     : RankUtil.getPlayerColoredName(player.getUniqueId());
@@ -619,6 +648,7 @@ public class CombatListener implements Listener {
             //process perk - start
             AtomicDouble coinsAtomic = new AtomicDouble(totalCoins);
             AtomicDouble expAtomic = new AtomicDouble(totalXp);
+            if (economyRunning) KillRewardContext.beginModifiers(killer.getUniqueId(), ProgressionV2.base(killerProfile.getPrestige()), 0, 0);
 
             if (progressionEligible) {
                 this.handleGameEffect(killerProfile, killer, player, coinsAtomic, expAtomic);
@@ -683,12 +713,50 @@ public class CombatListener implements Listener {
                 totalCoins *= 0.01;
                 totalXp *= 0.01;
             }
+            if (EconomyV2.active()) {
+                if (trainingTarget) {
+                    totalCoins = ProgressionV2.base(killerProfile.getPrestige()) * .5 * eventBoost * rewardUnits * botVariableFactor * (!botTarget && isNight ? .01 : 1);
+                    totalXp = totalCoins;
+                } else if (!extraRewards) {
+                    totalCoins = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * repeatKill.multiplier;
+                    totalXp = totalCoins;
+                }
+            }
+            if (EconomyV2.observing()) {
+                double base = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost;
+                if (trainingTarget) {
+                    double candidate = base * .5 * rewardUnits * botVariableFactor * (!botTarget && isNight ? .01 : 1);
+                    KillRewardContext.candidate(candidate, candidate * 4);
+                }
+                else if (!extraRewards) KillRewardContext.candidate(base * rewardUnits, base * 4 * rewardUnits);
+                else {
+                    double[] candidate = KillRewardContext.candidate(killer.getUniqueId());
+                    if (candidate == null) candidate = new double[]{totalCoins, totalXp * 4};
+                    if (event.getHillMultiplier() > 1) { candidate[0] += base; candidate[1] += base * 4; }
+                    candidate[0] += killerProfile.getGoldStackAddon() * ProgressionV2.sideScale(killerProfile.getPrestige());
+                    candidate[1] += killerProfile.getXpStackAddon() * 4 * ProgressionV2.sideScale(killerProfile.getPrestige());
+                    double multiplier = CombatEconomy.deathMultiplier(playerProfile) * (isNight ? .01 : 1);
+                    KillRewardContext.candidate(candidate[0] * multiplier, candidate[1] * multiplier);
+                }
+            }
             double targetMultiplier = botTarget ? 1 : deathTargetMultipliers.getOrDefault(player.getUniqueId(),
                     RewardService.victimMultiplier(playerProfile));
             RewardService.Receipt receipt = RewardService.grant(killerProfile, RewardSource.KILL,
                     totalCoins * targetMultiplier, totalXp * targetMultiplier);
             totalCoins = receipt.getCoins();
             totalXp = receipt.getExperience();
+            if (EconomyV2.active() && rewardLife == killerProfile.getEconomyData().lifeSerial) {
+                double basePaid = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * rewardUnits
+                        * (trainingTarget ? .5 : ProgressionV2.newcomer(killerProfile.getPrestige())) * botVariableFactor;
+                killerProfile.getEconomyData().lifeBaseCoins += Math.min(basePaid, receipt.getCoins());
+                killerProfile.getEconomyData().lifeBaseExperience += Math.min(basePaid * 4, receipt.getExperience());
+            }
+            if (EconomyV2.observing() && rewardLife == CombatEconomy.state(killerProfile).lifeSerial) {
+                double basePaid = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * rewardUnits
+                        * (trainingTarget ? .5 : ProgressionV2.newcomer(killerProfile.getPrestige())) * botVariableFactor * (!botTarget && isNight ? .01 : 1);
+                CombatEconomy.state(killerProfile).lifeBaseCoins += basePaid;
+                CombatEconomy.state(killerProfile).lifeBaseExperience += basePaid * 4;
+            }
             // Dedicated receipts are outside PitKillEvent, hill, enchant and newcomer multipliers.
             double specialFactor = isNight ? 0.01 : 1;
             if (competitiveKill && PlayerUtil.isPlayerChosePerk(killer, "high_lander")
@@ -791,6 +859,7 @@ public class CombatListener implements Listener {
         if (!playerProfile.isBot()) {
             boolean combatDeath = killer != null || playerProfile.getDamageMap().values().stream()
                     .anyMatch(data -> !data.getTimer().hasExpired() && data.getDamage() > 0);
+            CombatEconomy.finishHumanLife(playerProfile, combatDeath, System.currentTimeMillis());
             deathRewardPolicies.put(player.getUniqueId(),
                     passiveDeaths.finishLife(player.getUniqueId(), combatDeath, System.currentTimeMillis()));
         }
@@ -931,6 +1000,7 @@ public class CombatListener implements Listener {
         playerProfile.setStreakKills(0);
         playerProfile.setInArena(false);
         playerProfile.setDeaths(playerProfile.getDeaths() + 1);
+        if (EconomyV2.active() || EconomyV2.observing()) CombatEconomy.state(playerProfile).newLife();
         playerProfile.setCombatTimer(new Cooldown(0));
         playerProfile.setBountyStreak(0);
         playerProfile.setStrengthNum(0);
@@ -994,9 +1064,11 @@ public class CombatListener implements Listener {
             if (privateRespawn != null) location = privateRespawn;
         }
 
-        player.teleport(location);
+        Location deployment = cn.charlotte.pit.menu.shop.button.type.TacticalDeploymentShopButton.consumeRespawn(player, location);
+        boolean redeployed = deployment != location;
+        if (!player.teleport(deployment) && redeployed) { player.teleport(location); redeployed = false; }
 
-        PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).setInArena(false);
+        PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).setInArena(redeployed);
 
         PlayerUtil.clearPlayer(player, true, false);
         player.setGameMode(GameMode.SURVIVAL);
@@ -1060,6 +1132,14 @@ public class CombatListener implements Listener {
 
                 if (playerProfile.isBot()) {
                     double amount = BotRewards.amount(assistProfile.getPrestige(), BotRewards.multiplier(eventBoost)) * percentage;
+                    if (EconomyV2.active() || EconomyV2.observing()) {
+                        double units = TrainingBudget.consume(CombatEconomy.state(assistProfile),
+                                CombatEconomy.trainingUnits(playerProfile, player) * percentage, System.currentTimeMillis());
+                        context.setEconomy(units, true, false);
+                        double candidateGold = ProgressionV2.base(assistProfile.getPrestige()) * .5 * eventBoost * units * BotRewards.variableFactor(playerProfile);
+                        if (EconomyV2.active()) amount = candidateGold;
+                        else KillRewardContext.candidate(candidateGold, candidateGold * 4);
+                    }
                     RewardService.Receipt receipt = RewardService.grant(assistProfile, RewardSource.ASSIST, amount, amount);
                     assistProfile.setAssists(assistProfile.getAssists() + 1);
                     new PitRewardGrantedEvent(assistPlayer, player, RewardSource.ASSIST,
@@ -1132,13 +1212,22 @@ public class CombatListener implements Listener {
                 //process perk - start
                 AtomicDouble coinsAtomic = new AtomicDouble(totalCoins);
                 AtomicDouble expAtomic = new AtomicDouble(totalXp);
+                final Player finalAssister = assistPlayer;
+                boolean allowAssistExtras = !EconomyV2.active() && !EconomyV2.observing() || CombatEconomy.allowExtras(assistProfile, playerProfile,
+                        System.currentTimeMillis(), false);
+                if (EconomyV2.active() || EconomyV2.observing()) {
+                    context.setEconomy(percentage * CombatEconomy.deathMultiplier(playerProfile), !allowAssistExtras, allowAssistExtras);
+                    KillRewardContext.beginModifiers(assistPlayer.getUniqueId(), ProgressionV2.base(assistProfile.getPrestige()),
+                            totalCoins - ProgressionV2.base(assistProfile.getPrestige()), totalXp - ProgressionV2.base(assistProfile.getPrestige()));
+                }
                 if (progressionEligible) {
                     for (IPlayerAssist ins : ThePit.getInstance().getPerkFactory()
                             .getPlayerAssists()) {
                         AbstractPerk perk = (AbstractPerk) ins;
                         int perkPlayerLevel = perk.getPlayerLevel(assistPlayer);
                         if (perkPlayerLevel != -1) {
-                            ins.handlePlayerAssist(perkPlayerLevel, assistPlayer, player, player.getLastDamage(), (player.getLastDamageCause() == null ? 0 : player.getLastDamageCause().getFinalDamage()), coinsAtomic, expAtomic);
+                            runKillEffect(perk.getInternalPerkName(), coinsAtomic, expAtomic, () ->
+                                    ins.handlePlayerAssist(perkPlayerLevel, finalAssister, player, player.getLastDamage(), (player.getLastDamageCause() == null ? 0 : player.getLastDamageCause().getFinalDamage()), coinsAtomic, expAtomic));
                         }
                     }
                     for (IPlayerAssist ins : ThePit.getInstance().getEnchantmentFactor().getPlayerAssists()) {
@@ -1146,12 +1235,16 @@ public class CombatListener implements Listener {
                         if (!enchant.isEffectActive(assistPlayer, player)) continue;
                         int level = enchant.getItemEnchantLevel(assistPlayer.getItemInHand());
                         if (level > 0 && assistPlayer.getItemInHand() != null && assistPlayer.getItemInHand().getType() != Material.LEATHER_LEGGINGS) {
-                            ins.handlePlayerAssist(level, assistPlayer, player, player.getLastDamage(), (player.getLastDamageCause() == null ? 0 : player.getLastDamageCause().getFinalDamage()), coinsAtomic, expAtomic);
+                            final int activeLevel = level;
+                            runKillEffect(enchant.getNbtName(), coinsAtomic, expAtomic, () ->
+                                    ins.handlePlayerAssist(activeLevel, finalAssister, player, player.getLastDamage(), (player.getLastDamageCause() == null ? 0 : player.getLastDamageCause().getFinalDamage()), coinsAtomic, expAtomic));
                         }
                         if (assistPlayer.getInventory().getLeggings() != null && assistPlayer.getInventory().getLeggings().getType() != Material.AIR) {
                             level = enchant.getItemEnchantLevel(assistPlayer.getInventory().getLeggings());
                             if (level > 0) {
-                                ins.handlePlayerAssist(level, assistPlayer, player, player.getLastDamage(), (player.getLastDamageCause() == null ? 0 : player.getLastDamageCause().getFinalDamage()), coinsAtomic, expAtomic);
+                                final int activeLevel = level;
+                                runKillEffect(enchant.getNbtName(), coinsAtomic, expAtomic, () ->
+                                        ins.handlePlayerAssist(activeLevel, finalAssister, player, player.getLastDamage(), (player.getLastDamageCause() == null ? 0 : player.getLastDamageCause().getFinalDamage()), coinsAtomic, expAtomic));
                             }
                         }
                     }
@@ -1161,6 +1254,42 @@ public class CombatListener implements Listener {
                         * deathTargetMultipliers.getOrDefault(player.getUniqueId(), RewardService.victimMultiplier(playerProfile));
                 totalCoins = RewardMath.positive(coinsAtomic.get()) * scale;
                 totalXp = RewardMath.positive(expAtomic.get()) * scale;
+                if (EconomyV2.active()) {
+                    RewardModifiers modifiers = KillRewardContext.modifiers();
+                    double baseScale = percentage * repeatKill.multiplier * (night ? .01 : 1);
+                    if (modifiers != null) {
+                        totalCoins = ((coinsAtomic.get() - modifiers.fixedGold()) * eventBoost
+                                + modifiers.fixedGold() * ProgressionV2.sideScale(assistProfile.getPrestige())) * baseScale;
+                        totalXp = ((expAtomic.get() - modifiers.fixedXp()) * eventBoost
+                                + modifiers.fixedXp() * ProgressionV2.sideScale(assistProfile.getPrestige())) * baseScale;
+                    }
+                    if (!allowAssistExtras) {
+                        totalCoins = ProgressionV2.base(assistProfile.getPrestige()) * eventBoost * baseScale;
+                        totalXp = totalCoins;
+                    }
+                    if (!allowAssistExtras) {
+                        double units = TrainingBudget.consume(assistProfile.getEconomyData(), percentage
+                                * CombatEconomy.trainingUnits(playerProfile, player) * CombatEconomy.deathMultiplier(playerProfile), System.currentTimeMillis());
+                        totalCoins = ProgressionV2.base(assistProfile.getPrestige()) * .5 * eventBoost * units * (night ? .01 : 1);
+                        totalXp = totalCoins;
+                    }
+                }
+                if (EconomyV2.observing()) {
+                    RewardModifiers modifiers = KillRewardContext.modifiers();
+                    double candidateScale = percentage * CombatEconomy.deathMultiplier(playerProfile) * (night ? .01 : 1);
+                    double side = ProgressionV2.sideScale(assistProfile.getPrestige());
+                    double candidateGold = modifiers == null ? totalCoins
+                            : ((modifiers.gold() - modifiers.fixedGold()) * eventBoost + modifiers.fixedGold() * side) * candidateScale;
+                    double candidateXp = modifiers == null ? totalXp
+                            : ((modifiers.experience() - modifiers.fixedXp()) * eventBoost + modifiers.fixedXp() * side) * candidateScale;
+                    if (!allowAssistExtras) candidateXp = candidateGold = ProgressionV2.base(assistProfile.getPrestige()) * eventBoost * candidateScale;
+                    if (!allowAssistExtras) {
+                        double units = TrainingBudget.consume(CombatEconomy.state(assistProfile), percentage
+                                * CombatEconomy.trainingUnits(playerProfile, player) * CombatEconomy.deathMultiplier(playerProfile), System.currentTimeMillis());
+                        candidateXp = candidateGold = ProgressionV2.base(assistProfile.getPrestige()) * .5 * eventBoost * units * (night ? .01 : 1);
+                    }
+                    KillRewardContext.candidate(candidateGold, candidateXp * 4);
+                }
                 double recapScale = scale;
 
                 assistData.setBaseCoin((10.0d + assistProfile.getPrestige() * 0.5) * recapScale);
@@ -1176,6 +1305,8 @@ public class CombatListener implements Listener {
                 //Assistant to the streaker effect
                 if (progressionEligible) {
                     if (PlayerUtil.isPlayerChosePerk(assistPlayer, "assistant_to_the_streaker") && !isNight()) {
+                        CombatEconomy.contribution(assistProfile, Math.floor(100 * percentage) * .01,
+                                Math.floor(100 * percentage) * .01 * (allowAssistExtras ? repeatKill.multiplier : 0));
                         assistProfile.setStreakKills(assistProfile.getStreakKills() + Math.floor(100 * percentage) * 0.01);
                     }
                     assistProfile.setAssists(assistProfile.getAssists() + 1);
@@ -1608,10 +1739,12 @@ public class CombatListener implements Listener {
 
         //Genesis Boost Start
         if (killerProfile.getGenesisData().getTeam() == GenesisTeam.ANGEL && killerProfile.getGenesisData().getBoostTier() > 0) {
-            expAtomic.getAndAdd(0.01 * killerProfile.getGenesisData().getBoostTier() * expAtomic.get());
+            expAtomic.getAndAdd(0.01 * killerProfile.getGenesisData().getBoostTier()
+                    * (EconomyV2.active() ? ProgressionV2.base(killerProfile.getPrestige()) : expAtomic.get()));
         }
         if (killerProfile.getGenesisData().getTeam() == GenesisTeam.DEMON && killerProfile.getGenesisData().getBoostTier() > 0) {
-            coinsAtomic.getAndAdd(0.01 * killerProfile.getGenesisData().getBoostTier() * coinsAtomic.get());
+            coinsAtomic.getAndAdd(0.01 * killerProfile.getGenesisData().getBoostTier()
+                    * (EconomyV2.active() ? ProgressionV2.base(killerProfile.getPrestige()) : coinsAtomic.get()));
         }
         //Genesis Boost End
     }
@@ -1619,7 +1752,12 @@ public class CombatListener implements Listener {
     private void runKillEffect(String effect, AtomicDouble coins, AtomicDouble experience, Runnable callback) {
         double oldCoins = coins.get(), oldExperience = experience.get();
         try {
-            callback.run();
+            RewardModifiers modifiers = KillRewardContext.modifiers();
+            if (EconomyV2.active() && modifiers != null) modifiers.apply(effect, coins, experience, callback);
+            else {
+                callback.run();
+                if (EconomyV2.observing() && modifiers != null) modifiers.observe(effect, oldCoins, oldExperience, coins.get(), experience.get());
+            }
             if (!Double.isFinite(coins.get()) || !Double.isFinite(experience.get())) {
                 throw new IllegalStateException("Non-finite reward modifier");
             }
@@ -1723,8 +1861,32 @@ public class CombatListener implements Listener {
         killRecap.setLevelDisparityExp(levelAddon);
         killRecap.setLevelDisparityCoin(levelAddon);
 
-        totalCoins = eventBoost * totalCoins;
-        totalXp = eventBoost * totalXp;
+        if (EconomyV2.observing()) {
+            RewardModifiers modifiers = KillRewardContext.modifiers();
+            if (modifiers != null) {
+                double side = ProgressionV2.sideScale(killerProfile.getPrestige());
+                double goldGenesis = killerProfile.getGenesisData().getTeam() == GenesisTeam.DEMON
+                        ? modifiers.base * .01 * killerProfile.getGenesisData().getBoostTier() : 0;
+                double xpGenesis = killerProfile.getGenesisData().getTeam() == GenesisTeam.ANGEL
+                        ? modifiers.base * .01 * killerProfile.getGenesisData().getBoostTier() : 0;
+                double candidateGold = (modifiers.gold() - modifiers.fixedGold() + goldGenesis) * eventBoost
+                        + (modifiers.fixedGold() + totalCoins - totalCoinsAtomic.get()) * side;
+                double candidateXp = (modifiers.experience() - modifiers.fixedXp() + xpGenesis) * eventBoost
+                        + (modifiers.fixedXp() + totalXp - totalXpAtomic.get()) * side;
+                KillRewardContext.candidate(candidateGold, candidateXp * 4);
+            }
+        }
+        if (EconomyV2.active()) {
+            RewardModifiers modifiers = KillRewardContext.modifiers();
+            double fixedGold = totalCoins - totalCoinsAtomic.get() + (modifiers == null ? 0 : modifiers.fixedGold());
+            double fixedXp = totalXp - totalXpAtomic.get() + (modifiers == null ? 0 : modifiers.fixedXp());
+            double side = ProgressionV2.sideScale(killerProfile.getPrestige());
+            totalCoins = eventBoost * (totalCoins - fixedGold) + fixedGold * side;
+            totalXp = eventBoost * (totalXp - fixedXp) + fixedXp * side;
+        } else {
+            totalCoins = eventBoost * totalCoins;
+            totalXp = eventBoost * totalXp;
+        }
 
         totalXpAtomic.set(totalXp);
         totalCoinsAtomic.set(totalCoins);

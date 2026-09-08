@@ -35,7 +35,7 @@ public final class EnchantmentLoreRefresh implements Listener {
             String title = plain(enchant.getRarity().getPrefix() + "&9" + enchant.getEnchantName()
                     + (entry.getValue() >= 2 ? " " + RomanUtil.convert(entry.getValue()) : ""));
             if (descriptions.containsKey(title)) ambiguous.add(title);
-            descriptions.put(title, enchant.getUsefulnessLore(entry.getValue()).split("/s", -1));
+            descriptions.put(title, enchant.getEconomyLore(entry.getValue()).split("/s", -1));
         }
         ambiguous.forEach(descriptions::remove);
         List<String> original = meta.getLore();

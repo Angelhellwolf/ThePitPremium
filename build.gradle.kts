@@ -7,6 +7,9 @@ plugins {
 
 val pluginName = "ThePitPremium"
 val version = "3.93"
+// Old plugin jars embed an older Validate class. NMS tests need the overloads
+// present on the production server, without changing production dependencies.
+val legacyNmsTestLibraries by configurations.creating
 repositories {
     maven("https://maven.aliyun.com/repository/public/")
     mavenCentral()
@@ -29,6 +32,7 @@ repositories {
 }
 
 dependencies {
+    add(legacyNmsTestLibraries.name, "org.apache.commons:commons-lang3:3.12.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.14.2")
     testImplementation("com.h2database:h2:2.1.214")
@@ -115,4 +119,8 @@ configurations.testRuntimeClasspath {
 }
 configurations.testCompileClasspath {
     extendsFrom(configurations.compileOnly.get())
+}
+
+tasks.test {
+    classpath = files(legacyNmsTestLibraries) + classpath
 }

@@ -88,7 +88,11 @@ object KingsQuestsButton: Button() {
         val rewardExp = profile.getRewardExp()
         val rewardCoins = profile.getRewardCoins()
 
-        val receipt = RewardService.grant(profile, RewardSource.QUEST, rewardCoins, rewardExp)
+        val receipt = cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.KING_QUEST,
+            (2000.0 * profile.prestige) + 10000,
+            rewardExp,
+            cn.charlotte.pit.reward.ProgressionV2.goldRequired(profile.prestige) * .15,
+            cn.charlotte.pit.reward.ProgressionV2.totalExperience(profile.prestige) * .15)
 
         player.sendMessage(cn.charlotte.pit.util.chat.CC.translate("&a&l任务完成! &a你完成了 &e国王任务&a, 获得奖励: "))
         player.sendMessage(cn.charlotte.pit.util.chat.CC.translate(" &e+&6金头盔"))
@@ -103,6 +107,7 @@ object KingsQuestsButton: Button() {
     }
 
     private fun PlayerProfile.getRewardExp(): Double {
+        if (cn.charlotte.pit.reward.EconomyV2.active()) return cn.charlotte.pit.reward.ProgressionV2.totalExperience(prestige) * .15
         return LevelUtil.getLevelTotalExperience(prestige, 120) * 0.30326
     }
 
@@ -163,6 +168,7 @@ object KingsQuestsButton: Button() {
     }
 
     private fun PlayerProfile.getRewardCoins(): Double {
+        if (cn.charlotte.pit.reward.EconomyV2.active()) return cn.charlotte.pit.reward.ProgressionV2.goldRequired(prestige) * .15
         return (2000.0 * prestige) + 10000
     }
 }

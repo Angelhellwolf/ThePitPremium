@@ -110,7 +110,7 @@ public class KhanateKillStreak extends AbstractPerk implements Listener, IAttack
         int streak = 3;
         if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
-            RewardService.grant(event.getPlayerProfile(), RewardSource.STREAK, 8, 0);
+            cn.charlotte.pit.reward.EconomyV2.streak(event.getPlayerProfile(), 3, 8, 0);
         }
     }
 

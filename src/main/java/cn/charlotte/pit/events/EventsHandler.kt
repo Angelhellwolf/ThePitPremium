@@ -83,7 +83,7 @@ object EventsHandler {
         if (queue.isEmpty()) refreshEvents()
         val registered = if (major) factory.epicEvents.map { it as IEvent }
                          else factory.normalEvents.map { it as IEvent }
-        val event = EventQueueSelector.pollEligible(queue, registered, Bukkit.getOnlinePlayers().size)
+        val event = EventQueueSelector.pollEligible(queue, registered, EventFactory.publicOnline())
         this.refreshEvents()
 
         return event ?: "No event available"

@@ -54,7 +54,9 @@ public class TacticalInsertionsPerk extends AbstractPerk {
         lines.add("&7允许你在商店中购买战术重部署装置.");
         lines.add(" ");
         lines.add("&7战术重部署装置会在使用后消耗,");
-        lines.add("使你下次在使用此物品时的坐标处复活.");
+        lines.add("&7使你下次在使用时记录的战区位置复活.");
+        lines.add("&7每个装置100金币，适用于公共战区安全地面.");
+        lines.add("&7大型活动、军需处或失效落点使用正常复活点.");
         return lines;
     }
 

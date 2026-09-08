@@ -148,11 +148,11 @@ object NewConfiguration {
         customChatFormatEnable = config.getBoolean("custom-chat-format.enable", false)
         customChatFormat = config.getString("custom-chat-format.format", "%pit_level_tag_roman% %s&f: %s")
 
-        PrestigeStatusButton.limit = config.getInt("highest-prestige")
+        PrestigeStatusButton.limit = if (cn.charlotte.pit.reward.EconomyV2.active()) 50 else config.getInt("highest-prestige")
 
         config.getConfigurationSection("event-online-required")?.let {
             it.getKeys(false).forEach { eventName ->
-                eventOnlineRequired[eventName] = it.getInt(eventName)
+                eventOnlineRequired[eventName] = cn.charlotte.pit.reward.MajorEventRewards.minimum(eventName, it.getInt(eventName))
             }
         }
 

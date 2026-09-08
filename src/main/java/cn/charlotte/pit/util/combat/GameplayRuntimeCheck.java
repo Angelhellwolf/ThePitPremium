@@ -20,7 +20,7 @@ public final class GameplayRuntimeCheck {
             if (enchant.getClass().getSimpleName().equals("JSEnchantment")) js++;
             for (int level = 1; level <= enchant.getMaxEnchantLevel(); level++) {
                 try {
-                    String lore = enchant.getUsefulnessLore(level);
+                    String lore = enchant.getEconomyLore(level);
                     if (lore == null || lore.trim().isEmpty()) errors.add("empty lore " + enchant.getNbtName() + ":" + level);
                 } catch (Exception failure) { errors.add("lore error " + enchant.getNbtName() + ":" + level); }
             }
@@ -34,7 +34,7 @@ public final class GameplayRuntimeCheck {
         Set<String> listeners = new HashSet<>();
         for (RegisteredListener listener : HandlerList.getRegisteredListeners(plugin))
             listeners.add(listener.getListener().getClass().getSimpleName());
-        for (String name : Arrays.asList("XPStack", "GameEffectListener", "CombatListener", "EnchantmentLoreRefresh", "PlayerLife", "WolfPackEnchant"))
+        for (String name : Arrays.asList("XPStack", "GameEffectListener", "CombatListener", "EnchantmentLoreRefresh", "PlayerLife", "WolfPackEnchant", "TacticalDeploymentShopButton"))
             if (!listeners.contains(name)) errors.add("missing listener " + name);
 
         List<String> result = new ArrayList<>();

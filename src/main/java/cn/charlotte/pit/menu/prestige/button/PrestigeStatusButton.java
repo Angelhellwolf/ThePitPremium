@@ -44,7 +44,7 @@ public class PrestigeStatusButton extends Button {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (profile.getLevel() >= 120 && profile.getPrestige() < limit) {
             // && profile.getCoins() >= Math.round(profile.getPrestige() * 12 / 30) * 10000
-            if (profile.getGrindedCoins() >= 16000 * (profile.getPrestige() + 1)) {
+            if (cn.charlotte.pit.perk.PrestigeProgression.eligible(profile, limit)) {
                 EventFactory eventFactory = ThePit.getInstance().getEventFactory();
                 //check if event is available
                 if (eventFactory.getActiveNormalEvent() != null && eventFactory.getActiveNormalEventName().equals("auction")) {
@@ -77,17 +77,9 @@ public class PrestigeStatusButton extends Button {
 
     private ItemStack getPrestigeItem(Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (cn.charlotte.pit.reward.EconomyV2.active()) return getV2PrestigeItem(profile);
         List<String> lore = new ArrayList<>();
-        int award = 10;
-        if (profile.getPrestige() > 4) {
-            award += 10;
-        }
-        if (profile.getPrestige() > 10) {
-            award += 10;
-        }
-        if (profile.getPrestige() > 14) {
-            award += 10;
-        }
+        int award = cn.charlotte.pit.perk.PrestigeProgression.renownAward(profile.getPrestige() + 1);
         if (profile.getPrestige() >= limit) {
             lore.add("&7当前精通等级: &e" + RomanUtil.convert(profile.getPrestige()));
             if (profile.getLevel() < 120) {
@@ -145,5 +137,32 @@ public class PrestigeStatusButton extends Button {
         }
 
         return new ItemBuilder(Material.DIAMOND).name("&b精通").lore(lore).build();
+    }
+
+    private ItemStack getV2PrestigeItem(PlayerProfile profile) {
+        cn.charlotte.pit.reward.EconomyV2.migrate(profile);
+        DecimalFormat format = new DecimalFormat("#,##0.##");
+        List<String> lore = new ArrayList<>();
+        int p = profile.getPrestige();
+        lore.add("&7当前精通: &eP" + p + " &7/ &eP50");
+        lore.add("&7等级: &b" + profile.getLevel() + " &7/ &b120");
+        lore.add("&7本轮经验: &b" + format.format(profile.getExperience()) + " &7/ &b"
+                + format.format(cn.charlotte.pit.reward.ProgressionV2.totalExperience(p)));
+        if (p < 50) {
+            lore.add("&7累计获金: &6" + format.format(profile.getGrindedCoins()) + " &7/ &6"
+                    + format.format(cn.charlotte.pit.reward.ProgressionV2.goldRequired(p)));
+            lore.add("&7下轮经验储备: &b" + format.format(profile.getEconomyData().experienceReserve));
+            lore.add("&8购物不减少累计获金；交易和退款不增加进度");
+            lore.add("");
+            lore.add("&7精通后: &e+" + cn.charlotte.pit.perk.PrestigeProgression.renownAward(p + 1) + " 声望");
+            lore.add("&c余额清零，普通天赋与加成重置");
+            lore.add("&7保留声望解锁、装备、末影箱及购买偏好");
+            lore.add(profile.getUnlockedPerkMap().containsKey("FastPass") ? "&b高速通道: 从50级起步，并释放经验储备" : "&b释放已积累的下轮经验储备");
+            lore.add(cn.charlotte.pit.perk.PrestigeProgression.eligible(profile, 50) ? "&e点击查看精通确认" : "&7继续完成本轮经验与获金目标");
+        } else {
+            lore.add("&7荣誉等级: &d" + (long) (profile.getEconomyData().honorExperience / cn.charlotte.pit.reward.EconomyV2.honorStep()));
+            lore.add("&7达到120级后，玩法经验继续积累荣誉");
+        }
+        return new ItemBuilder(Material.DIAMOND).name("&b精通成长").lore(lore).build();
     }
 }

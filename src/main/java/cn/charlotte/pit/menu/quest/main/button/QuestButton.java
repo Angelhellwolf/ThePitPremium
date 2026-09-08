@@ -54,15 +54,16 @@ public class QuestButton extends Button {
                 if (currentQuest.getCurrent() >= currentQuest.getTotal()) {
                     lore.add("&7任务完成! 奖励如下:");
                     if (isNightQuest(profile, currentQuest)) {
-                        lore.add(" &8+ &b" + (level * 250) + " &7天坑乱斗经验值");
+                        lore.add(" &8+ &b" + cn.charlotte.pit.quest.QuestRules.previewExperience(profile, level, true) + " &7天坑乱斗经验值");
+        if (cn.charlotte.pit.reward.EconomyV2.active()) lore.add(" &8+ &6" + cn.charlotte.pit.quest.QuestRules.previewCoins(profile, playerFor(profile), level, true) + " &7硬币");
         if (profile.getUnlockedPerkMap().containsKey("quest_master_perk")) lore.add(" &8+ &51 暗聚块（任务大师）");
                         if (level > 1) {
                             lore.add(" &8+ &51 暗聚块");
                         }
                     } else {
-                        lore.add(" &8+ &6" + String.format("%.0f", level * 100 * cn.charlotte.pit.quest.QuestRules.coinMultiplier(playerFor(profile))) + " &7硬币");
+                        lore.add(" &8+ &6" + String.format("%.0f", cn.charlotte.pit.quest.QuestRules.previewCoins(profile, playerFor(profile), level, false)) + " &7硬币");
                         lore.add(" &8+ &e" + (level * 5) + " &7行动赏金");
-                        lore.add(" &8+ &b" + (level * 40) + " &7天坑乱斗经验值");
+                        lore.add(" &8+ &b" + cn.charlotte.pit.quest.QuestRules.previewExperience(profile, level, false) + " &7天坑乱斗经验值");
                     }
                     lore.add(" ");
                     lore.add("&a点击领取你的奖励!");
@@ -183,16 +184,17 @@ public class QuestButton extends Button {
     private void addReward(List<String> lore, PlayerProfile profile) {
         lore.add(" ");
         lore.add("&7任务奖励:");
-        lore.add(" &8+ &6" + String.format("%.0f", level * 100 * cn.charlotte.pit.quest.QuestRules.coinMultiplier(playerFor(profile))) + " &7硬币");
+        lore.add(" &8+ &6" + String.format("%.0f", cn.charlotte.pit.quest.QuestRules.previewCoins(profile, playerFor(profile), level, false)) + " &7硬币");
         lore.add(" &8+ &e" + (level * 5) + " &7行动赏金");
-        lore.add(" &8+ &b" + (level * 40) + " &7天坑乱斗经验值");
+        lore.add(" &8+ &b" + cn.charlotte.pit.quest.QuestRules.previewExperience(profile, level, false) + " &7天坑乱斗经验值");
         lore.add(" ");
     }
 
     private void addNightReward(List<String> lore, PlayerProfile profile) {
         lore.add(" ");
         lore.add("&7任务奖励:");
-        lore.add(" &8+ &b" + (level * 250) + " &7天坑乱斗经验值");
+        lore.add(" &8+ &b" + cn.charlotte.pit.quest.QuestRules.previewExperience(profile, level, true) + " &7天坑乱斗经验值");
+        if (cn.charlotte.pit.reward.EconomyV2.active()) lore.add(" &8+ &6" + cn.charlotte.pit.quest.QuestRules.previewCoins(profile, playerFor(profile), level, true) + " &7硬币");
         if (profile.getUnlockedPerkMap().containsKey("quest_master_perk")) lore.add(" &8+ &51 暗聚块（任务大师）");
         if (level > 1) {
             lore.add(" &8+ &51 暗聚块");

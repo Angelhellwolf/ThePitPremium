@@ -151,6 +151,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         Bukkit.getServer().getPluginManager().registerEvents(spigot, this);
 
         this.loadConfig();
+        cn.charlotte.pit.reward.EconomyV2.load(this);
         this.loadDatabase();
         this.loadListener();
         SpiterCompatibility.initialize(this);

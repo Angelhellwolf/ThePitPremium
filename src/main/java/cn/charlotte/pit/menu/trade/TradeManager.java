@@ -119,10 +119,10 @@ public class TradeManager {
             playerA.getInventory().addItem(item);
         }
         PlayerProfile profileA = PlayerProfile.getPlayerProfileByUuid(playerA.getUniqueId());
-        profileA.setCoins(profileA.getCoins() + bCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileA, profileA.getCoins() + bCoins, cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "trade_complete");
 
         PlayerProfile profileB = PlayerProfile.getPlayerProfileByUuid(playerB.getUniqueId());
-        profileB.setCoins(profileB.getCoins() + aCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileB, profileB.getCoins() + aCoins, cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "trade_complete");
 
         profileA.getTradeLimit().setAmount(profileA.getTradeLimit().getAmount() + aCoins + bCoins);
         profileB.getTradeLimit().setAmount(profileB.getTradeLimit().getAmount() + aCoins + bCoins);
@@ -205,10 +205,10 @@ public class TradeManager {
             playerB.getInventory().addItem(item);
         }
         PlayerProfile profileA = PlayerProfile.getPlayerProfileByUuid(playerA.getUniqueId());
-        profileA.setCoins(profileA.getCoins() + aCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileA, profileA.getCoins() + aCoins, cn.charlotte.pit.reward.CoinLedger.Flow.REFUND, "trade_cancel");
 
         PlayerProfile profileB = PlayerProfile.getPlayerProfileByUuid(playerB.getUniqueId());
-        profileB.setCoins(profileB.getCoins() + bCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileB, profileB.getCoins() + bCoins, cn.charlotte.pit.reward.CoinLedger.Flow.REFUND, "trade_cancel");
 
         trades.remove(playerA.getUniqueId());
         trades.remove(playerB.getUniqueId());

@@ -217,7 +217,8 @@ public class EnchantButton extends Button {
                 return;
             }
         }
-        profile.setCoins(profile.getCoins() - getPrice(player, level + 1, color));
+        cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - getPrice(player, level + 1, color),
+                cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "mythic_well");
         //handle enchant
         doEnchant(item, player, mythicItem);
 

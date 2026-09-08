@@ -77,6 +77,24 @@ public final class JunxuNpcs implements Listener {
             b.location.getChunk().load();b.npc.spawn(b.location);
             if(b.npc.getEntity() instanceof Player)NMS.removeFromServerPlayerList((Player)b.npc.getEntity());
         }
+        // Citizens uses a separate CIT-* GameProfile name behind its hologram.
+        // Hide that actual profile entry, not the NPC's localized display name.
+        List<Player> actors = new ArrayList<>(manager.plugin().getPitBotManager().getActivePlayers());
+        for (Binding binding : bindings.values())
+            if (binding.npc.getEntity() instanceof Player) actors.add((Player) binding.npc.getEntity());
+        for (Player actor : actors) {
+            String profileName = ((org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer) actor).getHandle().getProfile().getName();
+            String teamName = "jxh_" + actor.getUniqueId().toString().replace("-", "").substring(0, 12);
+            for (Player viewer : Bukkit.getOnlinePlayers()) {
+                if (!viewer.getWorld().equals(actor.getWorld())) continue;
+                org.bukkit.scoreboard.Scoreboard board = viewer.getScoreboard();
+                org.bukkit.scoreboard.Team team = board.getTeam(teamName);
+                if (team == null) team = board.registerNewTeam(teamName);
+                if (team.getNameTagVisibility() != org.bukkit.scoreboard.NameTagVisibility.NEVER)
+                    team.setNameTagVisibility(org.bukkit.scoreboard.NameTagVisibility.NEVER);
+                if (!team.hasEntry(profileName)) team.addEntry(profileName);
+            }
+        }
     }
     @EventHandler(priority=EventPriority.HIGHEST) public void click(NPCRightClickEvent event) {
         Binding binding=bindings.get(event.getNPC().getUniqueId());if(binding==null)return;

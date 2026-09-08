@@ -66,8 +66,8 @@ public class OfferButton extends Button {
         }
         player.closeInventory();
         InventoryUtil.addInvReverse(player.getInventory(), targetProfile.getOfferData().getItemStack());
-        profile.setCoins(profile.getCoins() - targetProfile.getOfferData().getPrice());
-        targetProfile.setCoins(targetProfile.getCoins() + targetProfile.getOfferData().getPrice());
+        cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - targetProfile.getOfferData().getPrice(), cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "offer");
+        cn.charlotte.pit.reward.CoinLedger.set(targetProfile, targetProfile.getCoins() + targetProfile.getOfferData().getPrice(), cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "offer");
         profile.getTradeLimit().setAmount(profile.getTradeLimit().getTimes() + targetProfile.getOfferData().getPrice());
         profile.getTradeLimit().setTimes(profile.getTradeLimit().getTimes() + 1);
         targetProfile.getTradeLimit().setAmount(targetProfile.getTradeLimit().getTimes() + targetProfile.getOfferData().getPrice());

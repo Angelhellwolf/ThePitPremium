@@ -67,6 +67,23 @@ public class PitBotManagerTest {
         assertTrue(hit.isCancelled());
         verifyNoInteractions(settlement);
     }
+    @Test public void defaultPublicSwitchLeavesPrivateTrainingDelegationAvailable() throws Exception {
+        org.bukkit.plugin.PluginManager plugins = mock(org.bukkit.plugin.PluginManager.class);
+        bukkit.when(Bukkit::getPluginManager).thenReturn(plugins);
+        assertFalse(manager.isPublicEnabled());
+        manager.start();
+        assertFalse(manager.isReady());
+        assertNull(field(manager, "task").get(manager));
+        JunxuTrainingBots privateBots = mock(JunxuTrainingBots.class);
+        manager.setJunxuBots(privateBots);
+        when(privateBots.isBot(killer)).thenReturn(true);
+        when(privateBots.getPlayer(killer.getUniqueId())).thenReturn(killer);
+        when(privateBots.handleDeath(killer, victim)).thenReturn(true);
+        assertTrue(manager.isBot(killer));
+        assertSame(killer, manager.getPlayer(killer.getUniqueId()));
+        assertTrue(manager.handleDeath(killer, victim));
+        verify(privateBots).handleDeath(killer, victim);
+    }
     @Test public void duplicateDeathsAreSettledOnceAndTheIdentitySurvives() {
         state.hitHuman();
         assertTrue(manager.handleDeath(victim, killer));

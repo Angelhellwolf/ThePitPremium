@@ -146,6 +146,16 @@ public class PlayerProfile {
     private OfferData offerData;
     //累计获得硬币
     private double grindedCoins;
+    private cn.charlotte.pit.data.sub.EconomyData economyData = new cn.charlotte.pit.data.sub.EconomyData();
+
+    public cn.charlotte.pit.data.sub.EconomyData getEconomyData() {
+        if (economyData == null) economyData = new cn.charlotte.pit.data.sub.EconomyData();
+        return economyData;
+    }
+
+    public void setEconomyData(cn.charlotte.pit.data.sub.EconomyData value) {
+        economyData = value == null ? new cn.charlotte.pit.data.sub.EconomyData() : value;
+    }
     private PlayerOption playerOption;
     private PlayerBanData playerBanData;
     private boolean supporter;
@@ -473,6 +483,7 @@ public class PlayerProfile {
     }
 
     public void init() {
+        cn.charlotte.pit.reward.EconomyV2.migrate(this);
         cacheProfile.put(this.getPlayerUuid(), this);
     }
 
@@ -520,6 +531,7 @@ public class PlayerProfile {
         PlayerProfile profile = PlayerProfile.loadPlayerProfileByUuid(this.getPlayerUuid());
         if (profile == null) {
             this.registerTime = System.currentTimeMillis();
+            if (cn.charlotte.pit.reward.EconomyV2.active()) getEconomyData().version = 2;
             //refresh quests - start
             this.refreshQuest();
             //refresh quests - end
@@ -535,6 +547,7 @@ public class PlayerProfile {
         profile.refreshGenesisData();
         //refresh quests - end
 
+        cn.charlotte.pit.reward.EconomyV2.migrate(profile);
         profile.loaded = true;
 
         if (ThePit.getInstance().isEnabled()) {
@@ -615,6 +628,7 @@ public class PlayerProfile {
 
     @JsonIgnore
     public void applyExperienceToPlayer(Player player) {
+        cn.charlotte.pit.reward.EconomyV2.migrate(this);
         this.experience = RewardMath.experienceTotal(this.experience,
                 LevelUtil.getLevelTotalExperience(this.prestige, 120));
         player.setLevel(getLevel());
@@ -734,11 +748,11 @@ public class PlayerProfile {
     }
 
     public String getFormattedName() {
-        return getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
+        return cn.charlotte.pit.reward.GrowthProgress.badge(this) + getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
     }
 
     public String getFormattedNameWithRoman() {
-        return getFormattedLevelTagWithRoman() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
+        return cn.charlotte.pit.reward.GrowthProgress.badge(this) + getFormattedLevelTagWithRoman() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
     }
 
     public String getFormattedLevelTag() {
@@ -1063,6 +1077,7 @@ public class PlayerProfile {
     }
 
     public void setCoins(double coins) {
+        cn.charlotte.pit.reward.CoinLedger.record(this, this.coins, coins);
         this.coins = coins;
     }
 

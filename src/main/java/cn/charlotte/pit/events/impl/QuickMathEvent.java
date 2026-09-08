@@ -140,7 +140,9 @@ public class QuickMathEvent implements IEvent, INormalEvent, Listener {
             new QuickMathsMedal().addProgress(profile, 1);
         }
         CC.boardCast("&5&l速算! &e#" + top + " " + profile.getFormattedName() + " &7在 &e" + TimeUtil.millisToRoundedTime(elapsed) + " &7内回答正确!");
-        RewardService.Receipt reward = RewardService.grant(profile, RewardSource.EVENT, 200, 100);
+        double scale = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+        RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                cn.charlotte.pit.reward.RewardDetail.QUICK_MATH, 200, 100, 250 * scale, 1000 * scale);
         player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT,
                 "&5&l速算! &7奖励到账 &6+%.2f 硬币 &b+%.2f 经验值", reward.getCoins(), reward.getExperience())));
         if (top >= 5) {

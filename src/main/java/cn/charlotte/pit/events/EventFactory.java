@@ -51,7 +51,7 @@ public class EventFactory {
     }
 
     public void pushEvent(IEpicEvent event, boolean force) {
-        if (Bukkit.getOnlinePlayers().size() >= getRequiredOnlineSafe((IEvent) event)) {
+        if (publicOnline() >= getRequiredOnlineSafe((IEvent) event)) {
             readyEpicEvent(event);
         }
     }
@@ -61,7 +61,7 @@ public class EventFactory {
     }
 
     public void pushEvent(INormalEvent event, boolean force) {
-        if (Bukkit.getOnlinePlayers().size() >= getRequiredOnlineSafe((IEvent) event)) {
+        if (publicOnline() >= getRequiredOnlineSafe((IEvent) event)) {
             activeEvent(event);
         }
     }
@@ -252,6 +252,7 @@ public class EventFactory {
         this.activeEpicEvent = event;
         IEvent iEvent = (IEvent) event;
         this.normalEnd = new Cooldown(5, TimeUnit.MINUTES);
+        cn.charlotte.pit.reward.MajorEventRewards.start(iEvent.getEventInternalName());
         try {
             iEvent.onActive();
         } catch (Throwable throwable) {
@@ -265,11 +266,16 @@ public class EventFactory {
     private int getRequiredOnlineSafe(IEvent event) {
         try {
             Integer required = event.requireOnline();
-            return required == null ? 0 : required;
+            return cn.charlotte.pit.reward.MajorEventRewards.minimum(event.getEventInternalName(), required == null ? 0 : required);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
             return 0;
         }
+    }
+
+    public static int publicOnline() {
+        return cn.charlotte.pit.reward.EconomyV2.active()
+                ? cn.charlotte.pit.junxu.PublicPitParticipants.online().size() : Bukkit.getOnlinePlayers().size();
     }
 
     public void inactiveEvent(IEpicEvent event) {
@@ -288,6 +294,8 @@ public class EventFactory {
             event.onInactive();
         } catch (Throwable failure) {
             Bukkit.getLogger().log(Level.WARNING, "Failed to clean event " + event.getEventInternalName(), failure);
+        } finally {
+            cn.charlotte.pit.reward.MajorEventRewards.end(event.getEventInternalName());
         }
     }
 

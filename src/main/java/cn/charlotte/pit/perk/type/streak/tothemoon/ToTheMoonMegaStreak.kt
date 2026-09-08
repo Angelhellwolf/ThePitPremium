@@ -219,7 +219,8 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
 
             val stored = cache.remove(myself.uniqueId) ?: return
             if (stored > 0) {
-                val give = min(((streakKills - 100) * 0.005) * stored + stored, stored * 2)
+                val economicStreak = if (cn.charlotte.pit.reward.EconomyV2.active()) profile.economyData.lifeEconomicUnits else streakKills
+                val give = min((maxOf(0.0, economicStreak - 100) * 0.005) * stored + stored, stored * 2)
                 val multiple = give / stored
                 val receipt = RewardService.grant(profile, RewardSource.STREAK_PAYOUT, 0.0, give)
                 myself.sendMessage(CC.translate("&b&l月球之旅! &7你挣取了 &b+${format.format(receipt.experience)}经验&7 在这次连杀中. (&b${decimalFormat.format(multiple)}x &7倍率)"))

@@ -91,7 +91,7 @@ class SuperStreaker : AbstractPerk(), IPlayerKilledEntity, Listener {
         if (!PlayerUtil.isPlayerChosePerk(player, getInternalPerkName())) return
         val milestones = StreakRewardMath.crossedMilestones(event.from, event.to, 10)
         if (milestones > 0) {
-            RewardService.grant(event.playerProfile, RewardSource.STREAK, 0.0, milestones * 50.0)
+            cn.charlotte.pit.reward.EconomyV2.streak(event.playerProfile, milestones * 10.0, 0.0, milestones * 50.0)
         }
     }
 

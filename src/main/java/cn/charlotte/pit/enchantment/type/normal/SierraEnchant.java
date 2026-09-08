@@ -44,7 +44,7 @@ public class SierraEnchant extends AbstractEnchantment implements IPlayerKilledE
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return ("&7击杀的玩家每穿着一件 &b钻石装备 &7,击杀奖励 &6+" + (enchantLevel * 30) + " 硬币") + "/s" + "&7以上金币或经验加成排除 Bot";
+        return ("&7击杀的玩家每穿着一件 &b钻石装备 &7,击杀奖励 &6+" + (enchantLevel * (cn.charlotte.pit.reward.EconomyV2.active() ? 5 : 30)) + " 基础硬币") + "/s" + "&7以上金币或经验加成排除 Bot";
     }
 
     @Override
@@ -53,7 +53,7 @@ public class SierraEnchant extends AbstractEnchantment implements IPlayerKilledE
         Player targetPlayer = (Player) target;
         for (ItemStack itemStack : targetPlayer.getInventory().getArmorContents()) {
             if (itemStack != null && itemStack.getType().name().contains("DIAMOND")) {
-                coins.getAndAdd(30 * enchantLevel);
+                coins.getAndAdd((cn.charlotte.pit.reward.EconomyV2.active() ? 5 : 30) * enchantLevel);
             }
         }
     }

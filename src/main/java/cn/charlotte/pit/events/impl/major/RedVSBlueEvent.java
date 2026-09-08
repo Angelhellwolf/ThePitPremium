@@ -208,7 +208,7 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                 if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) {
                     enchantBoostLevel = 0;
                 }
-                if (enchantBoostLevel > 0) {
+                if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                     rewardCoins += 0.5 * enchantBoostLevel * rewardCoins;
                     rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown);
                     MythicLeggingsItem mythicLeggings = new MythicLeggingsItem();
@@ -233,7 +233,10 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                         }
                     }
                 }
-                rewardCoins = RewardService.grant(profile, RewardSource.EVENT, rewardCoins, 0).getCoins();
+                cn.charlotte.pit.reward.MajorEventRewards.Result payout = cn.charlotte.pit.reward.MajorEventRewards.settle(
+                        player, "red_vs_blue", rewardCoins, rewardRenown, integer == null ? Integer.MAX_VALUE : integer,
+                        map, win, enchantBoostLevel);
+                rewardCoins = payout.coins; rewardRenown = payout.renown;
                 profile.setRenown(profile.getRenown() + rewardRenown);
                 profile.kingsQuestsData.checkUpdate();
                 if (profile.kingsQuestsData.getAccepted()) {
@@ -400,6 +403,7 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
 
         kaMap.putIfAbsent(event.getKiller().getUniqueId(), 0);
         kaMap.put(event.getKiller().getUniqueId(), kaMap.get(event.getKiller().getUniqueId()) + 1);
+        cn.charlotte.pit.reward.MajorEventRewards.mark("red_vs_blue", event.getKiller());
     }
 
     @EventHandler
@@ -408,6 +412,7 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
         if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(event.getAssist())) return;
         kaMap.putIfAbsent(event.getAssist().getUniqueId(), 0);
         kaMap.put(event.getAssist().getUniqueId(), kaMap.get(event.getAssist().getUniqueId()) + 1);
+        cn.charlotte.pit.reward.MajorEventRewards.mark("red_vs_blue", event.getAssist());
     }
 
     @Override

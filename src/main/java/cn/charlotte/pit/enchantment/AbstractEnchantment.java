@@ -27,6 +27,9 @@ import java.util.Objects;
 
 @Getter
 public abstract class AbstractEnchantment {
+    public String getEconomyLore(int level) {
+        return cn.charlotte.pit.reward.EconomyLore.enchant(getNbtName(), getUsefulnessLore(level));
+    }
 
     public abstract String getEnchantName();
 

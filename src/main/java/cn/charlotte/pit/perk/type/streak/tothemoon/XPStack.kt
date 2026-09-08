@@ -78,7 +78,7 @@ class XPStack : AbstractPerk(), Listener {
     fun assist(event: PitKillEvent) {
         if (!event.isProgressionEligible) return
         val profile = PlayerProfile.getPlayerProfileByUuid(event.killer.uniqueId) ?: return
-        event.exp += profile.xpStackAddon
+        event.exp += profile.xpStackAddon * cn.charlotte.pit.reward.EconomyV2.sideScale(profile)
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

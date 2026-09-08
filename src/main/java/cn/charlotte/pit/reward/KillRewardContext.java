@@ -11,6 +11,59 @@ public final class KillRewardContext implements AutoCloseable {
     private final boolean bot;
     private boolean closed;
     private double previousStreak = Double.NaN;
+    private boolean v2Training;
+    private boolean v2Extras = true;
+    private double v2Units = 1;
+    private RewardModifiers modifiers;
+    private double candidateCoins = Double.NaN, candidateExperience = Double.NaN;
+
+    public static void candidate(double coins, double xp) {
+        KillRewardContext c = CURRENT.get();
+        if (c != null) { c.candidateCoins = coins; c.candidateExperience = xp; }
+    }
+    public static double[] candidate(UUID recipient) {
+        KillRewardContext c = CURRENT.get();
+        return c != null && c.recipient.equals(recipient) && Double.isFinite(c.candidateCoins)
+                ? new double[]{c.candidateCoins, c.candidateExperience} : null;
+    }
+
+    public static double candidateBonus(UUID recipient, RewardSource source) {
+        KillRewardContext c = CURRENT.get();
+        if (c != null && c.recipient.equals(recipient) && !c.v2Extras
+                && (source == RewardSource.PERK || source == RewardSource.ENCHANT || source == RewardSource.STREAK || source == RewardSource.LOOT)) return 0;
+        return bonusMultiplier(recipient, source);
+    }
+
+    public void setEconomy(double units, boolean training, boolean extras) {
+        v2Units = units; v2Training = training; v2Extras = extras;
+    }
+
+    public static boolean training(UUID recipient) {
+        KillRewardContext c = CURRENT.get();
+        return c != null && c.recipient.equals(recipient) && (c.bot || c.v2Training);
+    }
+
+    public static boolean extras(UUID recipient) {
+        KillRewardContext c = CURRENT.get();
+        return c == null || !c.recipient.equals(recipient) || c.v2Extras;
+    }
+
+    public static double units(UUID recipient) {
+        KillRewardContext c = CURRENT.get();
+        return c == null || !c.recipient.equals(recipient) ? 1 : c.v2Units;
+    }
+
+    public static RewardModifiers beginModifiers(UUID recipient, double base, double fixedGold, double fixedXp) {
+        KillRewardContext c = CURRENT.get();
+        if (c == null || !c.recipient.equals(recipient)) return null;
+        c.modifiers = new RewardModifiers(base, fixedGold, fixedXp);
+        return c.modifiers;
+    }
+
+    public static RewardModifiers modifiers() {
+        KillRewardContext c = CURRENT.get();
+        return c == null ? null : c.modifiers;
+    }
 
     public void setPreviousStreak(double streak) { previousStreak = streak; }
 
@@ -42,6 +95,7 @@ public final class KillRewardContext implements AutoCloseable {
         return () -> {
             try (KillRewardContext ignored = new KillRewardContext(captured.recipient, captured.multiplier, captured.bot)) {
                 ignored.previousStreak = captured.previousStreak;
+                ignored.setEconomy(captured.v2Units, captured.v2Training, captured.v2Extras);
                 reward.run();
             }
         };
@@ -60,6 +114,8 @@ public final class KillRewardContext implements AutoCloseable {
     public static double bonusMultiplier(UUID recipient, RewardSource source) {
         KillRewardContext context = CURRENT.get();
         if (context == null || !context.recipient.equals(recipient)) return 1;
+        if (EconomyV2.active() && !context.v2Extras && (source == RewardSource.PERK || source == RewardSource.ENCHANT
+                || source == RewardSource.STREAK || source == RewardSource.LOOT)) return 0;
         // KILL/ASSIST already include this policy in the aggregate receipt.
         // Mail, stored payouts, contracts, and unrelated event rewards keep their own provenance.
         return source == RewardSource.PERK || source == RewardSource.ENCHANT

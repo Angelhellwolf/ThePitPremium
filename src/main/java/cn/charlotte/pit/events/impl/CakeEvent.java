@@ -194,7 +194,11 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
                 block.getState().update();
 
                 // final double totalCoins = baseCoins + baseCoins * i * 0.25D;
-                final double totalCoins = RewardService.grant(profile, RewardSource.EVENT, baseCoins, 0).getCoins();
+                double v2Gold = (baseCoins == 6 ? 10 : 2) * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                RewardService.Receipt cakeReceipt = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                        cn.charlotte.pit.reward.RewardDetail.CAKE, baseCoins, 0, v2Gold, v2Gold * 4);
+                final double totalCoins = cakeReceipt.getCoins();
+                cakePlayerData.experience += cakeReceipt.getExperience();
 
                 cakePlayerData.clicked++;
                 cakePlayerData.coins += totalCoins;
@@ -208,7 +212,11 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
                 if (data == 2) {
                     block.setType(Material.AIR);
 
-                    double totalCoins = RewardService.grant(profile, RewardSource.EVENT, 20, 0).getCoins();
+                    double side = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                    RewardService.Receipt cherryReceipt = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                            cn.charlotte.pit.reward.RewardDetail.CAKE, 20, 0, 20 * side, 80 * side);
+                    double totalCoins = cherryReceipt.getCoins();
+                    cakePlayerData.experience += cherryReceipt.getExperience();
                     cakePlayerData.clicked++;
                     cakePlayerData.coins += totalCoins;
 
@@ -218,7 +226,11 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
                 } else if (data == 15) {
                     block.setType(Material.AIR);
 
-                    double totalXp = RewardService.grant(profile, RewardSource.EVENT, 0, 20).getExperience();
+                    double side = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                    RewardService.Receipt chocolateReceipt = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                            cn.charlotte.pit.reward.RewardDetail.CAKE, 0, 20, 5 * side, 160 * side);
+                    double totalXp = chocolateReceipt.getExperience();
+                    cakePlayerData.coins += chocolateReceipt.getCoins();
                     cakePlayerData.clicked++;
                     cakePlayerData.experience += totalXp;
 

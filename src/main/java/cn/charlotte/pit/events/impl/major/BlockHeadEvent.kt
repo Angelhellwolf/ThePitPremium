@@ -247,6 +247,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             val data = cache[player.uniqueId] ?: return
             locationToPlayer[location] = data.uuid
             data.gotBlocks.add(location)
+            cn.charlotte.pit.reward.MajorEventRewards.mark("block_head", player)
             data.block.let {
                 location.block.type = it
                 location.block.data = data.data.toByte()
@@ -542,7 +543,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             if (PlayerUtil.shouldIgnoreEnchant(player)) {
                 enchantBoostLevel = 0
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += (0.5 * enchantBoostLevel * rewardCoins).toInt()
                 rewardRenown += floor(0.5 * enchantBoostLevel * rewardRenown).toInt()
                 val mythicLeggings = MythicLeggingsItem()
@@ -569,7 +570,10 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             if (success) {
                 rewardCoins *= 2
             }
-            val creditedCoins = cn.charlotte.pit.reward.RewardService.grant(profile, cn.charlotte.pit.reward.RewardSource.EVENT, rewardCoins.toDouble(), 0.0).coins
+            val payout = cn.charlotte.pit.reward.MajorEventRewards.settle(player, "block_head", rewardCoins.toDouble(),
+                rewardRenown, integer, rank.mapValues { it.value + 1 }, success, enchantBoostLevel)
+            val creditedCoins = payout.coins
+            rewardRenown = payout.renown
             profile.renown = profile.renown + rewardRenown
 
 

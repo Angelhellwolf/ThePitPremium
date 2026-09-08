@@ -61,6 +61,7 @@ public final class SupporterProductButton extends Button {
             lore.add("&7改名免费额度：每日 " + config.getRenameDailyFreeLimit() + " / 每周 " + config.getRenameWeeklyFreeLimit());
             lore.add("&7超额改名：&d" + config.getRenameExtraCost() + " 点券/次");
             lore.add("&7军需处：可接受圣契邀请，以访客进入");
+            if (cn.charlotte.pit.reward.EconomyV2.active()) lore.add("&7三套构筑预设与个人成长记录");
         } else {
             lore.add("&7神话掉落：" + enhancement(product));
             lore.add("&7稀有附魔：" + enhancement(product));
@@ -69,6 +70,10 @@ public final class SupporterProductButton extends Button {
             if (product == SupporterProduct.SACRED) {
                 lore.add("&7十名训练战魂，可发送圣契邀请函");
             } else lore.add("&7五名训练战魂，可设置练习参数");
+            if (cn.charlotte.pit.reward.EconomyV2.active()) {
+                lore.add("&7构筑与训练预设：" + (product == SupporterProduct.SACRED ? "12" : "6") + " 套");
+                lore.add("&7训练成长记录：最近 " + (product == SupporterProduct.SACRED ? "30" : "7") + " 天");
+            }
             lore.add("&7购买前提：&e已拥有天坑·会员");
             lore.add("&7两种契约择一生效，到期保留赞助者。");
         }

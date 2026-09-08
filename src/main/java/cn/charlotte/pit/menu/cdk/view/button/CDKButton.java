@@ -97,6 +97,7 @@ public class CDKButton extends Button {
             final Mail mail = new Mail();
             mail.setExpireTime(System.currentTimeMillis() + 30 * 24 * 60 * 60 * 1000L);
             mail.setCoins(data.getCoins());
+            mail.setRewardOrigin("gameplay");
             mail.setExp(data.getExp());
             mail.setRenown(data.getRenown());
             mail.setItem(data.getItem());

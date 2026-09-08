@@ -33,6 +33,12 @@ public class FishingHandler implements Listener {
         if (event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
             if (event.getCaught() == null || event.getCaught().hasMetadata("pit_fishing_processed")) return;
             event.getCaught().setMetadata("pit_fishing_processed", new FixedMetadataValue(ThePit.getInstance(), true));
+            if (cn.charlotte.pit.reward.EconomyV2.active() || cn.charlotte.pit.reward.EconomyV2.observing()) {
+                PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId());
+                double side = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.FISH_CATCH,
+                        0, 0, 10 * side, 40 * side);
+            }
             event.setExpToDrop(0);
             event.getCaught().remove();
 

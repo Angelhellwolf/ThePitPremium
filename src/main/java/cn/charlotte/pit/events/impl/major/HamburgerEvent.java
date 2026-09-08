@@ -1126,7 +1126,7 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
             if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) {
                 enchantBoostLevel = 0;
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += 0.5 * enchantBoostLevel * rewardCoins;
                 rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown);
                 MythicLeggingsItem mythicLeggings = new MythicLeggingsItem();
@@ -1149,7 +1149,9 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                     rewardCoins += 1000;
                 }
             }
-            rewardCoins = RewardService.grant(profile, RewardSource.EVENT, rewardCoins, 0).getCoins();
+            cn.charlotte.pit.reward.MajorEventRewards.Result payout = cn.charlotte.pit.reward.MajorEventRewards.settle(
+                    player, "ham", rewardCoins, rewardRenown, rank, rankMap, done >= 600, enchantBoostLevel);
+            rewardCoins = payout.coins; rewardRenown = payout.renown;
             profile.setRenown(profile.getRenown() + rewardRenown);
             profile.kingsQuestsData.checkUpdate();
             if (profile.kingsQuestsData.getAccepted()) {
@@ -1283,6 +1285,7 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
 
                     final PizzaData playerData = pizzaDataMap.get(player.getUniqueId());
                     playerData.money += deliveryVillager.coins;
+                    cn.charlotte.pit.reward.MajorEventRewards.mark("ham", player);
                     playerData.hamburger--;
                     playerData.hamOrdered++;
 
@@ -1303,6 +1306,7 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                 }
 
                 data.paidMoney += data.money;
+                cn.charlotte.pit.reward.MajorEventRewards.mark("ham", player);
 
                 CC.send(MessageType.EVENT, player, "&a&l订单交付! &7你已将手持价值 &6" + data.money + "$ &7的订单成功交付!");
 

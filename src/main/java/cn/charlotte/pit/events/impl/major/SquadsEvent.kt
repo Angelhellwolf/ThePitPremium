@@ -224,7 +224,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
             if (PlayerUtil.shouldIgnoreEnchant(player)) {
                 enchantBoostLevel = 0
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += 0.5 * enchantBoostLevel * rewardCoins
                 rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown).toInt()
                 val mythicLeggings = MythicLeggingsItem()
@@ -247,7 +247,10 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
                     rewardCoins += 1000.0
                 }
             }
-            rewardCoins = cn.charlotte.pit.reward.RewardService.grant(profile, cn.charlotte.pit.reward.RewardSource.EVENT, rewardCoins, 0.0).coins
+            val payout = cn.charlotte.pit.reward.MajorEventRewards.settle(player, "squads", rewardCoins, rewardRenown,
+                rank, teamMap.mapValues { it.value.rank }, false, enchantBoostLevel)
+            rewardCoins = payout.coins
+            rewardRenown = payout.renown
             profile.renown = profile.renown + rewardRenown
             player.sendMessage(CC.translate("&6你的奖励: &6+" + rewardCoins + "硬币 &e+" + rewardRenown + "声望"))
             if (rank > 0) {
@@ -310,6 +313,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
         val killer = event.killer
         val data = teamMap[killer.uniqueId] ?: return
         data.score += 25
+        cn.charlotte.pit.reward.MajorEventRewards.mark("squads", killer)
 
         killer.sendMessage(CC.translate("&b&l击杀! &7您通过击杀获得了 &b25积分&7 !"))
     }

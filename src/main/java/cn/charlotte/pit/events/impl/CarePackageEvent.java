@@ -182,7 +182,10 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
 
             for (int i = 0; i < RandomUtil.random.nextInt(3) + 3; i++) {
                 if (items.get(i) == null) {
-                    items.put(i, (ItemStack) RandomUtil.helpMeToChooseOne(new ItemBuilder(Material.EXP_BOTTLE).name("&b+1000经验值").internalName("xp_reward").shiny().build(), new ItemBuilder(Material.GOLD_INGOT).name("&6+1000硬币").internalName("coin_reward").shiny().build()));
+                    items.put(i, (ItemStack) RandomUtil.helpMeToChooseOne(new ItemBuilder(Material.EXP_BOTTLE)
+                            .name(cn.charlotte.pit.reward.EconomyV2.active() ? "&b+4000经验值" : "&b+1000经验值")
+                            .internalName(cn.charlotte.pit.reward.EconomyV2.active() ? "xp_reward_v2" : "xp_reward").shiny().build(),
+                            new ItemBuilder(Material.GOLD_INGOT).name("&6+1000硬币").internalName("coin_reward").shiny().build()));
                 }
             }
 

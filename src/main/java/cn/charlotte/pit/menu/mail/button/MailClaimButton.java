@@ -186,6 +186,7 @@ public class MailClaimButton extends Button {
         double experienceBefore = profile.getExperience();
         double grindedCoinsBefore = profile.getGrindedCoins();
         int renownBefore = profile.getRenown();
+        cn.charlotte.pit.data.sub.EconomyData economyBefore = cn.charlotte.pit.reward.EconomyV2.active() ? profile.getEconomyData().copy() : null;
         try {
             for (ItemStack content : attachments()) {
                 if (content != null && content.getType() != Material.AIR
@@ -194,14 +195,21 @@ public class MailClaimButton extends Button {
                 }
             }
             profile.setRenown(profile.getRenown() + mail.getRenown());
-            RewardService.grant(profile, RewardSource.MAIL, mail.getCoins(), mail.getExp());
+            if (cn.charlotte.pit.reward.EconomyV2.active()) {
+                cn.charlotte.pit.reward.RewardDetail detail = "gameplay".equals(mail.getRewardOrigin())
+                        ? cn.charlotte.pit.reward.RewardDetail.MAIL_REWARD
+                        : "refund".equals(mail.getRewardOrigin()) ? cn.charlotte.pit.reward.RewardDetail.REFUND
+                        : cn.charlotte.pit.reward.RewardDetail.MAIL_LEGACY;
+                cn.charlotte.pit.reward.EconomyV2.grant(profile, detail, mail.getCoins(), mail.getExp(), mail.getCoins(), mail.getExp());
+            } else RewardService.grant(profile, RewardSource.MAIL, mail.getCoins(), mail.getExp());
         } catch (RuntimeException exception) {
             player.getInventory().setContents(inventoryBefore.getContents());
             player.getInventory().setArmorContents(inventoryBefore.getArmorContents());
-            profile.setCoins(coinsBefore);
+            cn.charlotte.pit.reward.CoinLedger.set(profile, coinsBefore, cn.charlotte.pit.reward.CoinLedger.Flow.ROLLBACK, "mail_rollback");
             profile.setExperience(experienceBefore);
             profile.setGrindedCoins(grindedCoinsBefore);
             profile.setRenown(renownBefore);
+            if (economyBefore != null) profile.setEconomyData(economyBefore);
             profile.applyExperienceToPlayer(player);
             throw exception;
         }

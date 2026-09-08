@@ -43,17 +43,17 @@ public class BoostButton extends Button {
                 break;
             }
         }
-        lore.addAll(perk.getDescription(player));
+        lore.addAll(perk.getEconomyDescription(player));
         lore.add(" ");
         if (level >= 5) {
             lore.add("&c此加成等级已达到上限!");
         } else {
 
             if (perk.getInternalPerkName().equals("XPBoost")) {
-                price = new int[]{500, 1000, 2500, 10000, 25000};
+                price = cn.charlotte.pit.reward.EconomyV2.active() ? new int[]{500, 1000, 2500, 5000, 10000} : new int[]{500, 1000, 2500, 10000, 25000};
             }
             if (perk.getInternalPerkName().equals("CoinBoost")) {
-                price = new int[]{1000, 2500, 10000, 25000, 40000};
+                price = cn.charlotte.pit.reward.EconomyV2.active() ? new int[]{500, 1000, 2500, 5000, 10000} : new int[]{1000, 2500, 10000, 25000, 40000};
             }
             if (perk.getInternalPerkName().equals("MeleeBoost") || perk.getInternalPerkName().equals("ArrowBoost") || perk.getInternalPerkName().equals("DmgReduceBoost")) {
                 price = new int[]{450, 1050, 1500, 2250, 3000};
@@ -93,10 +93,10 @@ public class BoostButton extends Button {
         }
         if (level < 5) {
             if (perk.getInternalPerkName().equals("XPBoost")) {
-                price = new int[]{500, 1000, 2500, 10000, 25000};
+                price = cn.charlotte.pit.reward.EconomyV2.active() ? new int[]{500, 1000, 2500, 5000, 10000} : new int[]{500, 1000, 2500, 10000, 25000};
             }
             if (perk.getInternalPerkName().equals("CoinBoost")) {
-                price = new int[]{1000, 2500, 10000, 25000, 40000};
+                price = cn.charlotte.pit.reward.EconomyV2.active() ? new int[]{500, 1000, 2500, 5000, 10000} : new int[]{1000, 2500, 10000, 25000, 40000};
             }
             if (perk.getInternalPerkName().equals("MeleeBoost") || perk.getInternalPerkName().equals("ArrowBoost") || perk.getInternalPerkName().equals("DmgReduceBoost")) {
                 price = new int[]{450, 1050, 1500, 2250, 3000};
@@ -113,7 +113,8 @@ public class BoostButton extends Button {
             if (price.length >= level + 1) {
                 if (price[level] <= profile.getCoins()) {
                     profile.getChosePerk().put(page, new PerkData(perk.getInternalPerkName(), level + 1));
-                    profile.setCoins(profile.getCoins() - price[level]);
+                    cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - price[level],
+                            cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "boost." + perk.getInternalPerkName());
                     player.sendMessage(CC.translate("&a&l升级成功! &7成功升级加成 &a" + perk.getDisplayName() + " &7至等级 &b" + RomanUtil.convert(level + 1) + " &7."));
                 }
             }

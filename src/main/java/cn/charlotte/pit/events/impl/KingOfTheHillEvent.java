@@ -116,9 +116,19 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
     public void onKill(PitKillEvent event) {
         if (!event.isProgressionEligible() || !event.isHumanPvp()) return;
         if (isActive && isRegion(event.getKiller())) {
-            event.setCoins(event.getCoins() * 4);
-            event.setExp(event.getExp() * 4);
-            event.setHillMultiplier(4.0);
+            if (cn.charlotte.pit.reward.EconomyV2.active()) {
+                if (!cn.charlotte.pit.reward.KillRewardContext.extras(event.getKiller().getUniqueId())) return;
+                double base = cn.charlotte.pit.reward.ProgressionV2.base(
+                        cn.charlotte.pit.data.PlayerProfile.getPlayerProfileByUuid(event.getKiller().getUniqueId()).getPrestige())
+                        * cn.charlotte.pit.listener.CombatListener.eventBoost;
+                event.setCoins(event.getCoins() + base);
+                event.setExp(event.getExp() + base);
+                event.setHillMultiplier(2.0);
+            } else {
+                event.setCoins(event.getCoins() * 4);
+                event.setExp(event.getExp() * 4);
+                event.setHillMultiplier(4.0);
+            }
         }
     }
 

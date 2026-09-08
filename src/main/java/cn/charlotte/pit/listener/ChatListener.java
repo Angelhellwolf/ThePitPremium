@@ -95,6 +95,8 @@ public class ChatListener implements Listener {
                         + (player.hasPermission("thepit.admin") ? CC.translate("%s") : "%s")));
             }
         }
+        if (cn.charlotte.pit.reward.EconomyV2.active())
+            event.setFormat(CC.translate(cn.charlotte.pit.reward.GrowthProgress.badge(profile)) + event.getFormat());
     }
 
 }

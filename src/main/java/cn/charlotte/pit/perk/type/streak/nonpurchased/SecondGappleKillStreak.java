@@ -107,7 +107,7 @@ public class SecondGappleKillStreak extends AbstractPerk implements Listener {
         //trigger check (every X streak)
         int streak = 3;
         if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
-            RewardService.grant(profile, RewardSource.STREAK, 5, 5);
+            cn.charlotte.pit.reward.EconomyV2.streak(profile, 3, 5, 5);
             if (PlayerUtil.getAmountOfActiveHealingPerk(myself) <= 1 && PlayerUtil.getPlayerHealItemAmount(myself) < PlayerUtil.getPlayerHealItemLimit(myself)) {
                 myself.getInventory().addItem(new ItemBuilder(Material.GOLDEN_APPLE).canDrop(false).canSaveToEnderChest(false).deathDrop(true)
                         .removeOnJoin(true)

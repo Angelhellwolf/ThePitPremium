@@ -13,6 +13,8 @@ public final class HitRewardRules {
         if (!(target instanceof Player) || attacker == null || attacker.getUniqueId().equals(target.getUniqueId())
                 || !Double.isFinite(damage) || damage <= 0 || cancelled.get()) return false;
         PlayerProfile victim = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
-        return victim != null && victim.isLoaded() && !victim.isBot();
+        return victim != null && victim.isLoaded() && !victim.isBot()
+                && (!EconomyV2.active() || CombatEconomy.allowExtras(PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()),
+                    victim, System.currentTimeMillis(), false));
     }
 }

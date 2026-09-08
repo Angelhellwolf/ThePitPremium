@@ -43,12 +43,15 @@ public class ItemButton extends DisplayButton {
         ItemStack itemStack = PackageMenu.getItems().remove(slot);
         if (itemStack != null) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-            if ("xp_reward".equals(ItemUtil.getInternalName(itemStack))) {
-                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.LOOT, 0, 1000);
+            if ("xp_reward".equals(ItemUtil.getInternalName(itemStack)) || "xp_reward_v2".equals(ItemUtil.getInternalName(itemStack))) {
+                double face = "xp_reward_v2".equals(ItemUtil.getInternalName(itemStack)) ? 4000 : 1000;
+                RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                        cn.charlotte.pit.reward.RewardDetail.AIRDROP, 0, face, 0, face);
 
                 player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&6&l空投! &7你从空投箱中找到了 &b%.2f &7经验", reward.getExperience())));
             } else if ("coin_reward".equals(ItemUtil.getInternalName(itemStack))) {
-                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.LOOT, 1000, 0);
+                RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                        cn.charlotte.pit.reward.RewardDetail.AIRDROP, 1000, 0, 1000, 0);
                 player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&6&l空投! &7你从空投箱中找到了 &6%.2f &7硬币", reward.getCoins())));
             } else if ("renown_reward".equals(ItemUtil.getInternalName(itemStack))) {
                 profile.setRenown(profile.getRenown() + 2);

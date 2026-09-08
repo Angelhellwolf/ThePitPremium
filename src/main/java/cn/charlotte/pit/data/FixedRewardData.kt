@@ -38,6 +38,7 @@ class FixedRewardData() {
                         if (profile.prestige > 0 || profile.level > data.data?.limitLevel!!) {
                             val mail = Mail()
                             mail.coins = info.coins
+                            mail.rewardOrigin = "gameplay"
                             mail.exp = info.exp
                             mail.renown = info.renown
                             mail.item = info.item

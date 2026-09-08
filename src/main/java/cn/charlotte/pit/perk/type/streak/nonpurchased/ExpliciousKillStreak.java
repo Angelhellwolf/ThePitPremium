@@ -104,7 +104,7 @@ public class ExpliciousKillStreak extends AbstractPerk implements Listener {
         //trigger check (every X streak)
         int streak = 3;
         if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
-            RewardService.grant(profile, RewardSource.STREAK, 0, 12);
+            cn.charlotte.pit.reward.EconomyV2.streak(profile, 3, 0, 12);
         }
     }
 

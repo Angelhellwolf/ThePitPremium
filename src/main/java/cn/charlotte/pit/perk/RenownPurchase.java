@@ -14,8 +14,9 @@ public final class RenownPurchase {
         if (!profile.isLoaded() || profile.getPrestige() < perk.requirePrestige()) return false;
         if (perk instanceof PrestigePrerequisite && !((PrestigePrerequisite) perk).hasUnlockedRequirement(profile)) return false;
         PerkData current = profile.getUnlockedPerkMap().get(perk.getInternalPerkName());
+        if (perk.getMaxLevel() == 0 && current != null) return false;
         int next = current == null ? 1 : current.getLevel() + 1;
-        if (next > perk.getMaxLevel()) return false;
+        if (next > Math.max(1, perk.getMaxLevel())) return false;
         double quoted = perk.requireRenown(next);
         if (!Double.isFinite(quoted) || quoted < 0 || quoted > Integer.MAX_VALUE) return false;
         int price = (int) quoted;

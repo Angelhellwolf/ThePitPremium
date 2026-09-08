@@ -83,6 +83,16 @@ public abstract class NPCBase implements NPC, NPCPacketHandler {
     @Override
     public NPC setText(Player player, List<String> text) {
         Validate.notNull(player, "Player cannot be null.");
+        // Packet-only teams can disappear when another renderer replaces the
+        // viewer's scoreboard. Keep the profile name hidden on that real board,
+        // including when the hologram's cached text did not change.
+        org.bukkit.scoreboard.Scoreboard board = player.getScoreboard();
+        String hiddenTeamName = "pitn_" + name;
+        org.bukkit.scoreboard.Team hiddenTeam = board.getTeam(hiddenTeamName);
+        if (hiddenTeam == null) hiddenTeam = board.registerNewTeam(hiddenTeamName);
+        if (hiddenTeam.getNameTagVisibility() != org.bukkit.scoreboard.NameTagVisibility.NEVER)
+            hiddenTeam.setNameTagVisibility(org.bukkit.scoreboard.NameTagVisibility.NEVER);
+        if (!hiddenTeam.hasEntry(name)) hiddenTeam.addEntry(name);
         UUID playerId = player.getUniqueId();
         List<String> originalText = getText(player);
 

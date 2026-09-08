@@ -334,7 +334,8 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                             if (player != null && player.isOnline()) {
                                 //if player is online,give back coins to the profile
                                 PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(uuid);
-                                profile.setCoins(profile.getCoins() + getHighestBidHistory(uuid).getCoins());
+                                cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() + getHighestBidHistory(uuid).getCoins(),
+                                        cn.charlotte.pit.reward.CoinLedger.Flow.REFUND, "auction_cancel");
                                 player.sendMessage(CC.translate(prefix + "你参与竞拍的 &6" + String.format(Locale.ROOT, "%.2f", getHighestBidHistory(uuid).getCoins()) + " 硬币 &7已退还至账户中."));
                             } else {
                                 //send mail to give back coins if player is offline
@@ -342,6 +343,7 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                                 mail.setExpireTime(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L);
                                 mail.setSendTime(System.currentTimeMillis());
                                 mail.setCoins(getHighestBidHistory(uuid).getCoins());
+                                mail.setRewardOrigin("refund");
                                 mail.setTitle("&e【拍卖行】 竞拍硬币退还");
                                 mail.setContent("&f你在 " + dateFormat.format(System.currentTimeMillis()) + " 参与的拍卖被取消, \\n&f于当时投入的硬币现已退还.");
                                 sendMail(uuid, mail);
@@ -354,6 +356,7 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
         if (getHighestBidHistory() != null) {
             BidHistory highestBid = getHighestBidHistory();
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(highestBid.getUuid());
+            cn.charlotte.pit.reward.CoinLedger.escrowSpent(profile, highestBid.getCoins(), "auction_winner");
             new HighestBidMedal().addProgress(profile, 1);
             CC.boardCast(prefix + "恭喜 " + profile.getFormattedName() + " &7以 &6" + (int) highestBid.getCoins() + " 硬币 &7的价格买下了 " + (lots.getIcon().getAmount() > 1 ? "&f" + lots.getIcon().getAmount() + "x " : "") + (lots.getIcon().getItemMeta().getDisplayName() == null ? "&f" + lots.getIcon().getType().toString() : lots.getIcon().getItemMeta().getDisplayName()) + " &7!");
             getParticipants().forEach(uuid -> {
@@ -375,10 +378,12 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                         } else if (getHighestBidHistory(uuid) != null) {
                             if (player != null && player.isOnline()) {
                                 PlayerProfile participantProfile = PlayerProfile.getPlayerProfileByUuid(uuid);
-                                participantProfile.setCoins(participantProfile.getCoins() + getHighestBidHistory(uuid).getCoins());
+                                cn.charlotte.pit.reward.CoinLedger.set(participantProfile, participantProfile.getCoins() + getHighestBidHistory(uuid).getCoins(),
+                                        cn.charlotte.pit.reward.CoinLedger.Flow.REFUND, "auction_lost");
                                 player.sendMessage(CC.translate(prefix + "参与竞拍的 &6" + String.format(Locale.ROOT, "%.2f", getHighestBidHistory(uuid).getCoins()) + " 硬币 &7已直接退还到您的账户当中."));
                             } else {
                                 mail.setCoins(getHighestBidHistory(uuid).getCoins());
+                                mail.setRewardOrigin("refund");
                                 mail.setTitle("&e【拍卖行】 竞拍硬币退还");
                                 mail.setContent("&f你在 " + dateFormat.format(System.currentTimeMillis()) + " 参与的拍卖中未能拍下物品. \\n&f于当时投入的硬币现已退还.");
                                 sendMail(uuid, mail);
@@ -669,7 +674,8 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                 //if player has enough coins
                 //if player pay not enough coins with no-fast-bid way , cancel it
                 if (profile.getCoins() >= Math.max(paidCoins, price)) {
-                    profile.setCoins(profile.getCoins() - Math.max(paidCoins, price));
+                    cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - Math.max(paidCoins, price),
+                            cn.charlotte.pit.reward.CoinLedger.Flow.ESCROW, "auction_bid");
                     bidHistories.add(new BidHistory(profile.getPlayerUuid(), System.currentTimeMillis(), Math.max(paidCoins, price)));
                     StringBuilder alert = new StringBuilder(prefix);
                     alert.append("玩家 ")
@@ -690,7 +696,8 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
             } else { //if player has bid before
                 BidHistory playerHighestBid = getHighestBidHistory(profile.getPlayerUuid());
                 if (profile.getCoins() + playerHighestBid.getCoins() >= Math.max(paidCoins, price)) {
-                    profile.setCoins(profile.getCoins() - (Math.max(paidCoins, price) - playerHighestBid.getCoins()));
+                    cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - (Math.max(paidCoins, price) - playerHighestBid.getCoins()),
+                            cn.charlotte.pit.reward.CoinLedger.Flow.ESCROW, "auction_raise");
                     bidHistories.add(new BidHistory(profile.getPlayerUuid(), System.currentTimeMillis(), Math.max(paidCoins, price)));
                     StringBuilder alert = new StringBuilder(prefix);
                     alert.append("玩家 ")

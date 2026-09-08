@@ -87,9 +87,13 @@ public abstract class AbstractQuest {
         if (questData == null || profile.getCurrentQuest() != questData || questData.getCurrent() < questData.getTotal()) return;
 
         int level = questData.getLevel();
+        double progressionScale = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
         if (QuestRules.isNight(profile, questData)) {
-            RewardService.Receipt reward = RewardService.grant(profile, RewardSource.QUEST, 0, level * 250);
+            RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                    cn.charlotte.pit.reward.RewardDetail.NIGHT_QUEST, 0, level * 250,
+                    level * 100 * QuestRules.coinMultiplier(player) * progressionScale, level * 800 * progressionScale);
             player.sendMessage(CC.translate("&7奖励已交付:"));
+            if (reward.getCoins() > 0) player.sendMessage(CC.translate(" &8+ &6" + reward.getCoins() + " &7硬币"));
             player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, " &8+ &b%.2f &7天坑乱斗经验值", reward.getExperience())));
             if (level > 1) {
                 player.getInventory().addItem(ThePit.api.generateItem("ChunkOfVileItem"));
@@ -99,7 +103,9 @@ public abstract class AbstractQuest {
         } else {
             double coinBonus = QuestRules.coinMultiplier(player);
             int coins = (int) (level * 100 * coinBonus);
-            RewardService.Receipt reward = RewardService.grant(profile, RewardSource.QUEST, coins, level * 40);
+            RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                    cn.charlotte.pit.reward.RewardDetail.DAY_QUEST, coins, level * 40,
+                    level * 150 * coinBonus * progressionScale, level * 600 * progressionScale);
             profile.setActionBounty(profile.getActionBounty() + 5 * level);
 
 

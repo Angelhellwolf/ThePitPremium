@@ -97,6 +97,7 @@ public class CombatSettlementTest {
 
     @After
     public void tearDown() {
+        cn.charlotte.pit.reward.EconomyV2.setMode(cn.charlotte.pit.reward.EconomyV2.Mode.OFF);
         for (UUID uuid : profiles) PlayerProfile.getCacheProfile().remove(uuid);
         CombatListener.INSTANCE = previousCombat;
         CombatListener.eventBoost = previousBoost;
@@ -536,6 +537,55 @@ public class CombatSettlementTest {
         profiles.add(profile.getPlayerUuid());
         PlayerProfile.getCacheProfile().put(profile.getPlayerUuid(), profile);
         return profile;
+    }
+
+    @Test public void v2BotNormalizationRunsThroughActualCombatSettlementAndIgnoresInjectedBonuses() {
+        chat.when(() -> CC.printError(any(Player.class), any(Exception.class))).thenAnswer(call -> {
+            throw new AssertionError("Settlement failed", (Exception) call.getArgument(1));
+        });
+        for (double health : new double[]{1, 20, 200}) {
+            PlayerProfile recipient = profile(), victimProfile = profile(); victimProfile.setBot(true);
+            recipient.getEconomyData().version = 2; recipient.getEconomyData().newcomerMilestones = 15;
+            victimProfile.getEconomyData().version = 2;
+            victimProfile.getEconomyData().botRewardFactor = .94;
+            cn.charlotte.pit.reward.EconomyV2.setMode(cn.charlotte.pit.reward.EconomyV2.Mode.ACTIVE);
+            Player killer = player(recipient.getPlayerUuid());
+            LivingEntity victim = EconomyEntityFixture.entity(victimProfile.getPlayerUuid(), health);
+            cn.charlotte.pit.data.sub.DamageData damage = mock(cn.charlotte.pit.data.sub.DamageData.class);
+            when(damage.getDamage()).thenReturn(health); when(damage.getTimer()).thenReturn(new cn.charlotte.pit.util.cooldown.Cooldown(30000));
+            victimProfile.getDamageMap().put(killer.getUniqueId(), damage);
+            doAnswer(call -> {
+                Event e = call.getArgument(0);
+                if (e instanceof PitKillEvent) { ((PitKillEvent) e).setCoins(99999); ((PitKillEvent) e).setExp(99999); }
+                return null;
+            }).when(pluginManager).callEvent(any(Event.class));
+            double before = recipient.getCoins();
+            combat.handleKill(killer, recipient, victim, victimProfile);
+            double units = Math.min(1, health / 20);
+            assertEquals(5 * units * .94, recipient.getCoins() - before, 1e-6);
+            assertEquals(20 * units * .94, recipient.getExperience(), 1e-6);
+            assertEquals(5 * units * .94, recipient.getEconomyData().lifeBaseCoins, 1e-6);
+        }
+    }
+
+    @Test public void shadowBotSettlementRetainsLegacyMoneyAndStoresItsQuotaSeparately() {
+        chat.when(() -> CC.printError(any(Player.class), any(Exception.class))).thenAnswer(call -> {
+            throw new AssertionError("Settlement failed", (Exception) call.getArgument(1));
+        });
+        PlayerProfile recipient = profile(), victimProfile = profile(); victimProfile.setBot(true);
+        cn.charlotte.pit.reward.EconomyV2.setMode(cn.charlotte.pit.reward.EconomyV2.Mode.SHADOW);
+        cn.charlotte.pit.reward.CombatEconomy.state(victimProfile).botRewardFactor = .94;
+        Player killer = player(recipient.getPlayerUuid());
+        LivingEntity victim = EconomyEntityFixture.entity(victimProfile.getPlayerUuid(), 1);
+        cn.charlotte.pit.data.sub.DamageData damage = mock(cn.charlotte.pit.data.sub.DamageData.class);
+        when(damage.getDamage()).thenReturn(1.0); when(damage.getTimer()).thenReturn(new cn.charlotte.pit.util.cooldown.Cooldown(30000));
+        victimProfile.getDamageMap().put(killer.getUniqueId(), damage);
+        double before = recipient.getCoins();
+        combat.handleKill(killer, recipient, victim, victimProfile);
+        assertEquals(5, recipient.getCoins() - before, 1e-6); assertEquals(5, recipient.getExperience(), 1e-6);
+        assertEquals(0, recipient.getEconomyData().version); assertEquals(30, recipient.getEconomyData().trainingFull, 0);
+        assertEquals(29.95, cn.charlotte.pit.reward.CombatEconomy.state(recipient).trainingFull, 1e-6);
+        assertEquals(.25 * .94, cn.charlotte.pit.reward.CombatEconomy.state(recipient).lifeBaseCoins, 1e-6);
     }
 
     private Player player(UUID uuid) {

@@ -82,6 +82,11 @@ public final class PitBotManager implements Listener {
 
     public void start() {
         if (started) return;
+        if (!isPublicEnabled()) {
+            if (Bukkit.getPluginManager().isPluginEnabled("Citizens")) cleanupOwnedNpcs();
+            plugin.getLogger().info("PUBLIC_PLAYERS enabled=false spawned=0 privateTraining=independent");
+            return;
+        }
         if (!Bukkit.getPluginManager().isPluginEnabled("Citizens")) {
             plugin.getLogger().severe("[公共模拟玩家] Citizens 未启用。");
             return;
@@ -175,6 +180,7 @@ public final class PitBotManager implements Listener {
 
     public boolean isBot(Entity entity) { return entity != null && (identities.containsKey(entity.getUniqueId()) || junxuBots != null && junxuBots.isBot(entity)); }
     public boolean isReady() { return started && ready; }
+    public boolean isPublicEnabled() { return plugin.getConfig().getBoolean("public-simulated-players.enabled", false); }
 
     public boolean ownsProfile(PlayerProfile profile) {
         if (profile == null) return false;
@@ -613,7 +619,7 @@ public final class PitBotManager implements Listener {
     }
     public List<String> diagnostics() {
         List<String> lines = new ArrayList<>();
-        lines.add("PUBLIC_PLAYERS ready=" + isReady() + " identities=" + players.size() + " spawned=" + countOwnedSpawned() + " cap=3"
+        lines.add("PUBLIC_PLAYERS enabled=" + isPublicEnabled() + " ready=" + isReady() + " identities=" + players.size() + " spawned=" + countOwnedSpawned() + " cap=3"
                 + " nametagRenderer="+publicNametags.status()
                 + " meanMicros=" + (samples == 0 ? 0 : tickNanos / samples / 1000) + " peakMicros=" + peakNanos / 1000);
         for (PublicPlayerState state : players) lines.add("PUBLIC_SLOT name=" + state.identity.name + " uuid=" + state.identity.uuid

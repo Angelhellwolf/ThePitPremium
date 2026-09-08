@@ -42,7 +42,7 @@ public abstract class AbstractPitItem {
                 + (entry.getKey().getRarity() == EnchantmentRarity.DISABLED || entry.getKey().getRarity() == EnchantmentRarity.REMOVED ? "&m" : "")
                 + entry.getKey().getEnchantName() + " " + (entry.getValue() >= 2 ? RomanUtil.convert(entry.getValue()) : "") + "&r");
         if (entries.size() < 6) {
-            String[] split = entry.getKey().getUsefulnessLore(entry.getValue()).split("/s");
+            String[] split = entry.getKey().getEconomyLore(entry.getValue()).split("/s");
             if (entry.getKey().getRarity() != EnchantmentRarity.REMOVED) {
                 for (String s : split) {
                     lore.add("&7" + s);

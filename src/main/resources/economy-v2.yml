@@ -1,0 +1,22 @@
+# Values are interpreted by the versioned v2 rule registry, not mixed into legacy custom.yml.
+# SHADOW leaves live v1 rewards and profiles unchanged while recording v2 comparisons.
+mode: SHADOW
+required-game-database: thePit_economy_v2_20260908
+required-commerce-scope: thePit
+maximum-prestige: 50
+reference-hours-to-p50: 2000
+shadow-started-at: 0
+shadow-minimum-days: 7
+experience-reserve-fraction: 0.10
+training:
+  # One mean-preserving draw per defeated bot, shared by coins, XP and assists.
+  reward-variation: 0.10
+  full-units-per-minute: 10
+  full-capacity: 30
+  buffer-units-per-minute: 5
+  buffer-capacity: 15
+  buffer-multiplier: 0.25
+  overflow-multiplier: 0.02
+growth:
+  honor-experience-per-level: 100000
+  weekly-carry-weeks: 2

@@ -285,7 +285,14 @@ public class PlayerListener implements Listener {
                         (((org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.min(heart + 2, 8));
                     }
                 }
-                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.LOOT, gold, 0);
+                double v2Base = 5 + Math.floorMod(event.getItem().getEntityId(), 4);
+                double originalBase = event.getItem().getMetadata("gold").get(0).asInt();
+                double side = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                boolean nano = event.getItem().hasMetadata("pit_nano_human_ratio");
+                double ratio = nano ? event.getItem().getMetadata("pit_nano_human_ratio").get(0).asDouble() : 1;
+                RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                        nano ? cn.charlotte.pit.reward.RewardDetail.NANO : cn.charlotte.pit.reward.RewardDetail.GROUND_GOLD, gold, 0,
+                        (v2Base + gold - originalBase) * side * ratio, v2Base * 4 * side * ratio);
 
                 profile.setGoldPicked(profile.getGoldPicked() + 1);
                 player.sendMessage(CC.translate("&6&l捡起硬币! &7从地上找到了&6 " + numFormat.format(reward.getCoins()) + " &7硬币!"));
@@ -636,7 +643,7 @@ public class PlayerListener implements Listener {
                     if (shares[i] <= 0) continue;
                     Player player = recipients.get(i);
                     PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-                    profile.setCoins(profile.getCoins() + shares[i]);
+                    cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() + shares[i], cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "red_packet");
                     player.sendMessage(CC.translate("&c&l红包! &7来自 &6" + sender.getPlayerName() + " &6+" + shares[i]
                             + " 硬币 &7(" + numFormat.format(100.0 * shares[i] / money) + "%)"));
                 }

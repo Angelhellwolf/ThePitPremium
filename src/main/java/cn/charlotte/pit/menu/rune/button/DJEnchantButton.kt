@@ -29,7 +29,7 @@ class DJEnchantButton(
             return ItemBuilder(Material.AIR).build()
         }
 
-        val lore = enchantment.getUsefulnessLore(1).split("/s").toTypedArray()
+        val lore = enchantment.getEconomyLore(1).split("/s").toTypedArray()
         return ItemBuilder(Material.JUKEBOX)
             .name("&9" + enchantment.getEnchantName())
             .lore(*lore)

@@ -66,6 +66,39 @@ public class PitCommand {
         GameplayRules.show(player);
     }
 
+    @Command(names = {"pitprogress", "pit progress"})
+    public void growth(Player player) {
+        if (!cn.charlotte.pit.reward.EconomyV2.active()) {
+            player.sendMessage(CC.translate("&e成长更新准备中。"));
+            return;
+        }
+        new cn.charlotte.pit.menu.growth.GrowthMenu().openMenu(player);
+    }
+
+    @Command(names = {"pit build save"})
+    public void saveBuild(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.save(player, index); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
+    @Command(names = {"pit build use"})
+    public void useBuild(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.apply(player, index); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
+    @Command(names = {"pit training save"})
+    public void saveTraining(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.training(player, index, true); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
+    @Command(names = {"pit training use"})
+    public void useTraining(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.training(player, index, false); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
     @Command(
             names = {
                     "option",
@@ -656,6 +689,7 @@ public class PitCommand {
             final Mail mail = new Mail();
             mail.setExpireTime(System.currentTimeMillis() + 30 * 24 * 60 * 60 * 1000L);
             mail.setCoins(data.getCoins());
+            mail.setRewardOrigin("gameplay");
             mail.setExp(data.getExp());
             mail.setRenown(data.getRenown());
             mail.setItem(data.getItem());

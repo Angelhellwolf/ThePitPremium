@@ -91,7 +91,8 @@ public class BillionaireEnchant extends AbstractEnchantment implements IAttackEn
         int cost = getCost(enchantLevel);
         if (profile.getCoins() >= cost) {
             boostDamage.getAndAdd(getBoost(enchantLevel));
-            cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> profile.setCoins(Math.max(0, profile.getCoins() - cost)));
+            cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> cn.charlotte.pit.reward.CoinLedger.set(profile,
+                    Math.max(0, profile.getCoins() - cost), cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "billionaire"));
         }
     }
 }

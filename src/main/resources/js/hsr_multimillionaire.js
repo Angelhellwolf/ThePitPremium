@@ -1,4 +1,6 @@
 var CombatContext = Java.type('cn.charlotte.pit.util.combat.CombatContext');
+var CoinLedger = Java.type('cn.charlotte.pit.reward.CoinLedger');
+var CoinFlow = Java.type('cn.charlotte.pit.reward.CoinLedger$Flow');
 ENCHANT_NAME = "千万富翁";
 INTERNAL_NAME = "multimillionaire";
 RARITY = "RARE";
@@ -21,7 +23,7 @@ function _trySpend(enchant_level, attacker, boost_damage) {
     if (profile.getCoins() < cost) {
         return;
     }
-    CombatContext.afterAccepted(new Runnable({ run: function() { profile.setCoins(Math.max(0, profile.getCoins() - cost)); } }));
+    CombatContext.afterAccepted(new Runnable({ run: function() { CoinLedger.set(profile, Math.max(0, profile.getCoins() - cost), CoinFlow.SPEND, 'multimillionaire'); } }));
     var boost = enchant_level === 1 ? 1.0 / 6.0 : (enchant_level === 2 ? 1.0 / 3.0 : 0.5);
     boost_damage.getAndAdd(boost);
 }

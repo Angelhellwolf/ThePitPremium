@@ -72,7 +72,7 @@ public class PerkBuyButton extends Button {
             }
             //if (未解锁 &&                       精通大于要求)                   ||
             if (!unlocked && ((perk.requirePrestige() <= profile.getPrestige()) || special)) {
-                List<String> lore = new ArrayList<>(perk.getDescription(player));
+                List<String> lore = new ArrayList<>(perk.getEconomyDescription(player));
                 lore.add(" ");
                 lore.add("&7价格: &6" + df.format(perk.requireCoins()) + "硬币");
                 if (perk.requireLevel() > profile.getLevel()) {
@@ -96,7 +96,7 @@ public class PerkBuyButton extends Button {
         }
 
 
-        List<String> lore = new ArrayList<>(perk.getDescription(player));
+        List<String> lore = new ArrayList<>(perk.getEconomyDescription(player));
         lore.add("");
         lore.add("&7价格: &6" + df.format(perk.requireCoins()) + " 硬币");
         if (perk.requireLevel() > profile.getLevel()) {
@@ -257,7 +257,8 @@ public class PerkBuyButton extends Button {
                     if (profile.getChosePerk().get(page) != null) {
                         ThePit.getInstance().getPerkFactory().getPerks().stream().filter(perk -> perk.getInternalPerkName().equals(profile.getChosePerk().get(page).getPerkInternalName())).findFirst().ifPresent(abstractPerk -> abstractPerk.onPerkInactive(player));
                     }
-                    profile.setCoins(profile.getCoins() - perk.requireCoins());
+                    cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - perk.requireCoins(),
+                            cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "perk." + perk.getInternalPerkName());
                     PerkData perkData = new PerkData(perk.getInternalPerkName(), 0);
                     profile.getBoughtPerkMap().put(perkData.getPerkInternalName(), perkData);
                     profile.getChosePerk().put(page, perkData);

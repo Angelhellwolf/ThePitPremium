@@ -31,6 +31,9 @@ public abstract class AbstractPerk {
     public abstract int requireLevel();
 
     public abstract List<String> getDescription(Player player);
+    public List<String> getEconomyDescription(Player player) {
+        return cn.charlotte.pit.reward.EconomyLore.perk(getInternalPerkName(), getDescription(player));
+    }
 
     public abstract int getMaxLevel();
 
