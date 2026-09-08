@@ -54,8 +54,7 @@ public class SpiteEnchant extends AbstractEnchantment implements IAttackEntity, 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        Player targetPlayer = (Player) target;
-        if (targetPlayer.getInventory().getLeggings() != null && "mythic_leggings".equals(ItemUtil.getInternalName(targetPlayer.getInventory().getLeggings()))) {
+        if (isWearingLeather((Player) target)) {
             boostDamage.getAndAdd(0.2);
         }
     }
@@ -63,8 +62,7 @@ public class SpiteEnchant extends AbstractEnchantment implements IAttackEntity, 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        Player targetPlayer = (Player) target;
-        if (targetPlayer.getInventory().getLeggings() != null && "mythic_leggings".equals(ItemUtil.getInternalName(targetPlayer.getInventory().getLeggings()))) {
+        if (isWearingLeather((Player) target)) {
             boostDamage.getAndAdd(0.2);
         }
     }
@@ -72,9 +70,17 @@ public class SpiteEnchant extends AbstractEnchantment implements IAttackEntity, 
     @Override
     @PlayerOnly
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        Player targetPlayer = (Player) attacker;
-        if (targetPlayer.getInventory().getLeggings() != null && "mythic_leggings".equals(ItemUtil.getInternalName(targetPlayer.getInventory().getLeggings()))) {
+        if (attacker instanceof Player && isWearingLeather((Player) attacker)) {
             boostDamage.getAndAdd(0.05);
         }
+    }
+
+    private boolean isWearingLeather(Player player) {
+        for (org.bukkit.inventory.ItemStack armor : player.getInventory().getArmorContents()) {
+            if (armor != null && armor.getType().name().contains("LEATHER")) {
+                return true;
+            }
+        }
+        return false;
     }
 }

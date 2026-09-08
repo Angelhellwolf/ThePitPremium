@@ -45,7 +45,7 @@ public class KingKillersEnchant extends AbstractEnchantment implements IAttackEn
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return (new StringBuilder()).insert(0, "&7对穿戴 &6国王的王冠 &7的玩家额外造成 &c").append(enchantLevel * 0.5D).append("❤ &7的伤害.").toString();
+        return "&7对穿戴 &6国王的王冠 &7的玩家造成的伤害 &c+" + (enchantLevel * 10) + "%";
     }
     @PlayerOnly
     @Override

@@ -44,11 +44,22 @@ public class SharpnessEnchant extends AbstractEnchantment implements IAttackEnti
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7攻击造成的近战伤害 &c+" + (4 * enchantLevel) + "%";
+        return "&7攻击造成的近战伤害 &c+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 4;
+            case 2:
+                return 7;
+            default:
+                return 12;
+        }
     }
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        boostDamage.set(boostDamage.get() + 0.04 * enchantLevel);
+        boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
     }
 }

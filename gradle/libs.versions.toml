@@ -51,7 +51,7 @@ scoreboardlibrary-kotlin = { group = "net.megavex", name = "scoreboard-library-e
 scoreboardlibrary-packetevents = { group = "net.megavex", name = "scoreboard-library-packetevents", version.ref = "scoreboard-library" }
 scoreboardlibrary-18 = { group = "net.megavex", name = "scoreboard-library-v1_8_R3", version.ref = "scoreboard-library" }
 
-packetevents = { group = "com.github.retrooper.packetevents", name = "spigot", version.ref = "packetevents" }
+packetevents = { group = "com.github.retrooper", name = "packetevents-spigot", version.ref = "packetevents" }
 yamlassist = { group = "me.neznamy", name = "yamlassist", version.ref = "yamlassist" }
 
 gui = { group = "com.huanmeng-qwq", name = "Bukkit-Gui", version.ref = "gui" }

@@ -1,10 +1,15 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
+import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
+import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
+import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
@@ -21,7 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Created_In: 2021/4/9 22:09
  */
 @WeaponOnly
-public class CriticallyRichEnchant extends AbstractEnchantment implements IAttackEntity {
+@BowOnly
+public class CriticallyRichEnchant extends AbstractEnchantment implements IAttackEntity, IPlayerShootEntity {
     private final Map<UUID, Cooldown> cooldownMap = new HashMap<>();
 
     @Override
@@ -51,14 +57,27 @@ public class CriticallyRichEnchant extends AbstractEnchantment implements IAttac
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7造成暴击伤害时,获得 &6" + (enchantLevel * 2) + " 硬币";
+        return ("&7造成暴击伤害时,获得 &6" + (enchantLevel * 2) + " 硬币") + "/s" + "&7仅对真人目标触发（排除 Bot）";
     }
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (Double.isFinite(damage) && damage > 0 && !cancel.get()) grantGold(enchantLevel, attacker, target);
+    }
+
+    @Override
+    @PlayerOnly
+    public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (Double.isFinite(damage) && damage > 0 && !cancel.get()) grantGold(enchantLevel, attacker, target);
+    }
+
+    private void grantGold(int enchantLevel, Player attacker, Entity target) {
+        if (!(target instanceof Player)) return;
+        PlayerProfile victim = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
+        if (!victim.isLoaded() || victim.isBot()) return;
         if (PlayerUtil.isCritical(attacker)) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
-            profile.setCoins(profile.getCoins() + enchantLevel * 2);
+            cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> RewardService.grant(profile, RewardSource.ENCHANT, enchantLevel * 2, 0));
         }
     }
 }

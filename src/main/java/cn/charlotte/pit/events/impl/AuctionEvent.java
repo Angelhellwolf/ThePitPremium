@@ -3,6 +3,7 @@ package cn.charlotte.pit.events.impl;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.data.PlayerMailData;
 import cn.charlotte.pit.data.TradeData;
 import cn.charlotte.pit.data.mail.Mail;
 import cn.charlotte.pit.data.sub.EnchantmentRecord;
@@ -27,6 +28,8 @@ import cn.charlotte.pit.util.random.RandomUtil;
 import cn.charlotte.pit.util.rank.RankUtil;
 import cn.charlotte.pit.util.time.TimeUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.ReplaceOptions;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.md_5.bungee.api.chat.ClickEvent;
@@ -42,6 +45,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -125,7 +129,7 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                     .filter(abstractEnchantment -> abstractEnchantment.canApply(abstractPitItem.toItemStack()))
                     .collect(Collectors.toList());
             List<AbstractEnchantment> results = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.AUCTION_LIMITED).collect(Collectors.toList());
-            if (RandomUtil.hasSuccessfullyByChance(0.02)) {
+            if (RandomUtil.hasSuccessfullyByChance(0.01)) {
                 results = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.AUCTION_LIMITED_RARE).collect(Collectors.toList());
             }
             enchantments.put((AbstractEnchantment) RandomUtil.helpMeToChooseOne(results.toArray()), 1);
@@ -189,6 +193,15 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
         if (player != null && player.isOnline()) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(uuid);
             profile.getMailData().sendMail(mail);
+        } else if (!ThePit.getInstance().isEnabled()) {
+            // Bukkit no longer accepts scheduled tasks during plugin disable.
+            // Persist the refund before the shared Mongo client is closed.
+            PlayerMailData mailbox = ThePit.getInstance().getMongoDB().getMailCollection()
+                    .find(Filters.eq("uuid", uuid.toString())).first();
+            if (mailbox == null) {
+                mailbox = new PlayerMailData(uuid, uuid.toString());
+            }
+            mailbox.sendMail(mail);
         } else {
             new BukkitRunnable() {
                 @Override
@@ -302,7 +315,9 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
     @Override
     public void onInactive() {
         isCustom = false;
-        runnable.cancel();
+        if (runnable != null) {
+            runnable.cancel();
+        }
         if (!startByAdmin && ThePit.getInstance().getPitConfig().isGenesisEnable() && bidHistories.size() == 0) {
             return;
         }
@@ -319,14 +334,14 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                             if (player != null && player.isOnline()) {
                                 //if player is online,give back coins to the profile
                                 PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(uuid);
-                                profile.setCoins(profile.getCoins() + (int) getHighestBidHistory(uuid).getCoins());
-                                player.sendMessage(CC.translate(prefix + "你参与竞拍的 &6" + (int) getHighestBidHistory(player.getUniqueId()).getCoins() + " 硬币 &7已退还至账户中."));
+                                profile.setCoins(profile.getCoins() + getHighestBidHistory(uuid).getCoins());
+                                player.sendMessage(CC.translate(prefix + "你参与竞拍的 &6" + String.format(Locale.ROOT, "%.2f", getHighestBidHistory(uuid).getCoins()) + " 硬币 &7已退还至账户中."));
                             } else {
                                 //send mail to give back coins if player is offline
                                 Mail mail = new Mail();
                                 mail.setExpireTime(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L);
                                 mail.setSendTime(System.currentTimeMillis());
-                                mail.setCoins((int) getHighestBidHistory(uuid).getCoins());
+                                mail.setCoins(getHighestBidHistory(uuid).getCoins());
                                 mail.setTitle("&e【拍卖行】 竞拍硬币退还");
                                 mail.setContent("&f你在 " + dateFormat.format(System.currentTimeMillis()) + " 参与的拍卖被取消, \\n&f于当时投入的硬币现已退还.");
                                 sendMail(uuid, mail);
@@ -334,7 +349,6 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                         }
                     }
             );
-            this.saveAuctionLogs();
             return;
         }
         if (getHighestBidHistory() != null) {
@@ -358,13 +372,13 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                             if (player != null && player.isOnline()) {
                                 player.sendMessage(CC.translate(prefix + "你赢得了竞拍! 物品已发放至你的邮箱中,请及时收取."));
                             }
-                        } else if (player != null && getHighestBidHistory(player.getUniqueId()) != null) {
-                            if (player.isOnline()) {
+                        } else if (getHighestBidHistory(uuid) != null) {
+                            if (player != null && player.isOnline()) {
                                 PlayerProfile participantProfile = PlayerProfile.getPlayerProfileByUuid(uuid);
-                                participantProfile.setCoins(participantProfile.getCoins() + (int) getHighestBidHistory(uuid).getCoins());
-                                player.sendMessage(CC.translate(prefix + "参与竞拍的 &6" + (int) getHighestBidHistory(player.getUniqueId()).getCoins() + " 硬币 &7已直接退还到您的账户当中."));
+                                participantProfile.setCoins(participantProfile.getCoins() + getHighestBidHistory(uuid).getCoins());
+                                player.sendMessage(CC.translate(prefix + "参与竞拍的 &6" + String.format(Locale.ROOT, "%.2f", getHighestBidHistory(uuid).getCoins()) + " 硬币 &7已直接退还到您的账户当中."));
                             } else {
-                                mail.setCoins(getHighestBidHistory(player.getUniqueId()).getCoins());
+                                mail.setCoins(getHighestBidHistory(uuid).getCoins());
                                 mail.setTitle("&e【拍卖行】 竞拍硬币退还");
                                 mail.setContent("&f你在 " + dateFormat.format(System.currentTimeMillis()) + " 参与的拍卖中未能拍下物品. \\n&f于当时投入的硬币现已退还.");
                                 sendMail(uuid, mail);
@@ -770,10 +784,11 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
     }
 
     public void saveAuctionLogs() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
+        try {
                 BidHistory highestBid = getHighestBidHistory();
+                if (highestBid == null) {
+                    return;
+                }
                 getParticipants().forEach(uuid -> {
                     TradeData tradeData = new TradeData("auction", uuid.toString(), "[SYS] Auction", CC.stripColor(RankUtil.getPlayerRealColoredName(uuid)));
                     BidHistory playerHighestBid = getHighestBidHistory(uuid);
@@ -805,10 +820,18 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                     PlayerInv aInv = new PlayerInv();
                     aInv.setContents(itemStacks.toArray(new ItemStack[36]));
                     tradeData.setAPaidItem(aInv);
-                    tradeData.save();
+                    if (ThePit.getInstance().isEnabled()) {
+                        tradeData.save();
+                    } else {
+                        ThePit.getInstance().getMongoDB().getTradeCollection().replaceOne(
+                                Filters.eq("tradeUuid", tradeData.getTradeUuid()), tradeData,
+                                new ReplaceOptions().upsert(true));
+                    }
                 });
-            }
-        }.runTaskAsynchronously(ThePit.getInstance());
+        } catch (Exception failure) {
+            // Diagnostic persistence must never prevent auction refunds or delivery.
+            ThePit.getInstance().getLogger().log(Level.WARNING, "Failed to save auction logs", failure);
+        }
     }
 
     public void setCustom(boolean custom) {

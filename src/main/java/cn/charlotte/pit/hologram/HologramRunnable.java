@@ -12,6 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @Author: EmptyIrony
@@ -42,13 +43,22 @@ public class HologramRunnable extends BukkitRunnable {
             }
             Map<String, HologramListener.HologramData> data = hologram.getHologramData();
             for (AbstractHologram abstractHologram : (ThePit.getInstance().getHologramFactory()).loopHologram) {
-                HologramListener.HologramData hologramData = data.get(abstractHologram.getInternalName());
+                String internalName = abstractHologram.getInternalName();
+                HologramListener.HologramData hologramData = data.get(internalName);
                 if (hologramData == null) {
                     continue;
                 }
 
                 int loopTicks = abstractHologram.loopTicks();
-                if (loopTicks <= 0 || this.tick % loopTicks != 0L) {
+                if (loopTicks <= 0) {
+                    continue;
+                }
+
+                // This runnable itself runs once every four server ticks. Spread each
+                // player's holograms across the whole refresh window instead of moving
+                // and formatting every player's lines in one periodic spike.
+                int phase = Math.floorMod(31 * player.getUniqueId().hashCode() + internalName.hashCode(), loopTicks);
+                if (Math.floorMod(this.tick, loopTicks) != phase) {
                     continue;
                 }
 
@@ -57,19 +67,25 @@ public class HologramRunnable extends BukkitRunnable {
                     text = Collections.emptyList();
                 }
 
+                Location baseLocation = abstractHologram.getLocation();
                 List<Hologram> holograms = hologramData.getHolograms();
                 synchronized (holograms) {
                     for (int i = 0; i < text.size(); i++) {
-                        Location lineLocation = abstractHologram.getLocation().clone().add(0.0D, -i * abstractHologram.getHologramHighInterval(), 0.0D);
+                        Location lineLocation = baseLocation.clone().add(0.0D, -i * abstractHologram.getHologramHighInterval(), 0.0D);
                         String translatedText = CC.translate(text.get(i));
                         if (holograms.size() <= i) {
                             Hologram holo = HologramAPI.createHologram(lineLocation, translatedText);
                             holo.spawn(Collections.singletonList(player));
                             holograms.add(holo);
                         } else {
-                            holograms.get(i).setLocation(lineLocation);
+                            Hologram holo = holograms.get(i);
+                            if (!samePosition(holo.getLocation(), lineLocation)) {
+                                holo.setLocation(lineLocation);
+                            }
+                            if (!Objects.equals(holo.getText(), translatedText)) {
+                                holo.setText(translatedText);
+                            }
                         }
-                        holograms.get(i).setText(translatedText);
                     }
 
                     for (int i = holograms.size() - 1; i >= text.size(); i--) {
@@ -85,5 +101,14 @@ public class HologramRunnable extends BukkitRunnable {
             }
         }
         this.tick++;
+    }
+
+    private static boolean samePosition(Location first, Location second) {
+        return first != null
+                && second != null
+                && Objects.equals(first.getWorld(), second.getWorld())
+                && Double.compare(first.getX(), second.getX()) == 0
+                && Double.compare(first.getY(), second.getY()) == 0
+                && Double.compare(first.getZ(), second.getZ()) == 0;
     }
 }

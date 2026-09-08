@@ -55,11 +55,16 @@ public class TheSwiftWindEnchant extends AbstractEnchantment implements IAttackE
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        boostDamage.getAndAdd(enchantLevel * 0.03D);
+        applySpeedBonus(enchantLevel, attacker, boostDamage);
     }
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        boostDamage.getAndAdd(enchantLevel * 0.03D);
+        applySpeedBonus(enchantLevel, attacker, boostDamage);
+    }
+
+    private void applySpeedBonus(int enchantLevel, Player attacker, AtomicDouble boostDamage) {
+        org.bukkit.potion.PotionEffect speed = cn.charlotte.pit.util.combat.CombatPotions.find(attacker, org.bukkit.potion.PotionEffectType.SPEED);
+        if (speed != null && speed.getDuration() > 0) boostDamage.getAndAdd(enchantLevel * 0.03D * (speed.getAmplifier() + 1));
     }
 }

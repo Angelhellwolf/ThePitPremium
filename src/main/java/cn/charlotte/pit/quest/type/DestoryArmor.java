@@ -55,14 +55,6 @@ public class DestoryArmor extends AbstractQuest implements IPlayerDamaged {
 
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
-        if (profile.getCurrentQuest() != null && profile.getCurrentQuest().getInternalName().equalsIgnoreCase(this.getQuestInternalName())) {
-            if (profile.getCurrentQuest().getLevel() > 0 && PlayerUtil.getPlayerArmorDefense(myself) > 0) {
-                boostDamage.set(boostDamage.get() - 1 + Math.max(1.15 + 0.15 * profile.getCurrentQuest().getLevel(),
-                        (1 - 0.04 * PlayerUtil.getPlayerArmorDefense(myself) * (1 - 0.15 - 0.15 * profile.getCurrentQuest().getLevel()))
-                                - (1 - 0.04 * profile.getCurrentQuest().getLevel())
-                ));
-            }
-        }
+        if (!cancel.get()) cn.charlotte.pit.util.combat.CombatContext.weakenArmor((15 + enchantLevel * 15) * 0.01);
     }
 }

@@ -98,14 +98,15 @@ public class LeechKillStreak extends AbstractPerk implements Listener {
         }
         //trigger check (every X streak)
         int streak = 3;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             myself.setMetadata("leech_hit", new FixedMetadataValue(ThePit.getInstance(), true));
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
+        if (!Double.isFinite(event.getFinalDamage()) || event.getFinalDamage() <= 0) return;
         Player attacker = null;
         if (event.getDamager() instanceof Player) {
             attacker = (Player) event.getDamager();

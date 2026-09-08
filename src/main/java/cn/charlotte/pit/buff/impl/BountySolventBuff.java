@@ -22,6 +22,6 @@ public class BountySolventBuff extends AbstractPitBuff {
 
     @Override
     public List<String> getDescription() {
-        return Collections.singletonList("&7受到带有 &6&l1000g &7以上赏金攻击时受到的伤害 &9-30% &7;赏金获取量 &6+50%");
+        return Collections.singletonList("&7受到带有 &6&l1000g &7以上赏金攻击时受到的伤害 &9-30% &7;成功领取真人悬赏的赏金收入 &6+50%");
     }
 }

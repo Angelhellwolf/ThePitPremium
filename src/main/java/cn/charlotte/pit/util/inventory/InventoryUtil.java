@@ -632,4 +632,16 @@ public class InventoryUtil {
         }
         return true;
     }
+
+    public static boolean canFit(Player player, ItemStack... items) {
+        Inventory simulated = Bukkit.createInventory(null, 36);
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack item = player.getInventory().getItem(slot);
+            if (item != null) simulated.setItem(slot, item.clone());
+        }
+        for (ItemStack item : items) {
+            if (item != null && !simulated.addItem(item.clone()).isEmpty()) return false;
+        }
+        return true;
+    }
 }

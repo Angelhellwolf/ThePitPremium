@@ -94,20 +94,25 @@ public class VampirePerk extends AbstractPerk implements IAttackEntity, IPlayerS
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || cancel.get() || attacker.getUniqueId().equals(target.getUniqueId())) {
+            return;
+        }
         if ("rage_pit".equals(ThePit.getInstance().getEventFactory().getActiveEpicEventName())) {
             return;
         }
         if (PlayerUtil.isPlayerChosePerk(attacker, "rambo")) {
             return;
         }
-        new VampireMedal().addProgress(PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()), (int) Math.max(0, attacker.getMaxHealth() - Math.min(attacker.getHealth() + 1, attacker.getMaxHealth())));
-        attacker.setHealth(Math.min(attacker.getHealth() + 1, attacker.getMaxHealth()));
+        cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> healAndTrack(attacker, 1));
     }
 
     @Override
     @BowOnly
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || cancel.get() || attacker.getUniqueId().equals(target.getUniqueId())) {
+            return;
+        }
         if ("rage_pit".equals(ThePit.getInstance().getEventFactory().getActiveEpicEventName())) {
             return;
         }
@@ -118,8 +123,7 @@ public class VampirePerk extends AbstractPerk implements IAttackEntity, IPlayerS
         if (Utils.getEnchantLevel(targetPlayer.getItemInHand(), "BulletTime") > 0 && targetPlayer.isBlocking()) {
             return;
         }
-        new VampireMedal().addProgress(PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()), (int) Math.max(0, attacker.getMaxHealth() - Math.min(attacker.getHealth() + 3, attacker.getMaxHealth())));
-        attacker.setHealth(Math.min(attacker.getHealth() + 3, attacker.getMaxHealth()));
+        cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> healAndTrack(attacker, 3));
     }
 
     @Override
@@ -135,5 +139,11 @@ public class VampirePerk extends AbstractPerk implements IAttackEntity, IPlayerS
             myself.removePotionEffect(PotionEffectType.REGENERATION);
             myself.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 8, 0));
         });
+    }
+    private void healAndTrack(Player player, double amount) {
+        double before = player.getHealth();
+        PlayerUtil.heal(player, amount);
+        double healed = Math.max(0, player.getHealth() - before);
+        if (healed > 0) new VampireMedal().addProgress(PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()), healed);
     }
 }

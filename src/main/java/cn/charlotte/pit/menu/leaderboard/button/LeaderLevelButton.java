@@ -6,7 +6,6 @@ import cn.charlotte.pit.util.chat.StringUtil;
 import cn.charlotte.pit.util.item.ItemBuilder;
 import cn.charlotte.pit.util.level.LevelUtil;
 import cn.charlotte.pit.util.menu.Button;
-import cn.charlotte.pit.util.rank.RankUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -46,18 +45,18 @@ public class LeaderLevelButton extends Button {
                 String levelTag = LevelUtil.getLevelTagWithRoman(entry.getPrestige(), entry.getExperience());
                 String formattedExp = StringUtil.getFormatLong((long) experience);
 
-                hologramText.add("&e" + entry.getRank() + "&7." + " " + levelTag + " " + RankUtil.getPlayerRealColoredName(entry.getUuid()) + " &7- &b" + formattedExp + " 经验值");
+                hologramText.add("&e" + entry.getRank() + "&7." + " " + levelTag + " " + entry.getColoredName() + " &7- &b" + formattedExp + " 经验值");
             }
         }
 
-        Optional<LeaderBoardEntry> first = LeaderBoardEntry.getLeaderBoardEntries()
+        Optional<LeaderBoardEntry> first = entries
                 .stream()
                 .filter(leaderBoardEntry -> leaderBoardEntry.getUuid().equals(player.getUniqueId()))
                 .findFirst();
 
         if (first.isPresent()) {
             LeaderBoardEntry entry = first.get();
-            double top = 100D * entry.getRank() / LeaderBoardEntry.getLeaderBoardEntries().size();
+            double top = 100D * entry.getRank() / entries.size();
             int prestige = entry.getPrestige();
             double experience = entry.getExperience();
             for (int i = 0; i < prestige; i++) {

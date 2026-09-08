@@ -2,7 +2,6 @@ package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
-import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerKilledEntity;
@@ -17,7 +16,6 @@ import org.bukkit.inventory.ItemStack;
  * @Created_In: 2021/3/24 19:23
  */
 @WeaponOnly
-@ArmorOnly
 public class SierraEnchant extends AbstractEnchantment implements IPlayerKilledEntity {
     @Override
     public String getEnchantName() {
@@ -46,7 +44,7 @@ public class SierraEnchant extends AbstractEnchantment implements IPlayerKilledE
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7击杀的玩家每穿着一件 &b钻石装备 &7,击杀奖励 &6+" + (enchantLevel * 30) + " 硬币";
+        return ("&7击杀的玩家每穿着一件 &b钻石装备 &7,击杀奖励 &6+" + (enchantLevel * 30) + " 硬币") + "/s" + "&7以上金币或经验加成排除 Bot";
     }
 
     @Override
@@ -54,7 +52,7 @@ public class SierraEnchant extends AbstractEnchantment implements IPlayerKilledE
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         Player targetPlayer = (Player) target;
         for (ItemStack itemStack : targetPlayer.getInventory().getArmorContents()) {
-            if (itemStack.getType().name().contains("DIAMOND")) {
+            if (itemStack != null && itemStack.getType().name().contains("DIAMOND")) {
                 coins.getAndAdd(30 * enchantLevel);
             }
         }

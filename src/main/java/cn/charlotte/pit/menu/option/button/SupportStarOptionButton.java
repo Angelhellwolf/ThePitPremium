@@ -22,7 +22,7 @@ public class SupportStarOptionButton extends Button {
     public ItemStack getButtonItem(Player player) {
         List<String> lines = new ArrayList<>();
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-        lines.add("&7后缀: &e✬");
+        lines.add("&7后缀: " + profile.getSupporterStar());
         lines.add("&7调整是否在名称前后显示此后缀.");
         if (profile.isNicked()) {
             lines.add(" ");
@@ -30,8 +30,8 @@ public class SupportStarOptionButton extends Button {
         }
         lines.add(" ");
         lines.add("&7当前: " + (profile.getPlayerOption().isSupporterStarDisplay() ? "&a允许" : "&c不允许"));
-        lines.add((profile.isSupporter() || PlayerUtil.isStaff(player) ? "&e&e点击切换此选项!" : "&c需要&e天坑乱斗会员"));
-        return new ItemBuilder(Material.BEACON).name("&a后缀显示选项: 会员星标").lore(lines).build();
+        lines.add((profile.isSupporter() || PlayerUtil.isStaff(player) ? "&e&e点击切换此选项!" : "&c需要&e天坑·会员"));
+        return new ItemBuilder(Material.BEACON).name("&a后缀显示选项: 赞助者星标").lore(lines).build();
     }
 
     @Override

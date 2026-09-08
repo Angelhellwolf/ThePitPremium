@@ -67,7 +67,7 @@ public class SoulRipperEnchant extends AbstractEnchantment implements IAttackEnt
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player victim = (Player) target;
         //remove buff if buff expired or player is hitting different enemies
-        if (duration.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired() || victim.getUniqueId() != buff.getOrDefault(attacker.getUniqueId(), UUID.randomUUID())) {
+        if (duration.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired() || !victim.getUniqueId().equals(buff.get(attacker.getUniqueId()))) {
             buff.remove(attacker.getUniqueId());
             tier.remove(attacker.getUniqueId());
         }

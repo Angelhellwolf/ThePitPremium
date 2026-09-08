@@ -1,6 +1,7 @@
 package cn.charlotte.pit.data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,16 +10,22 @@ import java.util.UUID;
  * @Date: 2021/1/3 12:57
  */
 public class LeaderBoardEntry {
-    private static List<LeaderBoardEntry> leaderBoardEntries = new ArrayList<>();
+    private static volatile List<LeaderBoardEntry> leaderBoardEntries = Collections.emptyList();
 
     private final String name;
+    private final String coloredName;
     private final UUID uuid;
     private final int rank;
     private final double experience;
     private final int prestige;
 
     public LeaderBoardEntry(String name, UUID uuid, int rank, double experience, int prestige) {
+        this(name, uuid, rank, experience, prestige, "§7" + name);
+    }
+
+    public LeaderBoardEntry(String name, UUID uuid, int rank, double experience, int prestige, String coloredName) {
         this.name = name;
+        this.coloredName = coloredName;
         this.uuid = uuid;
         this.rank = rank;
         this.experience = experience;
@@ -30,7 +37,11 @@ public class LeaderBoardEntry {
     }
 
     public static void setLeaderBoardEntries(List<LeaderBoardEntry> leaderBoardEntries) {
-        LeaderBoardEntry.leaderBoardEntries = leaderBoardEntries;
+        if (leaderBoardEntries == null || leaderBoardEntries.isEmpty()) {
+            LeaderBoardEntry.leaderBoardEntries = Collections.emptyList();
+            return;
+        }
+        LeaderBoardEntry.leaderBoardEntries = Collections.unmodifiableList(new ArrayList<>(leaderBoardEntries));
     }
 
     public String getName() {
@@ -39,6 +50,10 @@ public class LeaderBoardEntry {
 
     public UUID getUuid() {
         return this.uuid;
+    }
+
+    public String getColoredName() {
+        return this.coloredName;
     }
 
     public int getRank() {
@@ -92,6 +107,6 @@ public class LeaderBoardEntry {
 
     @Override
     public String toString() {
-        return "LeaderBoardEntry(name=" + this.getName() + ", uuid=" + this.getUuid() + ", rank=" + this.getRank() + ", experience=" + this.getExperience() + ", prestige=" + this.getPrestige() + ")";
+        return "LeaderBoardEntry(name=" + this.getName() + ", coloredName=" + this.getColoredName() + ", uuid=" + this.getUuid() + ", rank=" + this.getRank() + ", experience=" + this.getExperience() + ", prestige=" + this.getPrestige() + ")";
     }
 }

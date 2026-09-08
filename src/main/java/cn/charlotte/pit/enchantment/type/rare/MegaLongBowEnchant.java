@@ -9,12 +9,7 @@ import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.chat.RomanUtil;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import cn.charlotte.pit.util.time.TimeUtil;
-import net.minecraft.server.v1_8_R3.EntityPlayer;
-import net.minecraft.server.v1_8_R3.ItemBow;
-import net.minecraft.server.v1_8_R3.ItemStack;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -69,7 +64,7 @@ public class MegaLongBowEnchant extends AbstractEnchantment implements Listener,
     }
 
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST, ignoreCancelled = true)
     public void onInteract(EntityShootBowEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
         if (event.getForce() >= 1) return;
@@ -88,11 +83,13 @@ public class MegaLongBowEnchant extends AbstractEnchantment implements Listener,
             if (cooldown.getOrDefault(player.getUniqueId(), new Cooldown(0)).hasExpired()) {
                 cooldown.put(player.getUniqueId(), new Cooldown(1, TimeUnit.SECONDS));
                 player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 2 * 20, level), false);
-                event.setCancelled(true);
-                final EntityPlayer ePlayer = ((CraftPlayer) player).getHandle();
-                final ItemStack itemStack = CraftItemStack.asNMSCopy(itemInHand);
-                final ItemBow bow = (ItemBow) itemStack.getItem();
-                bow.a(itemStack, ePlayer.world, ePlayer, 0);
+                // 1.8 EntityShootBowEvent has no setForce. Boost the already-spawned
+                // projectile instead of cancelling and calling bow.a(..., 0), which
+                // can fail to launch or knock the shooter back on close hits.
+                if (event.getProjectile() != null) {
+                    event.getProjectile().setVelocity(player.getLocation().getDirection().normalize().multiply(3.0D));
+                    if (event.getProjectile() instanceof org.bukkit.entity.Arrow) ((org.bukkit.entity.Arrow) event.getProjectile()).setCritical(true);
+                }
             }
         }
     }

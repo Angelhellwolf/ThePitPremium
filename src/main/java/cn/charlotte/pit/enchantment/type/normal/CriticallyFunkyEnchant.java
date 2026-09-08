@@ -50,8 +50,23 @@ public class CriticallyFunkyEnchant extends AbstractEnchantment implements IPlay
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7受到玩家的暴击伤害 &9-" + (5 + enchantLevel * 15) + "%" + (enchantLevel >= 2 ?
-                ("/s&7并使你下次攻击造成的伤害 &c+" + (enchantLevel * 15 - 15) + "% &7(不可叠加)") : "");
+        return "&7受到玩家的暴击伤害 &9-" + getReducePercent(enchantLevel) + "%" + (enchantLevel >= 2 ?
+                ("/s&7并使你下次攻击造成的伤害 &c+" + getNextStrikePercent(enchantLevel) + "% &7(不可叠加)") : "");
+    }
+
+    private int getReducePercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 20;
+            case 2:
+                return 35;
+            default:
+                return 50;
+        }
+    }
+
+    private int getNextStrikePercent(int enchantLevel) {
+        return enchantLevel >= 3 ? 30 : 14;
     }
 
     @Override
@@ -59,7 +74,7 @@ public class CriticallyFunkyEnchant extends AbstractEnchantment implements IPlay
         if (attacker.hasMetadata("funky_strike_hit")) {
             int level = attacker.getMetadata("funky_strike_hit").get(0).asInt();
             attacker.removeMetadata("funky_strike_hit", ThePit.getInstance());
-            boostDamage.getAndAdd(0.15 * level - 0.15);
+            boostDamage.getAndAdd(getNextStrikePercent(level) * 0.01);
         }
     }
 
@@ -68,7 +83,7 @@ public class CriticallyFunkyEnchant extends AbstractEnchantment implements IPlay
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player attackerPlayer = (Player) attacker;
         if (PlayerUtil.isCritical(attackerPlayer)) {
-            boostDamage.getAndAdd(-0.05 - 0.15 * enchantLevel);
+            boostDamage.getAndAdd(-getReducePercent(enchantLevel) * 0.01);
             if (enchantLevel >= 2) {
                 myself.setMetadata("funky_strike_hit", new FixedMetadataValue(ThePit.getInstance(), enchantLevel));
             }
@@ -80,7 +95,7 @@ public class CriticallyFunkyEnchant extends AbstractEnchantment implements IPlay
         if (attacker.hasMetadata("funky_strike_hit")) {
             int level = attacker.getMetadata("funky_strike_hit").get(0).asInt();
             attacker.removeMetadata("funky_strike_hit", ThePit.getInstance());
-            boostDamage.getAndAdd(0.15 * level - 0.15);
+            boostDamage.getAndAdd(getNextStrikePercent(level) * 0.01);
         }
     }
 }

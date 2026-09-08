@@ -1,6 +1,7 @@
 package cn.charlotte.pit.menu.quest.main.button;
 
 import cn.charlotte.pit.ThePit;
+import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.data.sub.QuestData;
 import cn.charlotte.pit.event.PitQuestInactiveEvent;
@@ -33,7 +34,7 @@ public class QuestButton extends Button {
     }
 
     private static boolean isNightQuest(PlayerProfile profile, QuestData quest) {
-        return profile.isNightQuestEnable() && TimeUtil.getMinecraftTick(quest.getStartTime()) > 12000;
+        return cn.charlotte.pit.quest.QuestRules.isNight(profile, quest);
     }
 
     @Override
@@ -54,11 +55,12 @@ public class QuestButton extends Button {
                     lore.add("&7任务完成! 奖励如下:");
                     if (isNightQuest(profile, currentQuest)) {
                         lore.add(" &8+ &b" + (level * 250) + " &7天坑乱斗经验值");
+        if (profile.getUnlockedPerkMap().containsKey("quest_master_perk")) lore.add(" &8+ &51 暗聚块（任务大师）");
                         if (level > 1) {
                             lore.add(" &8+ &51 暗聚块");
                         }
                     } else {
-                        lore.add(" &8+ &6" + (level * 100) + " &7硬币");
+                        lore.add(" &8+ &6" + String.format("%.0f", level * 100 * cn.charlotte.pit.quest.QuestRules.coinMultiplier(playerFor(profile))) + " &7硬币");
                         lore.add(" &8+ &e" + (level * 5) + " &7行动赏金");
                         lore.add(" &8+ &b" + (level * 40) + " &7天坑乱斗经验值");
                     }
@@ -72,9 +74,9 @@ public class QuestButton extends Button {
                         lore.add("&c&l您已超时，无法继续该任务!");
                     }
                     if (isNightQuest(profile, currentQuest)) {
-                        addNightReward(lore);
+                        addNightReward(lore, profile);
                     } else {
-                        addReward(lore);
+                        addReward(lore, profile);
                     }
                     lore.add("&c点击放弃此任务及其奖励!");
                 }
@@ -90,10 +92,10 @@ public class QuestButton extends Button {
                 lore.add("&7击杀要求: &a" + quest.getTotal(level) + " 击杀数");
                 if (isNightQuest(profile, currentQuest)) {
                     addNightTimeLore(lore);
-                    addNightReward(lore);
+                    addNightReward(lore, profile);
                 } else {
                     addTimeLore(lore);
-                    addReward(lore);
+                    addReward(lore, profile);
                 }
                 lore.add("&c你有其他正在进行中的任务!");
             }
@@ -108,12 +110,12 @@ public class QuestButton extends Button {
             lore.add("&7击杀要求: &a" + quest.getTotal(level) + " 不同玩家击杀");
             if (profile.isNightQuestEnable() && TimeUtil.getMinecraftTick() > 12000) {
                 addNightTimeLore(lore);
-                addNightReward(lore);
+                addNightReward(lore, profile);
             } else {
                 addTimeLore(lore);
-                addReward(lore);
+                addReward(lore, profile);
             }
-            lore.add("&7今日剩余可完成任务数: &e" + (10 + perkLevel * 2 - profile.getQuestLimit().getTimes()));
+            lore.add("&7今日剩余可完成任务数: &e" + Math.max(0, 10 + perkLevel * 2 - profile.getQuestLimit().getTimes()));
             lore.add("&7每获得一个 &5暗聚块 &7,额外消耗一次可完成任务次数.");
             lore.add("");
             if (profile.getLastQuest() != null) {
@@ -141,7 +143,7 @@ public class QuestButton extends Button {
         }
 
 
-        if (profile.getQuestLimit().getTimes() >= 10 + 2 * perkLevel) {
+        if (profile.getCurrentQuest() == null && profile.getQuestLimit().getTimes() >= 10 + 2 * perkLevel) {
             builder = new ItemBuilder(Material.BARRIER)
                     .name("&c挑战任务: ???");
             lore.clear();
@@ -163,6 +165,8 @@ public class QuestButton extends Button {
             lore.add("  " + desc);
         }
         lore.add(" ");
+        lore.add("&7同一目标仅计一次；Bot 可计入任务进度");
+        lore.add("&7结束后点击结算/放弃，解除任务限制");
         lore.add("&7任务进度: &a" + currentQuest.getCurrent() + "/" + currentQuest.getTotal() + " 击杀数");
     }
 
@@ -174,19 +178,22 @@ public class QuestButton extends Button {
         lore.add("&7限定时间: &a在日出(" + (TimeUtil.millisToRoundedTime(36 * 60 * 1000 - (System.currentTimeMillis() % (36 * 60 * 1000)))) + "后)前完成");
     }
 
-    private void addReward(List<String> lore) {
+    private Player playerFor(PlayerProfile profile) { return org.bukkit.Bukkit.getPlayer(profile.getPlayerUuid()); }
+
+    private void addReward(List<String> lore, PlayerProfile profile) {
         lore.add(" ");
         lore.add("&7任务奖励:");
-        lore.add(" &8+ &6" + (level * 100) + " &7硬币");
+        lore.add(" &8+ &6" + String.format("%.0f", level * 100 * cn.charlotte.pit.quest.QuestRules.coinMultiplier(playerFor(profile))) + " &7硬币");
         lore.add(" &8+ &e" + (level * 5) + " &7行动赏金");
         lore.add(" &8+ &b" + (level * 40) + " &7天坑乱斗经验值");
         lore.add(" ");
     }
 
-    private void addNightReward(List<String> lore) {
+    private void addNightReward(List<String> lore, PlayerProfile profile) {
         lore.add(" ");
         lore.add("&7任务奖励:");
         lore.add(" &8+ &b" + (level * 250) + " &7天坑乱斗经验值");
+        if (profile.getUnlockedPerkMap().containsKey("quest_master_perk")) lore.add(" &8+ &51 暗聚块（任务大师）");
         if (level > 1) {
             lore.add(" &8+ &51 暗聚块");
         }
@@ -198,10 +205,13 @@ public class QuestButton extends Button {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         int perkLevel = PlayerUtil.getPlayerUnlockedPerkLevel(player, "contractor_perk");
 
-        if (profile.getQuestLimit().getTimes() >= 10 + 2 * perkLevel) {
+        QuestData currentQuest = profile.getCurrentQuest();
+        boolean night = profile.isNightQuestEnable() && TimeUtil.getMinecraftTick() > 12000;
+        int cost = cn.charlotte.pit.quest.QuestRules.completionCost(profile, level, night);
+        if (currentQuest == null && profile.getQuestLimit().getTimes() + cost > 10 + 2 * perkLevel) {
+            player.sendMessage(CC.translate("&c接取此任务需要预留 " + cost + " 次完成额度，今日剩余额度不足。"));
             return;
         }
-        QuestData currentQuest = profile.getCurrentQuest();
         QuestData lastQuest = profile.getLastQuest();
         if (currentQuest != null) {
             if (currentQuest.getInternalName().equals(quest.getQuestInternalName()) && level == currentQuest.getLevel()) {

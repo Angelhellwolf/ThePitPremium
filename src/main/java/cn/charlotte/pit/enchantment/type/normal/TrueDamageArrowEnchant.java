@@ -25,12 +25,29 @@ import java.text.DecimalFormat;
  * @Created_In: 2021/1/30 15:33
  */
 @BowOnly
-@AutoRegister
-public class TrueDamageArrowEnchant extends AbstractEnchantment implements Listener {
+public class TrueDamageArrowEnchant extends AbstractEnchantment implements cn.charlotte.pit.parm.listener.IPlayerShootEntity {
     final DecimalFormat format = new DecimalFormat("0");
 
     public static double getTrueDamageRate(int enchantLevel) {
-        return (0.15 + enchantLevel * 0.1) / (1 - (0.15 + enchantLevel * 0.1));
+        switch (enchantLevel) {
+            case 1:
+                return 0.25;
+            case 2:
+                return 0.35;
+            default:
+                return 0.45;
+        }
+    }
+
+    public static double getBonusTrueDamage(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 0;
+            case 2:
+                return 0.5;
+            default:
+                return 1.0;
+        }
     }
 
     @Override
@@ -50,7 +67,7 @@ public class TrueDamageArrowEnchant extends AbstractEnchantment implements Liste
 
     @Override
     public EnchantmentRarity getRarity() {
-        return EnchantmentRarity.NORMAL;
+        return EnchantmentRarity.RARE;
     }
 
     @Override
@@ -61,46 +78,18 @@ public class TrueDamageArrowEnchant extends AbstractEnchantment implements Liste
     @Override
     public String getUsefulnessLore(int enchantLevel) {
 
-        return "&7造成的弓箭伤害降低至原来的 &9" + (100 - 15 - enchantLevel * 10) + "% &7,"
-                + "/s&7弓箭命中额外造成相当于伤害量 &c" + format.format(100 * getTrueDamageRate(enchantLevel)) + "% &7的&f真实&7伤害";
+        return "&7弓箭命中将伤害量的 &c" + format.format(100 * getTrueDamageRate(enchantLevel)) + "% &7转化为&f真实&7伤害"
+                + (enchantLevel >= 2 ? "/s&7并额外造成 &c" + (enchantLevel >= 3 ? 0.5 : 0.25) + "❤ &7的&f真实&7伤害" : "");
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onPlayerDamagePlayer(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Projectile && ((Projectile) event.getDamager()).getShooter() instanceof Player) {
-            if (event.getDamager().hasMetadata("true_shot")) {
-                final Player player = (Player) ((Projectile) event.getDamager()).getShooter();
-                if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) return;
-                final org.bukkit.inventory.ItemStack itemInHand = player.getItemInHand();
-                if (itemInHand == null) return;
-                final int level = this.getItemEnchantLevel(itemInHand);
-                if (level == -1) {
-                    return;
-                }
-                event.setDamage((1 - 0.15 - level * 0.1) * event.getDamage());
-                Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
-                    final int noDamageTicks = player.getNoDamageTicks();
-                    player.setNoDamageTicks(0);
-                    PlayerUtil.damage(player, (Player) event.getEntity(), PlayerUtil.DamageType.TRUE, getTrueDamageRate(level) * event.getFinalDamage(), true);
-                    player.setNoDamageTicks(noDamageTicks);
-                }, 1L);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onBowShot(EntityShootBowEvent event) {
-        if (!(event.getEntity() instanceof Player)) return;
-        final Player player = (Player) event.getEntity();
-        if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) return;
-        final org.bukkit.inventory.ItemStack itemInHand = player.getItemInHand();
-        if (itemInHand == null) return;
-        final int level = this.getItemEnchantLevel(itemInHand);
-        if (level <= 0) {
-            return;
-        }
-        if (itemInHand.getType() == Material.BOW) {
-            event.getProjectile().setMetadata("true_shot", new FixedMetadataValue(ThePit.getInstance(), true));
-        }
+    @Override
+    @cn.charlotte.pit.enchantment.param.event.PlayerOnly
+    @cn.charlotte.pit.parm.type.BowOnly
+    public void handleShootEntity(int level, Player attacker, org.bukkit.entity.Entity target, double damage,
+            com.google.common.util.concurrent.AtomicDouble trueDamage,
+            com.google.common.util.concurrent.AtomicDouble boost, java.util.concurrent.atomic.AtomicBoolean cancel) {
+        if (cancel.get() || !(target instanceof Player)) return;
+        cn.charlotte.pit.util.combat.CombatContext.convertNormalToTrue(getTrueDamageRate(level));
+        trueDamage.addAndGet(getBonusTrueDamage(level));
     }
 }

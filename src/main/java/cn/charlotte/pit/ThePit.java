@@ -4,17 +4,22 @@ import cn.charlotte.pit.actionbar.IActionBarManager;
 import cn.charlotte.pit.api.PitInternalHook;
 import cn.charlotte.pit.api.PointsAPI;
 import cn.charlotte.pit.buff.BuffFactory;
+import cn.charlotte.pit.bot.PitBotManager;
 import cn.charlotte.pit.config.PitConfig;
 import cn.charlotte.pit.data.FixedRewardData;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.data.sub.KillRecap;
 import cn.charlotte.pit.database.MongoDB;
+import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.EnchantmentFactor;
 import cn.charlotte.pit.event.OriginalTimeChangeEvent;
+import cn.charlotte.pit.events.EventBlockTracker;
+import cn.charlotte.pit.events.EventEntityTracker;
 import cn.charlotte.pit.events.EventFactory;
 import cn.charlotte.pit.events.EventsHandler;
 import cn.charlotte.pit.game.Game;
 import cn.charlotte.pit.hologram.HologramFactory;
+import cn.charlotte.pit.item.AbstractPitItem;
 import cn.charlotte.pit.item.ItemFactor;
 import cn.charlotte.pit.medal.MedalFactory;
 import cn.charlotte.pit.minigame.MiniGameController;
@@ -22,6 +27,7 @@ import cn.charlotte.pit.mode.Mode;
 import cn.charlotte.pit.movement.PlayerMoveHandler;
 import cn.charlotte.pit.npc.NpcFactory;
 import cn.charlotte.pit.parm.AutoRegister;
+import cn.charlotte.pit.perk.AbstractPerk;
 import cn.charlotte.pit.perk.PerkFactory;
 import cn.charlotte.pit.pet.PetFactory;
 import cn.charlotte.pit.quest.QuestFactory;
@@ -29,6 +35,7 @@ import cn.charlotte.pit.hologram.HologramListener;
 import cn.charlotte.pit.listener.DataListener;
 import cn.charlotte.pit.runnable.*;
 import cn.charlotte.pit.util.bossbar.BossBarHandler;
+import cn.charlotte.pit.util.SpiterCompatibility;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.command.util.ClassUtil;
 import cn.charlotte.pit.util.dependencies.Dependency;
@@ -64,8 +71,6 @@ import spg.lgdev.iSpigot;
 
 import java.util.Collection;
 import java.util.Objects;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -109,6 +114,8 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
     private SoundFactory soundFactory;
     private PetFactory petFactory;
     private LeaderBoardRunnable leaderBoardRunnable;
+    private PitBotManager pitBotManager;
+    private cn.charlotte.pit.junxu.JunxuManager junxuManager;
 
     private PointsAPI pointsAPI;
 
@@ -146,6 +153,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         this.loadConfig();
         this.loadDatabase();
         this.loadListener();
+        SpiterCompatibility.initialize(this);
         PitMain.start();
         this.loadMenu();
         this.loadNpc();
@@ -158,13 +166,16 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         this.loadEnchantment();
         this.loadQuest();
         this.loadEvents();
+        this.pitBotManager = new PitBotManager(this);
+        this.pitBotManager.start();
+        this.junxuManager = new cn.charlotte.pit.junxu.JunxuManager(this);
+        this.junxuManager.start();
 
         try {
             this.loadMoveHandler();
         } catch (Exception ignored) {
         }
 
-        this.loadQuest();
         this.initBossBar();
 
         this.initPet();
@@ -172,12 +183,12 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         this.signGui = new SignGui(this);
 
         this.rebootRunnable = new RebootRunnable();
-        this.rebootRunnable.runTaskTimerAsynchronously(this, 20, 20);
+        this.rebootRunnable.runTaskTimer(this, 20, 20);
 
         this.miniGameController = new MiniGameController();
-        this.miniGameController.runTaskTimerAsynchronously(this, 1, 1);
+        this.miniGameController.runTaskTimer(this, 1, 1);
 
-        new DayNightCycleRunnable().runTaskTimerAsynchronously(this, 20, 20);
+        new DayNightCycleRunnable().runTaskTimer(this, 20, 20);
         this.leaderBoardRunnable = new LeaderBoardRunnable(this);
         try {
             EventsHandler.INSTANCE.loadFromDatabase();
@@ -197,18 +208,23 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
 
     @Override
     public void onDisable() {
-        // Cancel all Bukkit scheduled tasks for this plugin
+        cn.charlotte.pit.reward.EconomyAudit.stop();
+        if (junxuManager != null) junxuManager.shutdown();
         try {
-            Bukkit.getScheduler().cancelTasks(this);
+            cn.charlotte.pit.supporter.SupporterService service = cn.charlotte.pit.supporter.SupporterService.get();
+            if (service != null) service.shutdown();
+        } catch (Exception ignored) {
+        }
+        try {
+            if (pitBotManager != null) {
+                pitBotManager.shutdown();
+            }
         } catch (Exception ignored) {
         }
 
-        // Shutdown bounty executor
+        // Cancel all Bukkit scheduled tasks for this plugin
         try {
-            java.util.concurrent.ScheduledThreadPoolExecutor bountyExec = PitHook.getBountyExecutor();
-            if (bountyExec != null) {
-                bountyExec.shutdownNow();
-            }
+            Bukkit.getScheduler().cancelTasks(this);
         } catch (Exception ignored) {
         }
 
@@ -255,6 +271,22 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         }
 
         try {
+            if (eventFactory != null) eventFactory.shutdown();
+        } catch (Exception exception) {
+            getLogger().log(java.util.logging.Level.SEVERE, "Failed to stop active events", exception);
+        }
+
+        try {
+            EventEntityTracker.get().onPluginDisable();
+        } catch (Exception ignored) {
+        }
+
+        try {
+            EventBlockTracker.get().onPluginDisable();
+        } catch (Exception ignored) {
+        }
+
+        try {
             if (ClearRunnable.getClearRunnable() != null) {
                 ClearRunnable.getClearRunnable().onPluginDisable();
             }
@@ -267,7 +299,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 try {
                     PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-                    if (profile.isLoaded()) {
+                    if (profile.isLoaded() && !profile.isBot()) {
                         profile.setInventory(InventoryUtil.playerInventoryFromPlayer(player));
                         profile.save(null);
                         CC.boardCast("&6&l公告! &7正在保存 " + player.getDisplayName() + " 的数据...");
@@ -391,6 +423,12 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         classes.stream()
                 .filter(clazz -> clazz.isAnnotationPresent(AutoRegister.class))
                 .filter(Listener.class::isAssignableFrom)
+                // These types are instantiated and registered by their factories in
+                // PitHook. Registering them here as well doubled more than fifty hot
+                // event listeners and separated listener state from the canonical item.
+                .filter(clazz -> !AbstractEnchantment.class.isAssignableFrom(clazz))
+                .filter(clazz -> !AbstractPerk.class.isAssignableFrom(clazz))
+                .filter(clazz -> !AbstractPitItem.class.isAssignableFrom(clazz))
                 .map(clazz -> {
                     try {
                         return (Listener) clazz.newInstance();
@@ -454,6 +492,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
     private void loadNpc() {
         log.info("Loading NPCFactory...");
         this.npcFactory = new NpcFactory();
+        Bukkit.getPluginManager().registerEvents(this.npcFactory, this);
         log.info("Loaded NPCFactory!");
     }
 
@@ -755,6 +794,10 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         return this.nametagHandler;
     }
 
+    public void setNametagHandler(NametagHandler nametagHandler) {
+        this.nametagHandler = nametagHandler;
+    }
+
     public Game getGame() {
         return this.game;
     }
@@ -813,6 +856,14 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
 
     public PetFactory getPetFactory() {
         return this.petFactory;
+    }
+
+    public PitBotManager getPitBotManager() {
+        return pitBotManager;
+    }
+
+    public cn.charlotte.pit.junxu.JunxuManager getJunxuManager() {
+        return junxuManager;
     }
 
 

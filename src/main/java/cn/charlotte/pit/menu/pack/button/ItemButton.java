@@ -2,6 +2,8 @@ package cn.charlotte.pit.menu.pack.button;
 
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.events.impl.CarePackageEvent;
 import cn.charlotte.pit.menu.pack.PackageMenu;
 import cn.charlotte.pit.util.chat.CC;
@@ -42,12 +44,12 @@ public class ItemButton extends DisplayButton {
         if (itemStack != null) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
             if ("xp_reward".equals(ItemUtil.getInternalName(itemStack))) {
-                profile.setExperience(profile.getExperience() + 1000);
+                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.LOOT, 0, 1000);
 
-                player.sendMessage(CC.translate("&6&l空投! &7你从空投箱中找到了 &b1000 &7经验"));
+                player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&6&l空投! &7你从空投箱中找到了 &b%.2f &7经验", reward.getExperience())));
             } else if ("coin_reward".equals(ItemUtil.getInternalName(itemStack))) {
-                profile.setCoins(profile.getCoins() + 1000);
-                player.sendMessage(CC.translate("&6&l空投! &7你从空投箱中找到了 &61000 &7硬币"));
+                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.LOOT, 1000, 0);
+                player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&6&l空投! &7你从空投箱中找到了 &6%.2f &7硬币", reward.getCoins())));
             } else if ("renown_reward".equals(ItemUtil.getInternalName(itemStack))) {
                 profile.setRenown(profile.getRenown() + 2);
                 player.sendMessage(CC.translate("&6&l空投! &7你从空投箱中找到了 &e2 &7声望"));

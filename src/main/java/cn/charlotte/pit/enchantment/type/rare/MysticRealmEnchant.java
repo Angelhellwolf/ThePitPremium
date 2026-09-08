@@ -53,13 +53,13 @@ public class MysticRealmEnchant extends AbstractEnchantment implements IAttackEn
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (((Player)target).hasPotionEffect(PotionEffectType.SLOW))
+        if (target instanceof Player && ((Player)target).hasPotionEffect(PotionEffectType.SLOW))
             boostDamage.getAndAdd(enchantLevel * 0.04D);
     }
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (((Player)target).hasPotionEffect(PotionEffectType.SLOW))
+        if (target instanceof Player && ((Player)target).hasPotionEffect(PotionEffectType.SLOW))
             boostDamage.getAndAdd(enchantLevel * 0.04D);
     }
 

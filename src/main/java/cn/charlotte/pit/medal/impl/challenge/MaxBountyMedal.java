@@ -45,6 +45,7 @@ public class MaxBountyMedal extends AbstractMedal {
 
     @Override
     public void handleProfileLoaded(PlayerProfile profile) {
+        if (profile.getBounty() > 5000) setProgress(profile, 1);
 //        if (profile.getBounty() >= 5000) {
 //            setProgress(profile, 1);
 //        }

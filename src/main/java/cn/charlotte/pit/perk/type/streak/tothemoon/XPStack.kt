@@ -3,14 +3,20 @@ package cn.charlotte.pit.perk.type.streak.tothemoon
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.event.PitKillEvent
 import cn.charlotte.pit.event.PitStreakKillChangeEvent
+import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.perk.AbstractPerk
 import cn.charlotte.pit.perk.PerkType
+import cn.charlotte.pit.util.PlayerUtil
+import cn.charlotte.pit.util.reward.StreakRewardMath
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import kotlin.math.min
 
+@AutoRegister
 class XPStack : AbstractPerk(), Listener {
     override fun getInternalPerkName(): String {
         return "xp_stack"
@@ -47,7 +53,8 @@ class XPStack : AbstractPerk(), Listener {
             "&7触发时: ",
             "  &a▶ &7永久增加击杀&b 0.05经验 &7奖励, 直至下一次精通, 最高",
             "  &7可堆叠至 &b1经验&7, 每次精通将提升&b 0.2经验&7 上限",
-            "  &b经验奖励&7 将会在任何时候"
+            "  &7已积累的加成在卸下此天赋后仍保留",
+            "  &7击杀 Bot 不享受此经验加成"
         )
     }
 
@@ -69,15 +76,19 @@ class XPStack : AbstractPerk(), Listener {
 
     @EventHandler
     fun assist(event: PitKillEvent) {
+        if (!event.isProgressionEligible) return
         val profile = PlayerProfile.getPlayerProfileByUuid(event.killer.uniqueId) ?: return
         event.exp += profile.xpStackAddon
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun assist(event: PitStreakKillChangeEvent) {
         val profile = event.playerProfile
-        if (event.to.toInt() % 10 == 0) {
-            profile.xpStackAddon = min(profile.xpStackMax, profile.xpStackAddon + 0.05)
+        val player = Bukkit.getPlayer(profile.playerUuid) ?: return
+        if (!PlayerUtil.isPlayerChosePerk(player, getInternalPerkName())) return
+        val milestones = StreakRewardMath.crossedMilestones(event.from, event.to, 10)
+        if (milestones > 0) {
+            profile.xpStackAddon = min(profile.xpStackMax, profile.xpStackAddon + 0.05 * milestones)
         }
     }
 

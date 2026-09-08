@@ -2,18 +2,23 @@ package cn.charlotte.pit.perk.type.streak.tothemoon
 
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.event.PitAssistEvent
+import cn.charlotte.pit.event.PitStreakKillChangeEvent
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.parm.listener.IPlayerKilledEntity
 import cn.charlotte.pit.perk.AbstractPerk
 import cn.charlotte.pit.perk.PerkType
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.reward.RewardSource
 import cn.charlotte.pit.util.PlayerUtil
+import cn.charlotte.pit.util.reward.StreakRewardMath
 import com.google.common.util.concurrent.AtomicDouble
 import org.bukkit.Material
+import org.bukkit.Bukkit
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
-import kotlin.math.min
 
 @AutoRegister
 class SuperStreaker : AbstractPerk(), IPlayerKilledEntity, Listener {
@@ -50,7 +55,9 @@ class SuperStreaker : AbstractPerk(), IPlayerKilledEntity, Listener {
             "&7此天赋每 &c10 连杀 &7触发一次.",
             "",
             "&7触发时: ",
-            " &a▶ &7增加 &b50经验 &7, 且累计增加 &b+5% &7经验(最高增加50%)"
+            " &a▶ &7立即获得 &b50经验&7.",
+            " &a▶ &7此后击杀与助攻经验 &b+5% &7(本次连杀内累计, 最高50%).",
+            "&7Bot 击杀可推进连杀，但不发放以上额外经验"
         )
     }
 
@@ -74,11 +81,17 @@ class SuperStreaker : AbstractPerk(), IPlayerKilledEntity, Listener {
     fun assist(event: PitAssistEvent) {
         val profile = PlayerProfile.getPlayerProfileByUuid(event.assist.uniqueId) ?: return
         if (PlayerUtil.isPlayerChosePerk(event.assist, "super_streaker")) {
-            if (profile.streakKills >= 10) {
-                val numbers = profile.streakKills / 10
-                val add = min(numbers * 0.05, 0.5)
-                event.exp = event.exp * (1.0 + add) + 50
-            }
+            event.exp *= 1.0 + StreakRewardMath.superStreakerBonus(profile.streakKills)
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onStreak(event: PitStreakKillChangeEvent) {
+        val player = Bukkit.getPlayer(event.playerProfile.playerUuid) ?: return
+        if (!PlayerUtil.isPlayerChosePerk(player, getInternalPerkName())) return
+        val milestones = StreakRewardMath.crossedMilestones(event.from, event.to, 10)
+        if (milestones > 0) {
+            RewardService.grant(event.playerProfile, RewardSource.STREAK, 0.0, milestones * 50.0)
         }
     }
 
@@ -90,10 +103,6 @@ class SuperStreaker : AbstractPerk(), IPlayerKilledEntity, Listener {
         experience: AtomicDouble
     ) {
         val profile = PlayerProfile.getPlayerProfileByUuid(myself.uniqueId) ?: return
-        if (profile.streakKills >= 10) {
-            val numbers = profile.streakKills / 10
-            val add = min(numbers * 0.05, 0.5)
-            experience.getAndAdd(experience.get() * (1.0 + add) + 50)
-        }
+        experience.set(experience.get() * (1.0 + StreakRewardMath.superStreakerBonus(profile.streakKills)))
     }
 }

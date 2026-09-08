@@ -38,6 +38,9 @@ public class GoldenHandcuffsEnchant extends AbstractEnchantment {
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7获得的赏金数量 &6+400% &7,额外获得的部分由当前房间内的所有玩家平分.";
+        return "&7有效真人击杀触发赏金增长时，将当次增长的 &680% &7分给同场其他真人"
+                + "/s&7自己保留 &620% &7，所有人均遵守赏金上限"
+                + "/s&7没有合格玩家或他人达到上限时，剩余部分归自己"
+                + "/s&7当次总增长不变；排除 Bot";
     }
 }

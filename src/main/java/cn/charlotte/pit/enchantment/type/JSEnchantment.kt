@@ -106,6 +106,8 @@ class JSEnchantment(
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean
     ) {
+        val source = cn.charlotte.pit.util.combat.CombatContext.currentSource()
+        if (!isRodOnly && source is org.bukkit.entity.Projectile && source !is org.bukkit.entity.Arrow) return
         shootFunc?.invoke(enchantLevel, attacker, target, damage, finalDamage, boostDamage, cancel)
     }
 
@@ -140,6 +142,7 @@ class JSEnchantment(
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean
     ) {
-        playerDamagedFunc?.invoke(enchantLevel, myself, attacker, damage, finalDamage, boostDamage, cancel)
+        val source = cn.charlotte.pit.util.combat.CombatContext.playerSource(attacker) ?: attacker
+        playerDamagedFunc?.invoke(enchantLevel, myself, source, damage, finalDamage, boostDamage, cancel)
     }
 }

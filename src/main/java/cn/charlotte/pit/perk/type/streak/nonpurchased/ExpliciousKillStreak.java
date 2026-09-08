@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.nonpurchased;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.AbstractPerk;
@@ -64,6 +66,7 @@ public class ExpliciousKillStreak extends AbstractPerk implements Listener {
         list.add(" ");
         list.add("&7触发时:");
         list.add("  &a▶ &7立刻获得 &b+12 经验值");
+        list.add("&7Bot 击杀可推进连杀，但触发时不发放额外金币或经验");
         return list;
     }
 
@@ -100,8 +103,8 @@ public class ExpliciousKillStreak extends AbstractPerk implements Listener {
         }
         //trigger check (every X streak)
         int streak = 3;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
-            profile.setExperience(profile.getExperience() + 12);
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
+            RewardService.grant(profile, RewardSource.STREAK, 0, 12);
         }
     }
 

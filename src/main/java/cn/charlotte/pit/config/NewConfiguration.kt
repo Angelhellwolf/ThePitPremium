@@ -1,6 +1,9 @@
 package cn.charlotte.pit.config
 
 import cn.charlotte.pit.ThePit
+import cn.charlotte.pit.data.PlayerProfile
+import cn.charlotte.pit.supporter.SupporterPricing
+import cn.charlotte.pit.supporter.SupporterTier
 import cn.charlotte.pit.enchantment.type.rare.ThePunchEnchant
 import cn.charlotte.pit.item.MythicColor
 import cn.charlotte.pit.listener.CombatListener
@@ -12,16 +15,35 @@ import java.util.*
 
 object NewConfiguration {
 
-    var vipPrice = 500
+    var vipPrice = 5000
+    var vipCashPrice = 50
+    var vipDurationDays = 30
+    var mythicContractCashPrice = 38
+    var sacredContractCashPrice = 88
+    var supporterBaseDropChance = 0.006
+    var supporterMythicDropChance = 0.0075
+    var supporterSacredDropChance = 0.0125
+    var supporterBaseRareChance = 0.006
+    var supporterMythicRareChance = 0.0075
+    var supporterSacredRareChance = 0.0125
     var priceName = "点券"
+    var vipCurrencyProvider = "remiaftvalue"
+    var renameDailyFreeLimit = 3
+    var renameWeeklyFreeLimit = 7
+    var renameExtraCost = 100
     var lobbyCommand = "spb connect lobby"
 
     var dateFormat = "MM/dd HH:mm"
 
-    var noobProtect = true
+    var noobProtect = false
     var noobProtectLevel = 120
-    var noobDamageBoost = 1.1
-    var noobDamageReduce = 0.9
+    var noobDamageBoost = 1.0
+    var noobDamageReduce = 1.0
+    var noobRewardsEnabled = true
+    var noobRewardMultiplier = 2.0
+    var noobCoinRewardMultiplier = 1.5
+    var noobMaxPrestige = 5
+    var noobKilledRewardMultiplier = 1.0
 
     var luckGem = 0.30;
     var customChatFormatEnable = false
@@ -75,20 +97,50 @@ object NewConfiguration {
     fun load() {
         refreshAndSave()
 
-        vipPrice = config.getInt("vip-price", 500)
-        priceName = config.getString("price-name", "点券")
+        // One yuan is always 100 points. Old monthly keys no longer price the permanent product.
+        vipCashPrice = config.getInt("supporter.permanent-cash-price-yuan", 50).coerceIn(1, 1_000_000)
+        vipPrice = Math.multiplyExact(vipCashPrice, SupporterPricing.POINTS_PER_YUAN)
+        mythicContractCashPrice = config.getInt("supporter.mythic-cash-price-yuan", 38).coerceIn(1, 999_999)
+        sacredContractCashPrice = config.getInt("supporter.sacred-cash-price-yuan", 88)
+            .coerceIn(mythicContractCashPrice + 1, 1_000_000)
+        vipDurationDays = config.getInt("supporter.duration-days", 30).coerceAtLeast(1)
+        supporterBaseDropChance = config.getDouble("supporter.drop-chance.base", 0.006).coerceIn(0.0, 1.0)
+        supporterMythicDropChance = config.getDouble("supporter.drop-chance.mythic", 0.0075).coerceIn(supporterBaseDropChance, 1.0)
+        supporterSacredDropChance = config.getDouble("supporter.drop-chance.sacred", 0.0125).coerceIn(supporterMythicDropChance, 1.0)
+        supporterBaseRareChance = config.getDouble("supporter.rare-chance.base", 0.006).coerceIn(0.0, 1.0)
+        supporterMythicRareChance = config.getDouble("supporter.rare-chance.mythic", 0.0075).coerceIn(supporterBaseRareChance, 1.0)
+        supporterSacredRareChance = config.getDouble("supporter.rare-chance.sacred", 0.0125).coerceIn(supporterMythicRareChance, 1.0)
+        priceName = config.getString("supporter.currency-name", "点券")
+        vipCurrencyProvider = config.getString("supporter.currency-provider", "remiaftvalue")
+        renameDailyFreeLimit = config.getInt("supporter.rename.daily-free", 3).coerceAtLeast(0)
+        renameWeeklyFreeLimit = config.getInt("supporter.rename.weekly-free", 7).coerceAtLeast(0)
+        renameExtraCost = config.getInt("supporter.rename.extra-cost", 100).coerceAtLeast(1)
         lobbyCommand = config.getString("lobby-command", "hub")
 
         dateFormat = config.getString("dateFormat", "MM/dd HH:mm")
 
         noobProtect = config.getBoolean("noob-protect.enable")
-        noobProtectLevel = config.getInt("noob-protect.level")
+        noobProtectLevel = config.getInt("noob-protect.level", 120).coerceIn(1, 120)
         noobDamageBoost = config.getDouble("noob-protect.damage_boost")
         noobDamageReduce = config.getDouble("noob-protect.damage_reduce")
+        noobRewardsEnabled = config.getBoolean("noob-rewards.enabled", true)
+        noobRewardMultiplier = config.getDouble("noob-rewards.multiplier", 2.0)
+            .takeIf { it.isFinite() && it in 1.0..3.0 } ?: 2.0
+        noobCoinRewardMultiplier = config.getDouble("noob-rewards.coin-multiplier", 1.5)
+            .takeIf { it.isFinite() && it in 1.0..3.0 } ?: 1.5
+        noobMaxPrestige = config.getInt("noob-rewards.max-prestige", 5).coerceIn(0, 10)
+        noobKilledRewardMultiplier = config.getDouble("noob-rewards.killed-multiplier", 1.0)
+            .takeIf { it.isFinite() && it in 0.0..1.0 } ?: 1.0
 
         val configuredBoost = if (config.contains("booster")) config.getDouble("booster") else 0.0
         val fallbackBoost = ThePit.getInstance().config.getDouble("booster", 1.0)
         CombatListener.eventBoost = if (configuredBoost > 0) configuredBoost else fallbackBoost
+        cn.charlotte.pit.reward.RewardCalendar.reload(ThePit.getInstance())
+        ThePit.getInstance().logger.info(
+            "Gameplay revision feedback-fairness-20260906: newcomer xp=$noobRewardMultiplier, " +
+                "coins=$noobCoinRewardMultiplier, max-prestige=$noobMaxPrestige, " +
+                "combat-modifiers=$noobProtect, victim-factor=$noobKilledRewardMultiplier"
+        )
 
         luckGem = config.getDouble("luck-gem", 0.30)
         waterMark = config.getString("water-mark")
@@ -203,38 +255,30 @@ object NewConfiguration {
     }
 
     fun Player.getMythicDropChance(): Double {
-        if (mythicChance.isEmpty()) return 0.005
-        for ((permission, chance) in mythicChance) {
-            if (hasPermission(permission)) return chance
-        }
-
-        return 0.005
+        return getSupporterDropChance(PlayerProfile.getPlayerProfileByUuid(uniqueId).activeSupporterTier)
     }
 
     fun getChance(player: Player, color: MythicColor): Double {
-        val list = when (color) {
-            MythicColor.DARK, MythicColor.RAGE -> {
-                rareRate[color]
-            }
-
-            else -> {
-                rareRate[MythicColor.ORANGE]
-            }
-        }
         if (player.hasMetadata("lucky")) {
             return luckGem
         }
-
-        if (list.isNullOrEmpty()) {
-            return 0.02
-        }
-
-        return list.filter {
-            player.hasPermission(it.permission)
-        }.maxByOrNull {
-            it.value
-        }?.value ?: 0.005
+        return getSupporterRareChance(PlayerProfile.getPlayerProfileByUuid(player.uniqueId).activeSupporterTier)
     }
+
+    fun getSupporterDropChance(tier: SupporterTier): Double = when (tier) {
+        SupporterTier.MYTHIC -> supporterMythicDropChance
+        SupporterTier.SACRED -> supporterSacredDropChance
+        else -> supporterBaseDropChance
+    }
+
+    fun getSupporterRareChance(tier: SupporterTier): Double = when (tier) {
+        SupporterTier.MYTHIC -> supporterMythicRareChance
+        SupporterTier.SACRED -> supporterSacredRareChance
+        else -> supporterBaseRareChance
+    }
+
+    fun supporterPricing(): SupporterPricing = SupporterPricing(vipCashPrice, mythicContractCashPrice,
+        sacredContractCashPrice, vipDurationDays)
 
     private fun refreshAndSave() {
         defaults.forEach {
@@ -262,8 +306,23 @@ object NewConfiguration {
     private val defaults = mapOf(
         "water-mark" to "&eThePitPremium &7| &b2025-Future",
         "bot-name" to "&cBot",
-        "vip-price" to 500,
+        "vip-price" to 2500,
         "price-name" to "点券",
+        "supporter.permanent-cash-price-yuan" to 50,
+        "supporter.mythic-cash-price-yuan" to 38,
+        "supporter.sacred-cash-price-yuan" to 88,
+        "supporter.drop-chance.base" to 0.006,
+        "supporter.drop-chance.mythic" to 0.0075,
+        "supporter.drop-chance.sacred" to 0.0125,
+        "supporter.rare-chance.base" to 0.006,
+        "supporter.rare-chance.mythic" to 0.0075,
+        "supporter.rare-chance.sacred" to 0.0125,
+        "supporter.duration-days" to 30,
+        "supporter.currency-name" to "点券",
+        "supporter.currency-provider" to "remiaftvalue",
+        "supporter.rename.daily-free" to 3,
+        "supporter.rename.weekly-free" to 7,
+        "supporter.rename.extra-cost" to 100,
         "lobby-command" to "hub",
 
 
@@ -287,10 +346,15 @@ object NewConfiguration {
         "status-npc-skin" to "ewogICJ0aW1lc3RhbXAiIDogMTY0ODY3MjI4MTczMiwKICAicHJvZmlsZUlkIiA6ICI1MjhlYzVmMmEzZmM0MDA0YjYwY2IwOTA5Y2JiMjdjYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJQdWxpenppIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2MxNTIxYTAyNTY2ODgxYjIwNTA4Mzg5YjM4MmEzMDIzMWE4NDViYTc0OWEyN2QxNDQ5NTUyNzQ3NDgxY2Y4YjkiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==",
 
         //新手保护
-        "noob-protect.enable" to true,
+        "noob-protect.enable" to false,
         "noob-protect.level" to 120,
-        "noob-protect.damage_boost" to 1.1,
-        "noob-protect.damage_reduce" to 0.9,
+        "noob-protect.damage_boost" to 1.0,
+        "noob-protect.damage_reduce" to 1.0,
+        "noob-rewards.enabled" to true,
+        "noob-rewards.multiplier" to 2.0,
+        "noob-rewards.coin-multiplier" to 1.5,
+        "noob-rewards.max-prestige" to 5,
+        "noob-rewards.killed-multiplier" to 1.0,
 
         //mm兼容
         "mm-listener.mm_mob_a.xp-provide" to "10-100",
@@ -316,7 +380,7 @@ object NewConfiguration {
         "event-online-required.ham" to 20,
         "event-online-required.rage_pit" to 20,
         "event-online-required.red_vs_blue" to 20,
-        "event-online-required.spire" to 20,
+        "event-online-required.spire" to 5,
         "event-online-required.block_head" to 999,
         "event-online-required.squads" to 999,
 

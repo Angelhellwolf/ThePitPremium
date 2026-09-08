@@ -20,7 +20,7 @@ public class RagePitTopMedal extends AbstractMedal {
 
     @Override
     public String getRequirementDescription(int level) {
-        return "在单次参与人数超过50人的事件[疯狂天坑]中，取得前三名";
+        return "在单次至少50名真人造成有效伤害的事件[疯狂天坑]中，取得前三名";
     }
 
     @Override

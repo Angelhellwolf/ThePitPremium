@@ -6,28 +6,71 @@ import cn.charlotte.pit.events.genesis.team.GenesisTeam;
 import cn.charlotte.pit.events.impl.major.HamburgerEvent;
 import cn.charlotte.pit.events.impl.major.RedVSBlueEvent;
 import cn.charlotte.pit.events.impl.major.SpireEvent;
+import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.nametag.BufferedNametag;
 import cn.charlotte.pit.util.nametag.NametagAdapter;
 import cn.charlotte.pit.util.rank.RankUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.UUID;
 
 /**
  * @Author: EmptyIrony
  * @Date: 2021/1/1 15:56
  */
 public class NameTagImpl implements NametagAdapter {
+    private static final long PLATE_CACHE_MS = 1000L;
+    private final java.util.function.Supplier<? extends java.util.Collection<? extends Player>> onlinePlayers;
+
+    public NameTagImpl() { this(Bukkit::getOnlinePlayers); }
+
+    NameTagImpl(java.util.function.Supplier<? extends java.util.Collection<? extends Player>> onlinePlayers) {
+        this.onlinePlayers = onlinePlayers;
+    }
+
+    private List<BufferedNametag> cachedPlate = Collections.emptyList();
+    private long cachedPlateUntil;
+    private UUID cachedPlateScope;
+
     @Override
     public List<BufferedNametag> getPlate(Player player) {
+        final long now = System.currentTimeMillis();
+        cn.charlotte.pit.junxu.JunxuManager junxu = ThePit.getInstance().getJunxuManager();
+        cn.charlotte.pit.junxu.JunxuRoom viewerRoom = junxu == null || player == null ? null : junxu.at(player.getLocation());
+        UUID scope = viewerRoom == null || !viewerRoom.permits(player.getUniqueId()) ? null : viewerRoom.session;
+        if (now < cachedPlateUntil && java.util.Objects.equals(scope,cachedPlateScope)) {
+            return cachedPlate;
+        }
+        cachedPlateScope=scope;
+
         List<BufferedNametag> tags = new ArrayList<>();
         List<PlayerProfile> profiles = new ArrayList<>();
 
-        for (Player target : Bukkit.getOnlinePlayers()) {
-            profiles.add(PlayerProfile.getPlayerProfileByUuid(target.getUniqueId()));
+        Map<UUID, Player> targets = new LinkedHashMap<>();
+        for (Player target : onlinePlayers.get()) targets.put(target.getUniqueId(), target);
+        if (ThePit.getInstance().getPitBotManager() != null) {
+            for (PlayerProfile profile : PlayerProfile.getCacheProfile().values()) {
+                if (!ThePit.getInstance().getPitBotManager().ownsProfile(profile)) continue;
+                Player target = ThePit.getInstance().getPitBotManager().getPlayer(profile.getPlayerUuid());
+                cn.charlotte.pit.junxu.JunxuRoom privateRoom = junxu == null || junxu.bots() == null ? null : junxu.bots().room(target);
+                if (privateRoom != null && (player == null || !cn.charlotte.pit.junxu.JunxuVisibility.canView(player.getUniqueId(),player.getLocation(),privateRoom))) continue;
+                if (target != null) targets.put(target.getUniqueId(), target);
+            }
+        }
+        for (Player target : targets.values()) {
+            PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
+            if (profile == null || !profile.isLoaded()) {
+                continue;
+            }
+            profiles.add(profile);
         }
 
         if (ThePit.getInstance().getEventFactory() == null) {
@@ -51,18 +94,27 @@ public class NameTagImpl implements NametagAdapter {
 
             if ("spire".equals(activeEpicEventName)) {
                 final SpireEvent event = (SpireEvent) ThePit.getInstance().getEventFactory().getActiveEpicEvent();
-                priority1 += event.getRank(Bukkit.getPlayer(profile1.getPlayerUuid())) * 10000000;
-                priority2 += event.getRank(Bukkit.getPlayer(profile2.getPlayerUuid())) * 10000000;
+                Player first = Bukkit.getPlayer(profile1.getPlayerUuid()), second = Bukkit.getPlayer(profile2.getPlayerUuid());
+                if (ThePit.getInstance().getPitBotManager() != null) {
+                    if (first == null) first = ThePit.getInstance().getPitBotManager().getPlayer(profile1.getPlayerUuid());
+                    if (second == null) second = ThePit.getInstance().getPitBotManager().getPlayer(profile2.getPlayerUuid());
+                }
+                priority1 += event.getRank(first) * 10000000;
+                priority2 += event.getRank(second) * 10000000;
             }
             return Integer.compare(priority1, priority2);
         });
         int i = 200;
         for (PlayerProfile profile : profiles) {
+            Player tagged = targets.get(profile.getPlayerUuid());
+            if (tagged == null) {
+                continue;
+            }
+
             String displayName;
             if ("spire".equals(activeEpicEventName)) {
                 final SpireEvent event = (SpireEvent) ThePit.getInstance().getEventFactory().getActiveEpicEvent();
-                final Player target = Bukkit.getPlayer(profile.getPlayerUuid());
-                final int rank = event.getRank(target);
+                final int rank = event.getRank(tagged);
                 if (rank == -1) {
                     displayName = CC.translate("&7[???&7] " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
                 } else {
@@ -73,26 +125,14 @@ public class NameTagImpl implements NametagAdapter {
                 displayName = activeEpicEvent.isRedTeam(profile.getPlayerUuid()) ? CC.translate(profile.getFormattedLevelTag() + " &c") : CC.translate(profile.getFormattedLevelTag() + " &9");
             } else {
                 displayName = CC.translate(profile.getFormattedLevelTag() + " " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
-                if (profile.getChosePerk().get(5) != null) {
-                    if (profile.getChosePerk().get(5).getPerkInternalName().equalsIgnoreCase("over_drive") && profile.getStreakKills() >= 50) {
-                        displayName = CC.translate("&e&l超速传动" + " " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
+                String activeMegaStreak = PlayerUtil.getActiveMegaStreak(tagged);
+                if (activeMegaStreak != null) {
+                    String streakLevel = "";
+                    if ("uber_streak".equalsIgnoreCase(profile.getChosePerk().get(5).getPerkInternalName())) {
+                        streakLevel = String.valueOf(Math.min(400, (((int) profile.getStreakKills()) / 100) * 100));
                     }
-                    if (profile.getChosePerk().get(5).getPerkInternalName().equalsIgnoreCase("high_lander") && profile.getStreakKills() >= 50) {
-                        displayName = CC.translate("&6&l尊贵血统" + " " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
-                    }
-                    if (profile.getChosePerk().get(5).getPerkInternalName().equalsIgnoreCase("beast_mode_mega_streak") && profile.getStreakKills() >= 50) {
-                        displayName = CC.translate("&a&l野兽模式" + " " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
-                    }
-                    if (profile.getChosePerk().get(5).getPerkInternalName().equalsIgnoreCase("hermit") && profile.getStreakKills() >= 50) {
-                        displayName = CC.translate("&9&l隐士" + " " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
-                    }
-                    if (profile.getChosePerk().get(5).getPerkInternalName().equalsIgnoreCase("uber_streak") && profile.getStreakKills() >= 100) {
-                        final int level = Math.min(400, (((int) profile.getStreakKills()) / 100) * 100);
-                        displayName = CC.translate("&d&l登峰造极" + level + " " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
-                    }
-                    if (profile.getChosePerk().get(5).getPerkInternalName().equalsIgnoreCase("to_the_moon") && profile.getStreakKills() >= 100) {
-                        displayName = CC.translate("&b&l月球之旅" + " " + RankUtil.getPlayerRankColor(profile.getPlayerUuid()));
-                    }
+                    displayName = activeMegaStreak + ChatColor.BOLD + streakLevel + " "
+                            + RankUtil.getPlayerRankColor(profile.getPlayerUuid());
                 }
             }
             StringBuilder suffix = new StringBuilder();
@@ -115,7 +155,7 @@ public class NameTagImpl implements NametagAdapter {
                 }
             } else {
                 if (profile.isSupporter() && profile.getPlayerOption().isSupporterStarDisplay() && !profile.isNicked()) {
-                    suffix.append(" &e✬");
+                    suffix.append(" ").append(profile.getSupporterStar());
                 }
                 if (ThePit.getInstance().getPitConfig().isGenesisEnable()) {
                     if (profile.getGenesisData().getTeam() == GenesisTeam.ANGEL) {
@@ -146,18 +186,20 @@ public class NameTagImpl implements NametagAdapter {
                 }
             }
 
+            String translatedSuffix = CC.translate(suffix.toString());
             tags.add(new BufferedNametag(
-                    i + "",
-                    //&7 refers to Prefix
+                    String.format("%03d", i),
                     displayName,
-                    CC.translate(suffix.toString()),
+                    translatedSuffix,
                     false,
-                    Bukkit.getPlayer(profile.getPlayerUuid())));
+                    tagged));
             i--;
 
         }
 
-        return tags;
+        cachedPlate = Collections.unmodifiableList(tags);
+        cachedPlateUntil = now + PLATE_CACHE_MS;
+        return cachedPlate;
     }
 
     @Override

@@ -3,6 +3,7 @@ package cn.charlotte.pit.events.impl;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.event.PitKillEvent;
+import cn.charlotte.pit.events.EventBlockTracker;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.events.INormalEvent;
 import cn.charlotte.pit.parm.AutoRegister;
@@ -23,8 +24,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
@@ -37,6 +40,7 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
     @Getter
     private static HillData hillData;
     private boolean isActive = false;
+    private org.bukkit.scheduler.BukkitTask endTask;
 
     @Override
     public String getEventInternalName() {
@@ -80,7 +84,8 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
     }
 
     private void scheduleEventDeactivation(int minutes) {
-        Bukkit.getScheduler().runTaskLater(
+        if (endTask != null) endTask.cancel();
+        endTask = Bukkit.getScheduler().runTaskLater(
                 ThePit.getInstance(),
                 this::deactivateEvent,
                 20L * 60 * minutes
@@ -88,12 +93,20 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
     }
 
     private void deactivateEvent() {
-        ThePit.getInstance().getEventFactory().inactiveEvent(this);
-        onInactive();
+        if (!isActive) {
+            return;
+        }
+        if (ThePit.getInstance().getEventFactory().getActiveNormalEvent() == this) {
+            ThePit.getInstance().getEventFactory().inactiveEvent(this);
+        } else {
+            onInactive();
+        }
     }
 
     @Override
     public void onInactive() {
+        if (endTask != null) endTask.cancel();
+        endTask = null;
         despawnKothCircle();
         HandlerList.unregisterAll(this);
         isActive = false;
@@ -101,9 +114,11 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
 
     @EventHandler
     public void onKill(PitKillEvent event) {
+        if (!event.isProgressionEligible() || !event.isHumanPvp()) return;
         if (isActive && isRegion(event.getKiller())) {
             event.setCoins(event.getCoins() * 4);
             event.setExp(event.getExp() * 4);
+            event.setHillMultiplier(4.0);
         }
     }
 
@@ -115,14 +130,28 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
         int centerX = center.getBlockX();
         int centerY = center.getBlockY();
         int centerZ = center.getBlockZ();
+
+        List<Block> circleBlocks = new ArrayList<>();
+        List<Location> affectedLocations = new ArrayList<>();
         for (int x = centerX - extendedRadius; x <= centerX + extendedRadius; x++) {
             for (int z = centerZ - extendedRadius; z <= centerZ + extendedRadius; z++) {
                 if (Math.pow(centerX - x, 2) + Math.pow(centerZ - z, 2) <= squaredRadius) {
                     Block block = world.getBlockAt(x, centerY, z);
-                    saveBlockData(block);
-                    block.setType(material);
+                    circleBlocks.add(block);
+                    affectedLocations.add(block.getLocation());
                 }
             }
+        }
+
+        Block beaconBlock = center.clone().add(0, -1, 0).getBlock();
+        affectedLocations.add(beaconBlock.getLocation());
+        EventBlockTracker.get().captureBlocks(EventBlockTracker.KOTH, affectedLocations);
+
+        blocks.clear();
+        blockData.clear();
+        for (Block block : circleBlocks) {
+            saveBlockData(block);
+            block.setType(material);
         }
         setupCentralBeacon(center);
         setupHolograms(center);
@@ -148,18 +177,27 @@ public class KingOfTheHillEvent implements IEvent, INormalEvent, Listener {
     }
 
     public void despawnKothCircle() {
-        blocks.forEach((block, type) -> block.setType(type));
-        blockData.forEach((block, data) -> block.setData(data));
-        hillData.despawnAllHolograms();
+        // Restore synchronously so players do not keep seeing the hill after the
+        // event ends. The persisted tracker also restores it after a restart or crash.
+        EventBlockTracker.get().restoreImmediately(EventBlockTracker.KOTH);
+        blocks.forEach((block, type) -> block.setType(type, false));
+        blockData.forEach((block, data) -> block.setData(data, false));
+        blocks.clear();
+        blockData.clear();
+        if (hillData != null) {
+            hillData.despawnAllHolograms();
+        }
     }
 
     public boolean isRegion(Player player) {
+        if (!isActive || player == null) return false;
         Location loc = player.getLocation();
-        return isGoldBlock(loc.add(0, -1, 0)) || isGoldBlock(loc.add(0, -2, 0));
+        return isGoldBlock(loc.clone().add(0, -1, 0)) || isGoldBlock(loc.clone().add(0, -2, 0));
     }
 
     private boolean isGoldBlock(Location location) {
-        return location.getBlock().getType() == Material.GOLD_BLOCK;
+        Block block = location.getBlock();
+        return blocks.containsKey(block) && block.getType() == Material.GOLD_BLOCK;
     }
 
     @Data

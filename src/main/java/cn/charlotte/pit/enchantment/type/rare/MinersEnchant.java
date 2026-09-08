@@ -54,7 +54,7 @@ public class MinersEnchant extends AbstractEnchantment implements IPlayerKilledE
     @PlayerOnly
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
-        if (profile.getStreakKills() % 1000 == 0) {
+        if (cn.charlotte.pit.reward.KillRewardContext.crossedStreak(myself.getUniqueId(), profile.getStreakKills(), 1000)) {
             double chance = 0.01 * (enchantLevel + 2) * 10;
             if (RandomUtil.hasSuccessfullyByChance(chance)) {
                 myself.getInventory().addItem(ChunkOfVileItem.toItemStack());

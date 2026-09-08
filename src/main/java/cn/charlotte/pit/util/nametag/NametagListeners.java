@@ -23,7 +23,14 @@ public class NametagListeners implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        getHandler().getBoards().putIfAbsent(event.getPlayer().getUniqueId(), new NametagBoard(event.getPlayer(), getHandler()));
+        // Let ServerManager / Assemble claim the player scoreboard first, then
+        // attach nametag teams onto that same board.
+        Bukkit.getScheduler().runTaskLater(getHandler().getPlugin(), () -> {
+            if (!event.getPlayer().isOnline()) {
+                return;
+            }
+            getHandler().getBoards().putIfAbsent(event.getPlayer().getUniqueId(), new NametagBoard(event.getPlayer(), getHandler()));
+        }, 2L);
     }
 
     @EventHandler

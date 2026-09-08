@@ -85,10 +85,15 @@ public class GladiatorPerk extends AbstractPerk implements IPlayerDamaged {
 
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        double boost = PlayerUtil.getNearbyPlayers(myself.getLocation(), 12).size();
+        boostDamage.getAndAdd(-getReduction(myself));
+    }
+
+    public static double getReduction(Player myself) {
+        double boost = PlayerUtil.getNearbyPlayers(myself.getLocation(), 12).stream()
+                .filter(player -> !player.getUniqueId().equals(myself.getUniqueId())).count();
 
         int sybilLevel = Utils.getEnchantLevel(myself.getInventory().getLeggings(), "sybil");
-        if (sybilLevel > 0) {
+        if (sybilLevel > 0 && !PlayerUtil.shouldIgnoreEnchant(myself)) {
             boost += sybilLevel + 1;
         }
 
@@ -98,6 +103,6 @@ public class GladiatorPerk extends AbstractPerk implements IPlayerDamaged {
         if (boost < 3) {
             boost = 0;
         }
-        boostDamage.set(boostDamage.get() - 0.01 * 3 * boost);
+        return 0.01 * 3 * boost;
     }
 }

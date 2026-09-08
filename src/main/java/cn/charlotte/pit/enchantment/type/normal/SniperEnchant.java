@@ -46,7 +46,18 @@ public class SniperEnchant extends AbstractEnchantment implements IPlayerShootEn
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7弓箭命中距离 &e24 &7格外的玩家时造成的伤害 &c+" + (10 + enchantLevel * 10) + "%";
+        return "&7弓箭命中距离 &e24 &7格及以上的玩家时造成的伤害 &c+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 9;
+            case 2:
+                return 18;
+            default:
+                return 30;
+        }
     }
 
     @Override
@@ -55,7 +66,7 @@ public class SniperEnchant extends AbstractEnchantment implements IPlayerShootEn
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player targetPlayer = (Player) target;
         if (PlayerUtil.getDistance(attacker, targetPlayer) >= 24) {
-            boostDamage.getAndAdd(0.1 + enchantLevel * 0.1);
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
     }
 }

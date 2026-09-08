@@ -46,7 +46,8 @@ public class SomberEnchant extends AbstractEnchantment implements IAttackEntity,
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         return "&7攻击或受到攻击时, 当次攻击对双方附加 &c阴影 &7效果."
-                + "/s&7效果 &c阴影 &7: 攻击/受到攻击时,装备/使用的神话物品失效";
+                + "/s&7效果 &c阴影 &7: 攻击/受到攻击时,非暗黑附魔失效"
+                + "/s&7暗黑附魔仍有效；世界末日之靴可抵御对方的阴影";
     }
 
     @Override

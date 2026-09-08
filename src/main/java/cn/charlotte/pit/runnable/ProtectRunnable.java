@@ -31,6 +31,13 @@ public class ProtectRunnable extends BukkitRunnable {
             if (profile == null) {
                 continue;
             }
+            cn.charlotte.pit.junxu.JunxuManager junxu = ThePit.getInstance().getJunxuManager();
+            if (junxu != null && junxu.isWorld(player.getWorld())) {
+                profile.setInArena(junxu.isTraining(player, player.getLocation()));
+                if (player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR)
+                    player.setGameMode(profile.isInArena() ? GameMode.SURVIVAL : GameMode.ADVENTURE);
+                continue;
+            }
             if (!profile.isEditingMode() || !PlayerUtil.isStaffSpectating(player)) {
                 if (!profile.isInArena()) {
                     Location location = player.getLocation();

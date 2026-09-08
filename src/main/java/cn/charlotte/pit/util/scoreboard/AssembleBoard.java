@@ -50,12 +50,14 @@ public class AssembleBoard {
      */
     public Scoreboard getScoreboard() {
         Player player = Bukkit.getPlayer(getUuid());
-
-        if (assemble.isHook() || player.getScoreboard() != Bukkit.getScoreboardManager().getMainScoreboard()) {
-            return player.getScoreboard();
-        } else {
+        if (player == null) {
             return Bukkit.getScoreboardManager().getNewScoreboard();
         }
+        Scoreboard current = player.getScoreboard();
+        if (current != null && current != Bukkit.getScoreboardManager().getMainScoreboard()) {
+            return current;
+        }
+        return Bukkit.getScoreboardManager().getNewScoreboard();
     }
 
     /**

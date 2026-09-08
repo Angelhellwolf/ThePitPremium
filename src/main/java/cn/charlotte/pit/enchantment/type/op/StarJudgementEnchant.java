@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.op;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
@@ -56,22 +58,23 @@ public class StarJudgementEnchant extends AbstractEnchantment implements IAttack
 
     @Override
     public String getText(int level, Player player) {
-        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getBowHit() : PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getMeleeHit());
+        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? CombatContext.bowHits(player) : CombatContext.meleeHits(player));
         return (hit % (Math.max(1, 4 - level)) == 0 ? "&a&l✔" : "&e&l" + (Math.max(1, 4 - level) - hit % (Math.max(1, 4 - level))));
     }
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        int hit = (attacker.getItemInHand() != null && attacker.getItemInHand().getType() == Material.BOW ? PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getBowHit() : PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit());
+        int hit = (attacker.getItemInHand() != null && attacker.getItemInHand().getType() == Material.BOW ? CombatContext.bowHits(attacker) : CombatContext.meleeHits(attacker));
         final boolean b = hit % (Math.max(1, 4 - enchantLevel)) == 0;
         if (b) {
             final boolean success = RandomUtil.hasSuccessfullyByChance(enchantLevel >= 3 ? 0.3 : 0.2);
             if (success && target instanceof Player) {
-                Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+                final Object life = cn.charlotte.pit.util.combat.PlayerLife.capture((Player) target);
+                CombatContext.afterAccepted(() -> Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
                     final Player player = (Player) target;
-                    final double nowHealth = player.getHealth();
-                    player.setHealth(Math.max(0.0, nowHealth - 2.0));
-                });
+                    if (cn.charlotte.pit.util.combat.PlayerLife.isCurrent(player, life))
+                        cn.charlotte.pit.util.PlayerUtil.damage(attacker, player, cn.charlotte.pit.util.PlayerUtil.DamageType.TRUE, 2D, true);
+                }));
             }
         }
     }

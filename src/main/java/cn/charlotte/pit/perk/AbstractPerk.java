@@ -49,6 +49,7 @@ public abstract class AbstractPerk {
     }
 
     public int getPlayerLevel(Player player) {
+        if (player == null || cn.charlotte.pit.UtilKt.hasRealMan(player)) return -1;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
 
         boolean passiveFound = this.getClass().isAnnotationPresent(Passive.class);

@@ -7,9 +7,13 @@ import cn.charlotte.pit.event.PitStreakKillChangeEvent
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.perk.AbstractPerk
 import cn.charlotte.pit.perk.PerkType
+import cn.charlotte.pit.util.PlayerUtil
+import cn.charlotte.pit.util.reward.StreakRewardMath
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import kotlin.math.min
 
@@ -50,7 +54,8 @@ class GoldStack : AbstractPerk(), Listener {
             "&7触发时: ",
             "  &a▶ &7永久增加击杀&6 0.1金币 &7奖励, 直至下一次精通升级,",
             "  &7最高可堆叠至 &60.5金币&7, 每次精通将提升&6 0.1金币&7 上限",
-            "  &6金币奖励&7 将会在任何时候生效"
+            "  &7已积累的加成在卸下此天赋后仍保留",
+            "  &7击杀 Bot 不享受此金币加成"
         )
     }
 
@@ -72,15 +77,19 @@ class GoldStack : AbstractPerk(), Listener {
 
     @EventHandler
     fun assist(event: PitKillEvent) {
+        if (!event.isProgressionEligible) return
         val profile = PlayerProfile.getPlayerProfileByUuid(event.killer.uniqueId) ?: return
         event.coins += profile.goldStackAddon
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun assist(event: PitStreakKillChangeEvent) {
         val profile = event.playerProfile
-        if (event.to.toInt() % 10 == 0) {
-            profile.goldStackAddon = min(profile.goldStackMax, profile.goldStackAddon + 0.1)
+        val player = Bukkit.getPlayer(profile.playerUuid) ?: return
+        if (!PlayerUtil.isPlayerChosePerk(player, getInternalPerkName())) return
+        val milestones = StreakRewardMath.crossedMilestones(event.from, event.to, 10)
+        if (milestones > 0) {
+            profile.goldStackAddon = min(profile.goldStackMax, profile.goldStackAddon + 0.1 * milestones)
         }
     }
 

@@ -166,7 +166,8 @@ public class Utils {
         }
 
         for (Map.Entry<AbstractEnchantment, Integer> entry : mythicItem.getEnchantments().entrySet()) {
-            if ((is == (entry.getKey().getRarity().getParentType() == EnchantmentRarity.RarityType.RARE)) && entry.getValue() < entry.getKey().getMaxEnchantLevel()) {
+            if (entry.getKey().getRarity().getParentType() == (is ? EnchantmentRarity.RarityType.RARE : EnchantmentRarity.RarityType.NORMAL)
+                    && entry.getValue() < entry.getKey().getMaxEnchantLevel()) {
                 return true;
             }
         }
@@ -174,19 +175,20 @@ public class Utils {
         return false;
     }
 
-    public static ItemStack subtractLive( ItemStack item) {
+    public static ItemStack subtractLive(ItemStack item) {
         if (item == null) {
             return null;
         }
 
-        final IMythicItem mythicLeggings = MythicUtil.getMythicItem(item);
-        if (mythicLeggings == null) return null;
-        if (mythicLeggings.isEnchanted()) {
-            if (mythicLeggings.getLive() <= 1) {
+        final IMythicItem mythicItem = MythicUtil.getMythicItem(item);
+        if (mythicItem == null) return null;
+
+        if (mythicItem.isEnchanted()) {
+            if (mythicItem.getLive() <= 1) {
                 return new ItemStack(Material.AIR);
             } else {
-                mythicLeggings.setLive(mythicLeggings.getLive() - 1);
-                return mythicLeggings.toItemStack();
+                mythicItem.setLive(mythicItem.getLive() - 1);
+                return mythicItem.toItemStack();
             }
         }
         return item;

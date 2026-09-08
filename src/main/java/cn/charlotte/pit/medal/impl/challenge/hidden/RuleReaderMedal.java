@@ -20,7 +20,7 @@ public class RuleReaderMedal extends AbstractMedal {
 
     @Override
     public String getRequirementDescription(int level) {
-        return "打开两次[天坑乱斗总规则]";
+        return "打开两次[天坑玩法规则]（/pitrules）";
     }
 
     @Override

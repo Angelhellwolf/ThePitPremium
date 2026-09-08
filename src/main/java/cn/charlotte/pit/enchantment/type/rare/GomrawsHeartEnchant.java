@@ -12,6 +12,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class GomrawsHeartEnchant extends AbstractEnchantment implements ITickTask {
 
     private static final HashMap<UUID, Boolean> inCombat = new HashMap<>();
+    private static final Map<UUID, Long> oocSince = new HashMap<>();
 
     @Override
     public String getEnchantName() {
@@ -50,7 +52,7 @@ public class GomrawsHeartEnchant extends AbstractEnchantment implements ITickTas
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7脱离战斗状态期间恢复自身全部生命值" + (enchantLevel >= 2 ?
+        return (enchantLevel >= 2 ? "&7持续脱离战斗15秒后恢复自身全部生命值" : "&7脱离战斗状态时恢复自身全部生命值") + (enchantLevel >= 2 ?
                 "/s&7且进入战斗状态后获得 &c生命恢复 IV &f(00:0" + (enchantLevel - 1) + ")" : "");
     }
 
@@ -60,12 +62,19 @@ public class GomrawsHeartEnchant extends AbstractEnchantment implements ITickTas
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         inCombat.putIfAbsent(player.getUniqueId(), true);
         if (profile.getCombatTimer().hasExpired()) {
-            player.setHealth(player.getMaxHealth());
+            long delay = enchantLevel >= 2 ? 15000L : 0L;
+            oocSince.putIfAbsent(player.getUniqueId(), System.currentTimeMillis());
+            if (System.currentTimeMillis() - oocSince.get(player.getUniqueId()) >= delay) {
+                PlayerUtil.heal(player, Math.max(0, player.getMaxHealth() - player.getHealth()));
+            }
             inCombat.put(player.getUniqueId(), false);
         } else {
+            oocSince.remove(player.getUniqueId());
             if (!inCombat.get(player.getUniqueId())) {
                 inCombat.put(player.getUniqueId(), true);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, (enchantLevel - 1) * 20, 3), true);
+                if (enchantLevel >= 2) {
+                    player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, (enchantLevel - 1) * 20, 3), true);
+                }
             }
         }
     }

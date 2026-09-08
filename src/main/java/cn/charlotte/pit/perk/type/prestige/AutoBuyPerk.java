@@ -84,30 +84,23 @@ public class AutoBuyPerk extends AbstractPerk implements IPlayerRespawn {
 
     }
 
-    private List<AbstractShopButton> buttons = null;
-
     @Override
     public void handleRespawn(int enchantLevel, Player myself) {
-        if (buttons == null) {
-            buttons = new ShopMenu()
-                    .getButtons(myself)
-                    .values()
-                    .stream()
-                    .filter(button -> button instanceof AbstractShopButton)
-                    .map(button -> ((AbstractShopButton) button))
-                    .collect(Collectors.toList());
-        }
-
+        Object life = cn.charlotte.pit.util.combat.PlayerLife.capture(myself);
         Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
+            if (!cn.charlotte.pit.util.combat.PlayerLife.isCurrent(myself, life)) return;
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
-            profile.getAutoBuyButtons().forEach(internal -> {
+            if (!profile.isLoaded()) return;
+            List<AbstractShopButton> buttons = new ShopMenu().getButtons(myself).values().stream()
+                    .filter(button -> button instanceof AbstractShopButton).map(button -> (AbstractShopButton) button).collect(Collectors.toList());
+            for (String internal : profile.getAutoBuyButtons()) {
                 for (AbstractShopButton button : buttons) {
                     if (button.getInternalName().equals(internal)) {
                         button.clicked(myself, 0, ClickType.LEFT, 0, new ItemStack(Material.AIR));
                         break;
                     }
                 }
-            });
+            }
         }, 1L);
     }
 }

@@ -65,7 +65,7 @@ class HappyNewYearEnchant : AbstractEnchantment(), IPlayerDamaged, IActionDispla
     ) {
         cooldown.putIfAbsent(myself.uniqueId, Cooldown(0))
         if (cooldown[myself.uniqueId]!!.hasExpired()) {
-            cooldown[myself.uniqueId] = Cooldown(1.5.toLong(), TimeUnit.SECONDS)
+            cooldown[myself.uniqueId] = Cooldown(1500, TimeUnit.MILLISECONDS)
             val (level, duration) = getHeal(enchantLevel)
             myself.addPotionEffect(
                 PotionEffect(

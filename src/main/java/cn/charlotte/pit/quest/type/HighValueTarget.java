@@ -67,7 +67,6 @@ public class HighValueTarget extends AbstractQuest implements IAttackEntity, IPl
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
         if (profile.getCurrentQuest() != null && profile.getCurrentQuest().getInternalName().equalsIgnoreCase(this.getQuestInternalName())) {
             boostDamage.getAndAdd(-0.2 * profile.getCurrentQuest().getLevel());
-            finalDamage.set(finalDamage.get() * (1 - 0.4 * profile.getCurrentQuest().getLevel()));
         }
     }
 
@@ -76,7 +75,6 @@ public class HighValueTarget extends AbstractQuest implements IAttackEntity, IPl
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
         if (profile.getCurrentQuest() != null && profile.getCurrentQuest().getInternalName().equalsIgnoreCase(this.getQuestInternalName())) {
             boostDamage.getAndAdd(-0.2 * profile.getCurrentQuest().getLevel());
-            finalDamage.set(finalDamage.get() * (1 - 0.4 * profile.getCurrentQuest().getLevel()));
         }
     }
 }

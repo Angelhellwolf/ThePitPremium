@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.dark_rare;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
@@ -59,8 +61,8 @@ public class ComboUnpredictablyEnchant extends AbstractEnchantment implements IA
 
     public String getText(int a, Player player) {
         a = player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW
-                ? PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getBowHit()
-                : PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getMeleeHit();
+                ? CombatContext.bowHits(player)
+                : CombatContext.meleeHits(player);
         return a % 5 == 0 ? "&a&l✔" : new StringBuilder().insert(0, "&e&l").append(5 - a % 5).toString();
     }
 
@@ -68,12 +70,12 @@ public class ComboUnpredictablyEnchant extends AbstractEnchantment implements IA
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % 5 == 0) {
+        if (CombatContext.meleeHits(attacker) % 5 == 0) {
             Player targetPlayer = (Player)target;
             targetPlayer.removePotionEffect(PotionEffectType.SLOW);
             targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 140, 1, true));
             targetPlayer.removePotionEffect(PotionEffectType.WEAKNESS);
-            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 280, 3), true);
+            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 140, 3), true);
         }
 
     }
@@ -82,12 +84,12 @@ public class ComboUnpredictablyEnchant extends AbstractEnchantment implements IA
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % 5 == 0) {
+        if (CombatContext.bowHits(attacker) % 5 == 0) {
             Player targetPlayer = (Player)target;
             targetPlayer.removePotionEffect(PotionEffectType.SLOW);
             targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 140, 1, true));
             targetPlayer.removePotionEffect(PotionEffectType.WEAKNESS);
-            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 280, 3), true);
+            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 140, 3), true);
         }
 
     }

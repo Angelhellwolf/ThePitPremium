@@ -75,16 +75,16 @@ public class MythicismPerk extends AbstractPerk {
         HashMap<Integer, List<String>> effects = new HashMap<>();
         for (int i = 1; i < 12; i++) {
             effects.put(i, new ArrayList<>());
-            if (i > 1) {
+            if (i >= 1) {
                 effects.get(i).add("  &7可以通过击杀玩家概率掉落 &e神话之剑 &7, &e神话之弓 &7.");
                 effects.get(i).add("  &7可以进行 &dI , II &7阶附魔.");
             }
-            if (i > 4) {
+            if (i >= 4) {
                 effects.get(i).add("  &7可以进行 &dIII &7阶附魔.");
                 effects.get(i).add("  &7可以通过击杀玩家概率掉落 &e神话之甲 &7.");
             }
             if (i > 1) {
-                effects.get(i).add("  &7击杀玩家掉落神话物品的几率提升至基础概率的 &d" + (100 + (i - 1) * 20) + "% &7.");
+                effects.get(i).add("  &7击杀玩家掉落神话物品的几率提升至基础概率的 &d" + (100 + (i - 1) * 2) + "% &7.");
             }
         }
         if (nextLevel > 1) {

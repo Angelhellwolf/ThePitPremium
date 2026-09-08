@@ -133,6 +133,7 @@ object YummyBread: AbstractPitItem(), Listener {
 
         if (event.action == Action.RIGHT_CLICK_BLOCK || event.action == Action.RIGHT_CLICK_AIR) {
             if (ItemUtil.getInternalName(item) == "yummy_bread") {
+                event.isCancelled = true
                 PlayerUtil.takeOneItemInHand(player)
                 PlayerUtil.heal(player, 1.0)
                 player.playSound(player.location, Sound.EAT, 1f, 1f)
@@ -161,7 +162,10 @@ object YummyBread: AbstractPitItem(), Listener {
             .canSaveToEnderChest(true)
             .name(itemDisplayName)
             .lore(
-                "&7死亡时保留"
+                "&7死亡时保留",
+                "&7手持右键食用，恢复 &c0.5❤",
+                "&7右键一只鸡，可换取一个高级鸡蛋",
+                "&7手持材料右键熔炉：64 小麦烘焙 10 秒制成"
             )
             .build()
     }

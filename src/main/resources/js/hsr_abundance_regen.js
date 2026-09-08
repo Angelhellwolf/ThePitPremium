@@ -1,3 +1,5 @@
+var PlayerLife = Java.type('cn.charlotte.pit.util.combat.PlayerLife');
+var PlayerUtil = Java.type('cn.charlotte.pit.util.PlayerUtil');
 var FixedMetadataValue = Java.type('org.bukkit.metadata.FixedMetadataValue');
 
 ENCHANT_NAME = "回春赐福";
@@ -26,6 +28,7 @@ function _setMetaLong(entity, key, value) {
 }
 
 function be_damaged(enchant_level, myself, attacker, damage, final_damage, boost_damage, cancel) {
+    if (cancel.get() || damage <= 0) return;
     var now = Date.now();
     var cdUntil = _metaLong(myself, "hsr_abundance_regen_cd");
     if (now < cdUntil) {
@@ -33,16 +36,17 @@ function be_damaged(enchant_level, myself, attacker, damage, final_damage, boost
     }
     _setMetaLong(myself, "hsr_abundance_regen_cd", now + 8000);
 
+    var life = PlayerLife.capture(myself);
     Bukkit.getScheduler().runTaskLater(Pit, new Runnable({
         run: function () {
-            if (!myself.isOnline()) {
+            if (!PlayerLife.isCurrent(myself, life) || cancel.get()) {
                 return;
             }
             var maxHealth = myself.getMaxHealth();
             if (maxHealth <= 0) {
                 return;
             }
-            myself.setHealth(Math.min(maxHealth, myself.getHealth() + 0.6 * enchant_level)); // 0.3❤ * lvl
+            PlayerUtil.heal(myself, 0.6 * enchant_level); // 0.3❤ * lvl
         }
     }), 20);
 }

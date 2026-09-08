@@ -27,9 +27,12 @@ import org.bukkit.metadata.FixedMetadataValue;
 @AutoRegister
 public class FishingHandler implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.NORMAL, ignoreCancelled = true)
     public void onFishing(PlayerFishEvent event) {
+        if (!PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId()).isLoaded()) return;
         if (event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
+            if (event.getCaught() == null || event.getCaught().hasMetadata("pit_fishing_processed")) return;
+            event.getCaught().setMetadata("pit_fishing_processed", new FixedMetadataValue(ThePit.getInstance(), true));
             event.setExpToDrop(0);
             event.getCaught().remove();
 
@@ -38,10 +41,24 @@ public class FishingHandler implements Listener {
             ItemStack itemStack = this.generateItem(event.getPlayer(), location);
             EntityItem entityItem = this.generateEntity(event.getPlayer(), location, itemStack);
             CraftEntity item = entityItem.getBukkitEntity();
-            item.setMetadata("gold", new FixedMetadataValue(ThePit.getInstance(), RandomUtil.random.nextInt(5) + 5));
+            if (itemStack.getType() == Material.GOLD_INGOT) {
+                int gold = RandomUtil.random.nextInt(5) + 5;
+                item.setMetadata("gold", new FixedMetadataValue(ThePit.getInstance(), gold));
+                Player player = event.getPlayer();
+                if (!cn.charlotte.pit.util.PlayerUtil.shouldIgnoreEnchant(player)
+                        && cn.charlotte.pit.util.Utils.getEnchantLevel(player.getInventory().getLeggings(), "trophy") > 0) {
+                    for (int i = 0; i < 2; i++) {
+                        generateEntity(player, location, new ItemStack(Material.GOLD_INGOT)).getBukkitEntity()
+                                .setMetadata("gold", new FixedMetadataValue(ThePit.getInstance(), gold));
+                    }
+                }
+            }
         } else if (event.getState() == PlayerFishEvent.State.FISHING) {
             ItemStack item = event.getPlayer().getItemInHand();
-
+            if (!cn.charlotte.pit.util.PlayerUtil.shouldIgnoreEnchant(event.getPlayer())) {
+                int lure = cn.charlotte.pit.util.Utils.getEnchantLevel(item, "lure");
+                if (lure > 0) event.getHook().setBiteChance(Math.min(1, event.getHook().getBiteChance() * (1 + Math.min(3, lure) * 0.5)));
+            }
         }
     }
 
@@ -66,7 +83,11 @@ public class FishingHandler implements Listener {
 
     private ItemStack generateItem(Player player, Location location) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-
+        if (RandomUtil.hasSuccessfullyByChance(0.008)) {
+            return new ItemBuilder(Material.DIAMOND_SWORD).canSaveToEnderChest(false).canTrade(false)
+                    .canDrop(false).deathDrop(true).removeOnJoin(false).name("&6钻石剑")
+                    .internalName("fishing_dia_armor").buildWithUnbreakable();
+        }
         return new ItemBuilder(Material.GOLD_INGOT)
                 .build();
     }

@@ -30,6 +30,8 @@ public class LuckPermsUtil {
     }
 
     public static User getUser(UUID uuid) {
+        cn.charlotte.pit.data.PlayerProfile profile = cn.charlotte.pit.data.PlayerProfile.getCacheProfile().get(uuid);
+        if (profile != null && profile.isBot()) return null;
         if (userManager == null) {
             return null;
         }

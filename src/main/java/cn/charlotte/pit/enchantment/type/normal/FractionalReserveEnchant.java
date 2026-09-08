@@ -45,14 +45,26 @@ public class FractionalReserveEnchant extends AbstractEnchantment implements IPl
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7你每持有 &610,000 硬币 &7,受到的伤害 &9-1% &7(可叠加,最高" + (enchantLevel * 5 + 10) + "层)";
+        return "&7你每持有 &610,000 硬币 &7,受到的伤害 &9-1% &7(可叠加,最高" + getMaxPercent(enchantLevel) + "%)";
+    }
+
+    private int getMaxPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 15;
+            case 2:
+                return 21;
+            default:
+                return 30;
+        }
     }
 
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
         if (profile.getCoins() >= 10000) {
-            boostDamage.getAndAdd(Math.max(-0.3, (-0.01 - 0.01 * enchantLevel) / 10000 * profile.getCoins()));
+            double reduce = Math.min(getMaxPercent(enchantLevel) * 0.01, 0.01 * (profile.getCoins() / 10000.0));
+            boostDamage.getAndAdd(-reduce);
         }
     }
 }

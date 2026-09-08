@@ -53,6 +53,7 @@ public class AssistantToTheStreakerPerk extends AbstractPerk {
             lines.add("&7且死亡时若已激活一个超级连杀,");
             lines.add("&7则保护神话物品不因本次死亡失去生命.");
         }
+        lines.add("&7仅携带时生效；Bot 助攻不计入连杀");
         return lines;
     }
 

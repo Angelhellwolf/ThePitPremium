@@ -39,11 +39,11 @@ class Regularity : AbstractEnchantment(), Listener {
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7当近战伤害低于&c${a(enchantLevel)}❤ &7时/ s&7, 将会自动再次攻击./s&7第二次攻击的伤害为第一次攻击的&c${
+        return "&7当近战伤害低于&c${a(enchantLevel)}❤ &7时/s&7将在0.25秒后追加一次普通攻击./s&7追加攻击的基础伤害为本次的&c${
             b(
                 enchantLevel
             )
-        }%&7."
+        }%&7，不重复触发武器效果。/s&7对同一目标1秒冷却"
     }
 
     fun a(enchantLevel: Int): Double {
@@ -71,7 +71,7 @@ class Regularity : AbstractEnchantment(), Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 
     fun damage(event: EntityDamageByEntityEvent) {
         val attacker = event.damager
@@ -79,6 +79,7 @@ class Regularity : AbstractEnchantment(), Listener {
 
         val victim = event.entity
         if (victim !is Player) return
+        if (cn.charlotte.pit.util.combat.SecondaryDamage.isHit(event) || event.finalDamage <= 0) return
 
         if (PlayerUtil.shouldIgnoreEnchant(attacker, victim)) {
             return
@@ -88,7 +89,7 @@ class Regularity : AbstractEnchantment(), Listener {
         if (level < 1) return
 
 
-        if (event.finalDamage < a(level)
+        if (event.finalDamage < a(level) * 2
         ) {
             val metadata = victim.getMetadata("regularity_cooldown")
             metadata.firstOrNull()?.asLong()?.let {
@@ -99,15 +100,15 @@ class Regularity : AbstractEnchantment(), Listener {
 
             if (!victim.isDead) {
                 val boost = b(level) * 0.01
+                val followupDamage = event.damage * boost
+                val life = cn.charlotte.pit.util.combat.PlayerLife.capture(victim)
+                victim.setMetadata("regularity_cooldown", FixedMetadataValue(ThePit.getInstance(), System.currentTimeMillis() + 1000L))
 
                 Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), {
-
+                    if (event.isCancelled || !cn.charlotte.pit.util.combat.PlayerLife.isCurrent(victim, life)
+                        || attacker.world != victim.world || PlayerUtil.shouldIgnoreEnchant(attacker, victim)) return@runTaskLater
                     victim.noDamageTicks = 0
-                    victim.damage(event.damage * boost, attacker)
-                    victim.setMetadata(
-                        "regularity_cooldown",
-                        FixedMetadataValue(ThePit.getInstance(), System.currentTimeMillis() + 1000L + 2)
-                    )
+                    cn.charlotte.pit.util.combat.SecondaryDamage.reflection(attacker, victim, followupDamage)
                 }, 5L)
             }
         }

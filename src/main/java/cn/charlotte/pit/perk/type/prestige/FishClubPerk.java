@@ -3,6 +3,8 @@ package cn.charlotte.pit.perk.type.prestige;
 
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.data.sub.PerkData;
 import cn.charlotte.pit.item.MythicColor;
 import cn.charlotte.pit.item.type.mythic.MythicLeggingsItem;
@@ -116,39 +118,10 @@ public class FishClubPerk extends AbstractPerk implements Listener {
 
     }
 
-    @EventHandler
+    @EventHandler(priority = org.bukkit.event.EventPriority.HIGH, ignoreCancelled = true)
     public void onFishing(PlayerFishEvent event) {
+        if (!PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId()).isLoaded()) return;
         if (event.getState() == PlayerFishEvent.State.CAUGHT_FISH) {
-            event.getCaught().remove();
-            event.setExpToDrop(0);
-
-            final boolean diamondSuccess = RandomUtil.hasSuccessfullyByChance(0.008);
-            if (diamondSuccess) {
-                final ItemStack itemStack = new ItemBuilder(Material.DIAMOND_SWORD)
-                        .canSaveToEnderChest(false)
-                        .canTrade(false)
-                        .canDrop(false)
-                        .deathDrop(true)
-                        .removeOnJoin(false)
-                        .name("&6钻石剑")
-                        .internalName("fishing_dia_armor")
-                        .buildWithUnbreakable();
-
-                Item item = event.getPlayer()
-                        .getWorld()
-                        .dropItemNaturally(
-                                event.getCaught().getLocation(),
-                                itemStack
-                        );
-                dropFishing(event.getPlayer(), event.getHook(), item);
-                return;
-            } else {
-                Item item = event.getPlayer().getWorld().dropItemNaturally(event.getCaught().getLocation(), new ItemStack(Material.GOLD_INGOT, 1));
-                item.setMetadata("gold", new FixedMetadataValue(ThePit.getInstance(), RandomUtil.random.nextInt(3) + 3));
-
-                dropFishing(event.getPlayer(), event.getHook(), item);
-            }
-
             final Player player = event.getPlayer();
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
             PerkData perkData = profile.getUnlockedPerkMap().get(getInternalPerkName());
@@ -205,7 +178,7 @@ public class FishClubPerk extends AbstractPerk implements Listener {
                                             .lore(
                                                     "&7一条很大的Irony鱼",
                                                     "",
-                                                    "&7吃下它给予你 &e2❤",
+                                                    "&7吃下它给予你 &e1❤ 伤害吸收",
                                                     "&8即使你不是很饿"
                                             )
                                             .build(),
@@ -215,7 +188,7 @@ public class FishClubPerk extends AbstractPerk implements Listener {
                                             .lore(
                                                     "&7一条Irony鱼",
                                                     "",
-                                                    "&7吃下它给予你 &e2❤",
+                                                    "&7吃下它给予你 &e1❤ 伤害吸收",
                                                     "&8即使你不是很饿"
                                             )
                                             .build(),
@@ -225,7 +198,7 @@ public class FishClubPerk extends AbstractPerk implements Listener {
                                             .lore(
                                                     "&7一条很小的Irony鱼",
                                                     "",
-                                                    "&7吃下它给予你 &e2❤",
+                                                    "&7吃下它给予你 &e1❤ 伤害吸收",
                                                     "&8即使你不是很饿"
                                             )
                                             .build()
@@ -239,8 +212,7 @@ public class FishClubPerk extends AbstractPerk implements Listener {
             }
 
             if (level >= 2) {
-                profile.setExperience(profile.getExperience() + 25);
-                profile.applyExperienceToPlayer(player);
+                RewardService.grant(profile, RewardSource.FISHING, 0, 25);
             }
 
             if (level >= 3) {
@@ -371,7 +343,7 @@ public class FishClubPerk extends AbstractPerk implements Listener {
                 return;
             }
 
-            if (perkData.getLevel() >= 3) {
+            if (perkData.getLevel() >= 4) {
                 final Fish hook = event.getHook();
                 hook.setBiteChance(Math.min(hook.getBiteChance() * 1.2, 1.0));
             }

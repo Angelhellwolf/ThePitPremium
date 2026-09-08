@@ -1,6 +1,10 @@
 package cn.charlotte.pit.perk.type.prestige;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.perk.AbstractPerk;
@@ -59,7 +63,9 @@ public class ReconPerk extends AbstractPerk implements IPlayerShootEntity {
 
     @Override
     public List<String> getDescription(Player player) {
-        return Collections.singletonList("&7每 &e4 &7次箭矢命中造成的伤害 &c+50% &7并额外获得 &b40 经验值 &7.");
+        java.util.List<String> details = new java.util.ArrayList<>(Collections.singletonList("&7每 &e4 &7次箭矢命中造成的伤害 &c+50% &7并额外获得 &b40 经验值 &7."));
+        details.add("&7触发冷却2秒；攻击 Bot 保留伤害加成，不发放额外经验");
+        return details;
     }
 
     @Override
@@ -91,9 +97,11 @@ public class ReconPerk extends AbstractPerk implements IPlayerShootEntity {
         }
 
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
-        if (profile.getBowHit() % 4 == 0) {
+        if (CombatContext.bowHits(attacker) % 4 == 0) {
             boostDamage.getAndAdd(0.5);
-            profile.setExperience(profile.getExperience() + 40);
+            if (cn.charlotte.pit.reward.HitRewardRules.eligible(attacker, target, damage, cancel)) {
+                CombatContext.afterAccepted(() -> RewardService.grant(profile, RewardSource.PERK, 0, 40));
+            }
 
             this.cooldown.put(attacker.getUniqueId(), new Cooldown(2, TimeUnit.SECONDS));
         }

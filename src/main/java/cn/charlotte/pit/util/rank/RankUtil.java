@@ -58,6 +58,8 @@ public class RankUtil {
     private static Boolean mmEnable = null;
 
     public static String getPlayerName(UUID uuid) {
+        cn.charlotte.pit.data.PlayerProfile profile = cn.charlotte.pit.data.PlayerProfile.getCacheProfile().get(uuid);
+        if (profile != null && profile.isBot()) return profile.getPlayerName();
         Player player = Bukkit.getPlayer(uuid);
         if (player == null) {
             User user = LuckPermsUtil.getUser(uuid);
@@ -109,6 +111,8 @@ public class RankUtil {
 
 
     public static String getNameFormatWithPrefix(UUID uuid) {
+        cn.charlotte.pit.data.PlayerProfile profile = cn.charlotte.pit.data.PlayerProfile.getCacheProfile().get(uuid);
+        if (profile != null && profile.isBot()) return "§7" + profile.getPlayerName();
         String playerName = getPlayerName(uuid);
 
         if (playerName == null || "null".equals(playerName)) {

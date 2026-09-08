@@ -21,14 +21,14 @@ import java.util.UUID;
  * @Date: 2021/4/17 23:03
  */
 public class SuperLaserEnchant extends AbstractEnchantment implements ITickTask {
-    private final Map<UUID, TargetInfo> targetInfoMap = new HashMap<>();
+    private final Map<String, TargetInfo> targetInfoMap = new HashMap<>();
 
     public SuperLaserEnchant() {
         Bukkit.getScheduler().runTaskTimer(
                 ThePit.getInstance(),
                 () -> {
                     new HashMap<>(targetInfoMap).forEach((uuid, info) -> {
-                        Player player = Bukkit.getPlayer(uuid);
+                        Player player = Bukkit.getPlayer(info.owner);
                         if (player == null || !player.isOnline()) {
                             info.beam.stop();
                             targetInfoMap.remove(uuid);
@@ -73,7 +73,7 @@ public class SuperLaserEnchant extends AbstractEnchantment implements ITickTask 
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7周期性选中周围8格内所有玩家并对其发射激光,造成 &c0.5❤ &7普通伤害  (视为近战攻击)";
+        return "&7每0.5秒选中周围8格内所有玩家并对其发射激光,造成 &c0.5❤ &7普通伤害  (视为近战攻击)";
     }
 
     @Override
@@ -85,13 +85,14 @@ public class SuperLaserEnchant extends AbstractEnchantment implements ITickTask 
             }
             target.damage(1, player);
 
-            final TargetInfo info = targetInfoMap.get(target.getUniqueId());
+            final String key = player.getUniqueId() + ":" + target.getUniqueId();
+            final TargetInfo info = targetInfoMap.get(key);
             if (info == null) {
                 final Beam beam = new Beam(player.getLocation(), target.getLocation(), 100, 5);
                 beam.start();
 
-                final TargetInfo targetInfo = new TargetInfo(target.getUniqueId(), beam);
-                targetInfoMap.put(target.getUniqueId(), targetInfo);
+                final TargetInfo targetInfo = new TargetInfo(player.getUniqueId(), target.getUniqueId(), beam);
+                targetInfoMap.put(key, targetInfo);
                 continue;
             }
 
@@ -100,8 +101,8 @@ public class SuperLaserEnchant extends AbstractEnchantment implements ITickTask 
         }
 
 
-        for (Map.Entry<UUID, TargetInfo> entry : targetInfoMap.entrySet()) {
-            if (players.stream().noneMatch(target -> target.getUniqueId().equals(entry.getKey()))) {
+        for (Map.Entry<String, TargetInfo> entry : new HashMap<>(targetInfoMap).entrySet()) {
+            if (entry.getValue().owner.equals(player.getUniqueId()) && players.stream().noneMatch(target -> target.getUniqueId().equals(entry.getValue().target))) {
                 targetInfoMap.remove(entry.getKey());
                 entry.getValue().beam.stop();
             }
@@ -116,6 +117,7 @@ public class SuperLaserEnchant extends AbstractEnchantment implements ITickTask 
 
     @RequiredArgsConstructor
     public static class TargetInfo {
+        private final UUID owner;
         private final UUID target;
         private final Beam beam;
     }

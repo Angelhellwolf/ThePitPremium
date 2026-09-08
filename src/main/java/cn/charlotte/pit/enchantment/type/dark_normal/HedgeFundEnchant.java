@@ -1,15 +1,13 @@
 package cn.charlotte.pit.enchantment.type.dark_normal;
 
-import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
+import cn.charlotte.pit.parm.listener.IPlayerBeKilledByEntity;
 import cn.charlotte.pit.parm.listener.IPlayerKilledEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
-import cn.charlotte.pit.util.item.ItemUtil;
 import com.google.common.util.concurrent.AtomicDouble;
-import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -18,7 +16,7 @@ import org.bukkit.entity.Player;
  * @Created_In: 2021/3/15 20:40
  */
 @ArmorOnly
-public class HedgeFundEnchant extends AbstractEnchantment implements IPlayerKilledEntity {
+public class HedgeFundEnchant extends AbstractEnchantment implements IPlayerKilledEntity, IPlayerBeKilledByEntity {
     @Override
     public String getEnchantName() {
         return "避险基金";
@@ -46,8 +44,23 @@ public class HedgeFundEnchant extends AbstractEnchantment implements IPlayerKill
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7击杀获得 &6+6 硬币 &7."
-                + "/s&7击杀穿着 &eI+ 阶 &7的 &d神话之甲 &7的玩家额外获得 &666 硬币 &7.";
+        return ("&7击杀获得 &6+6 硬币 &7."
+                + "/s&7击杀穿着已附魔 &d神话之甲 &7的玩家改为获得 &6+66 硬币 &7."
+                + "/s&7被玩家击杀时失去最多 &650 硬币&7.") + "/s" + "&7金币与经验加成排除 Bot";
+    }
+
+    private boolean isEnchantedMysticPants(Player targetPlayer) {
+        if (targetPlayer.getInventory().getLeggings() == null) {
+            return false;
+        }
+        org.bukkit.inventory.ItemStack pants = targetPlayer.getInventory().getLeggings();
+        if (!pants.getType().name().contains("LEATHER")) {
+            return false;
+        }
+        return cn.charlotte.pit.util.item.ItemUtil.getInternalName(pants) != null
+                && "mythic_leggings".equals(cn.charlotte.pit.util.item.ItemUtil.getInternalName(pants))
+                && cn.charlotte.pit.util.item.ItemUtil.getItemIntData(pants, "tier") != null
+                && cn.charlotte.pit.util.item.ItemUtil.getItemIntData(pants, "tier") >= 1;
     }
 
     @Override
@@ -55,19 +68,15 @@ public class HedgeFundEnchant extends AbstractEnchantment implements IPlayerKill
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         coins.getAndAdd(6);
         Player targetPlayer = (Player) target;
-        if (targetPlayer.getInventory().getLeggings() != null && targetPlayer.getInventory().getLeggings().getType() != Material.AIR) {
-            String internalName = ItemUtil.getInternalName(targetPlayer.getInventory().getLeggings());
-            boolean isMythicItem = internalName != null &&
-                    ThePit.getInstance()
-                            .getItemFactor()
-                            .getItemMap()
-                            .containsKey(internalName);
-            if (isMythicItem) {
-                Integer tier = ItemUtil.getItemIntData(targetPlayer.getInventory().getLeggings(), "tier");
-                if (tier >= 1) {
-                    coins.getAndAdd(66);
-                }
-            }
+        if (isEnchantedMysticPants(targetPlayer)) {
+            coins.getAndAdd(60);
         }
+    }
+
+    @Override
+    @PlayerOnly
+    public void handlePlayerBeKilledByEntity(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
+        cn.charlotte.pit.data.PlayerProfile profile = cn.charlotte.pit.data.PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
+        profile.setCoins(Math.max(0, profile.getCoins() - 50));
     }
 }

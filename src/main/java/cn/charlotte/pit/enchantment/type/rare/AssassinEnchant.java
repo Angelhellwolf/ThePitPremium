@@ -65,18 +65,24 @@ public class AssassinEnchant extends AbstractEnchantment implements IPlayerDamag
 
     @Override
     public String getUsefulnessLore(int enchantLevel) { //10 5 3
-        return "&7蹲下状态时受到攻击会将你传送至攻击者处 (" + getCooldownInt(enchantLevel) + "秒冷却)";
+        return "&7蹲下状态时受到" + (enchantLevel <= 1 ? "弓箭" : "") + "攻击会将你传送至攻击者身后 (" + getCooldownInt(enchantLevel) + "秒冷却)";
     }
 
     @Override
-    @PlayerOnly
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (myself == attacker) return;
+        if (enchantLevel <= 1 && !(attacker instanceof org.bukkit.entity.Arrow)) {
+            return;
+        }
+        Player source = cn.charlotte.pit.util.combat.CombatContext.playerSource(attacker);
+        if (source == null || myself.getUniqueId().equals(source.getUniqueId())) return;
 
         cooldown.putIfAbsent(myself.getUniqueId(), new Cooldown(0));
         if (myself.isSneaking() && cooldown.get(myself.getUniqueId()).hasExpired()) {
-            Location location = attacker.getLocation();
-            Location newLoc = location.add(attacker.getLocation().getDirection().clone().multiply(-1.5));
+            Location location = source.getLocation();
+            Location newLoc = location.clone().add(location.getDirection().clone().multiply(-1.5));
+            if (newLoc.getBlock().getType().isSolid() || newLoc.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
+                newLoc = location.clone();
+            }
 
             myself.teleport(newLoc);
             cooldown.put(myself.getUniqueId(), new Cooldown(getCooldownInt(enchantLevel), TimeUnit.SECONDS));

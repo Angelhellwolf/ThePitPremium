@@ -66,6 +66,7 @@ public class HealShieldEnchant extends AbstractEnchantment implements IPlayerDam
     @Override
     @PlayerOnly
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (cancel.get() || damage <= 0) return;
         shield.putIfAbsent(myself.getUniqueId(), 0);
         if (shield.get(myself.getUniqueId()) > 0) {
             shield.put(myself.getUniqueId(), shield.get(myself.getUniqueId()) - 1);
@@ -90,7 +91,7 @@ public class HealShieldEnchant extends AbstractEnchantment implements IPlayerDam
                 CC.send(MessageType.MISC, player, "&a你恢复了一层护盾,当前护盾层数: " + shield.get(player.getUniqueId()) + "/3");
             }
         } else {
-            cooldown.put(player.getUniqueId(), new Cooldown(0));
+            cooldown.put(player.getUniqueId(), new Cooldown(30 - enchantLevel * 5L, TimeUnit.SECONDS));
         }
     }
 
@@ -102,7 +103,7 @@ public class HealShieldEnchant extends AbstractEnchantment implements IPlayerDam
     @Override
     public String getText(int level, Player player) {
         shield.putIfAbsent(player.getUniqueId(), 0);
-        cooldown.putIfAbsent(player.getUniqueId(), new Cooldown(15, TimeUnit.SECONDS));
+        cooldown.putIfAbsent(player.getUniqueId(), new Cooldown(30 - level * 5L, TimeUnit.SECONDS));
         String duration = cooldown.getOrDefault(player.getUniqueId(), new Cooldown(0)).hasExpired() ? "" : "&c&l" + TimeUtil.millisToRoundedTime(cooldown.get(player.getUniqueId()).getRemaining()).replace(" ", "");
         return (shield.get(player.getUniqueId()) < 3 ? "&e&l" : "&a&l") + shield.get(player.getUniqueId()) + "/3 " + duration;
     }

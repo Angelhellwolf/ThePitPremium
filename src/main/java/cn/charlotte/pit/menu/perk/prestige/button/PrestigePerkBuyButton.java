@@ -131,10 +131,7 @@ public class PrestigePerkBuyButton extends Button {
                 if (price > profile.getRenown()) {
                     player.sendMessage(CC.translate("&c你没有足够的声望!"));
                 } else {
-                    profile.setRenown(profile.getRenown() - price);
-                    new PitPlayerUpgradePerkEvent(player, perk, data.getLevel() + 1);
-                    data.setLevel(data.getLevel() + 1);
-                    perk.onUpgrade(player);
+                    if (!cn.charlotte.pit.perk.RenownPurchase.purchase(player, perk)) return;
                     player.sendMessage(CC.translate("&a&l天赋升级! &7你升级了精通天赋 &e" + perk.getDisplayName() + " &7至等级 &b" + RomanUtil.convert(data.getLevel()) + " &7."));
                 }
             }
@@ -152,14 +149,7 @@ public class PrestigePerkBuyButton extends Button {
             } else {
                 new ConfirmMenu("购买天赋 " + perk.getDisplayName(), confirm -> {
                     if (confirm) {
-                        profile.setRenown(profile.getRenown() - price);
-                        PerkData perkData = new PerkData();
-                        perkData.setPerkInternalName(perk.getInternalPerkName());
-                        perkData.setLevel(1);
-
-                        profile.getUnlockedPerkMap().put(perkData.getPerkInternalName(), perkData);
-                        perk.onUnlock(player);
-                        new PitPlayerUnlockPerkEvent(player, perk).callEvent();
+                        if (!cn.charlotte.pit.perk.RenownPurchase.purchase(player, perk)) return;
                         player.sendMessage(CC.translate("&a&l天赋解锁! &7你解锁了精通天赋 &e" + perk.getDisplayName() + " &7."));
                         new PrestigePerkBuyMenu().openMenu(player);
                     }

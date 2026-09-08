@@ -39,6 +39,15 @@ public class PaparazziEnchant extends AbstractEnchantment {
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         return "&7参与大型事件的奖励 &e+" + (enchantLevel * 50) + "% &7(声望数向下取整)."
-                + "/s&7每次触发此效果扣除此神话物品 &c2 &7点生命.";
+                + "/s&7不放大天赋“自信”提供的额外金币"
+                + "/s&7每次触发扣除此物品 &c2 &7点生命，至少剩余2点才能触发.";
+    }
+
+    public static int getUsableLevel(org.bukkit.entity.Player player) {
+        org.bukkit.inventory.ItemStack item = player.getInventory().getLeggings();
+        int level = new PaparazziEnchant().getItemEnchantLevel(item);
+        if (level <= 0 || cn.charlotte.pit.util.PlayerUtil.shouldIgnoreEnchant(player)) return 0;
+        cn.charlotte.pit.item.IMythicItem mythic = cn.charlotte.pit.util.MythicUtil.getMythicItem(item);
+        return mythic != null && mythic.isEnchanted() && mythic.getMaxLive() > 0 && mythic.getLive() >= 2 ? level : 0;
     }
 }

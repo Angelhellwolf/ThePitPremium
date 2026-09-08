@@ -1,6 +1,8 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
@@ -63,24 +65,25 @@ public class SelfCheckoutEnchant extends AbstractEnchantment implements ITickTas
     @Override
     public void handle(int enchantLevel, Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-        if (profile.getBounty() >= 5000) {
+        if (profile.isLoaded() && !profile.isBot() && profile.getBounty() >= 5000) {
             //consume life start
             ItemStack leggings = player.getInventory().getLeggings();
             if ("mythic_leggings".equals(ItemUtil.getInternalName(leggings))) {
                 MythicLeggingsItem mythicLeggings = new MythicLeggingsItem();
                 mythicLeggings.loadFromItemStack(leggings);
-                if (mythicLeggings.isEnchanted()) {
-                    if (mythicLeggings.getMaxLive() > 0 && mythicLeggings.getLive() <= 1) {
+                if (mythicLeggings.isEnchanted() && mythicLeggings.getMaxLive() > 0 && mythicLeggings.getLive() > 0) {
+                    if (mythicLeggings.getLive() <= 1) {
                         player.getInventory().setLeggings(new ItemStack(Material.AIR));
                     } else {
                         mythicLeggings.setLive(mythicLeggings.getLive() - 1);
                         player.getInventory().setLeggings(mythicLeggings.toItemStack());
                     }
-                }
-            }
+                } else return;
+            } else return;
             //consume life end
             profile.setBounty(0);
-            profile.setCoins(profile.getCoins() + getCheckoutAmount(enchantLevel));
+            if (RewardService.grant(profile, RewardSource.BOUNTY, getCheckoutAmount(enchantLevel), 0).getCoins() > 0)
+                new cn.charlotte.pit.medal.impl.challenge.SelfCheckoutMedal().setProgress(profile, 1);
         }
     }
 

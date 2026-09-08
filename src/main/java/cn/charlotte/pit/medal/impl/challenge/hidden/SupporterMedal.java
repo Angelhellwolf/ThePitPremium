@@ -20,7 +20,7 @@ public class SupporterMedal extends AbstractMedal {
 
     @Override
     public String getRequirementDescription(int level) {
-        return "购买[天坑会员]";
+        return "购买[天坑·会员]";
     }
 
     @Override

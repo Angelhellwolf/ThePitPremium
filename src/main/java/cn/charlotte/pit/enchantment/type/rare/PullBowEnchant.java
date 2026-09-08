@@ -7,6 +7,7 @@ import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.PlayerUtil;
+import cn.charlotte.pit.util.SpiterCompatibility;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import cn.charlotte.pit.util.time.TimeUtil;
 import com.google.common.util.concurrent.AtomicDouble;
@@ -56,32 +57,46 @@ public class PullBowEnchant extends AbstractEnchantment implements IPlayerShootE
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7箭矢命中可以将敌人" + (enchantLevel >= 2 ? "及其周围2.5格的玩家" : "") + "&7向你所在的位置拖拽"
-                + "/s&7此附魔" + (enchantLevel >= 3 ? "每 &f8 &7秒只能触发一次." : "&7每影响一名玩家,此附魔需要额外等待 &f8 &7秒才能再次触发.");
+        return "&7箭矢命中可以将敌人" + (enchantLevel >= 2 ? "及其周围玩家" : "") + "&7向你所在的位置拖拽"
+                + "/s&7此附魔对每名玩家每 &f" + (enchantLevel == 1 ? 8 : 5) + " &7秒只能触发一次.";
     }
 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player targetEntity = (Player) target;
-        if (cooldown.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired()) {
-            Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
-                int count = 0;
-                for (Player targetPlayer : PlayerUtil.getNearbyPlayers(target.getLocation(), 2.5D)) {
-                    if (targetPlayer == attacker) continue;
+        long cooldownSeconds = enchantLevel == 1 ? 8L : 5L;
+        Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
+            for (Player targetPlayer : PlayerUtil.getNearbyPlayers(target.getLocation(), enchantLevel >= 2 ? 4.0D : 0.5D)) {
+                if (targetPlayer == attacker) continue;
 
-                    if (enchantLevel <= 1 && !targetPlayer.getUniqueId().equals(targetEntity.getUniqueId())) {
-                        continue;
-                    }
-                    Vector direction = targetPlayer.getLocation().toVector().subtract(attacker.getLocation().toVector()).normalize();
-                    direction.setX(direction.getX() * -1);
-                    direction.setZ(direction.getZ() * -1);
-                    targetPlayer.setVelocity(direction);
-                    count++;
+                if (enchantLevel <= 1 && !targetPlayer.getUniqueId().equals(targetEntity.getUniqueId())) {
+                    continue;
                 }
-                cooldown.put(attacker.getUniqueId(), new Cooldown(enchantLevel >= 3 ? 8 : 8L * count, TimeUnit.SECONDS));
-            }, 1L);
-        }
+                if (!cooldown.getOrDefault(targetPlayer.getUniqueId(), new Cooldown(0)).hasExpired()) {
+                    continue;
+                }
+                if (targetPlayer.getLocation().distanceSquared(attacker.getLocation()) < 0.25D) {
+                    continue;
+                }
+                Vector direction = attacker.getLocation().toVector().subtract(targetPlayer.getLocation().toVector());
+                if (direction.lengthSquared() < 1.0E-6D) {
+                    continue;
+                }
+                direction.normalize();
+                if (enchantLevel >= 3) {
+                    direction.multiply(1.8);
+                } else if (enchantLevel == 1) {
+                    direction.multiply(0.6);
+                }
+                if (Double.isNaN(direction.getX()) || Double.isNaN(direction.getY()) || Double.isNaN(direction.getZ())) {
+                    continue;
+                }
+                SpiterCompatibility.exemptVelocity(targetPlayer, 30L);
+                targetPlayer.setVelocity(direction);
+                cooldown.put(targetPlayer.getUniqueId(), new Cooldown(cooldownSeconds, TimeUnit.SECONDS));
+            }
+        }, 1L);
     }
 
     @Override

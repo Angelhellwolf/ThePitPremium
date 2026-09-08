@@ -49,12 +49,12 @@ public class SoulEarterEnchant extends AbstractEnchantment implements IAttackEnt
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        boostDamage.getAndAdd(((Player)target).getHealth() / 2.0D * 0.05D);
+        if (target instanceof Player) boostDamage.getAndAdd(((Player)target).getHealth() / 2.0D * 0.05D * enchantLevel);
     }
 
     @cn.charlotte.pit.parm.type.BowOnly
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        boostDamage.getAndAdd(((Player)target).getHealth() / 2.0D * 0.05D);
+        if (target instanceof Player) boostDamage.getAndAdd(((Player)target).getHealth() / 2.0D * 0.05D * enchantLevel);
     }
 }

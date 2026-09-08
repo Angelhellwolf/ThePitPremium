@@ -16,6 +16,7 @@ import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.chat.MessageType;
 import cn.charlotte.pit.util.item.ItemBuilder;
+import cn.charlotte.pit.util.reward.StreakRewardMath;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -95,6 +96,7 @@ public class HermitMegaStreak extends AbstractPerk implements Listener, IPlayerD
         list.add("  &a▶ &7立刻获得 &f32 * &c基岩");
         list.add("  &a▶ &7激活后每击杀10名玩家,获得 &f16 * &c基岩 &7");
         list.add("  &a▶ &7激活后每击杀10名玩家,此后击杀获得的硬币与经验值 &a+5% &7(可堆叠,最高75%)");
+        list.add("  &7以上收益加成不适用于 Bot");
         list.add("  &c▶ &7激活后每击杀1名玩家,自身受到的伤害 &c+0.3% (可堆叠,无上限)");
         return list;
     }
@@ -127,14 +129,14 @@ public class HermitMegaStreak extends AbstractPerk implements Listener, IPlayerD
         int trigger = 50;
         //trigger check (get X streak)
         if (event.getFrom() < trigger && event.getTo() >= trigger) {
-            CC.boardCast(MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &9&l隐士 &7!");
-            Bukkit.getOnlinePlayers().forEach(player -> {
+            cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.getPlayerProfile().getPlayerUuid(), MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &9&l隐士 &7!");
+            cn.charlotte.pit.junxu.JunxuMessages.audience(event.getPlayerProfile().getPlayerUuid()).forEach(player -> {
                 player.playSound(player.getLocation(), Sound.WITHER_SPAWN, 0.8F, 1.5F);
             });
             myself.getInventory().addItem(new ItemBuilder(Material.BEDROCK).canDrop(false).removeOnJoin(true).canSaveToEnderChest(false).deathDrop(true).internalName("perk_hermit").amount(32).build());
         }
-        if (event.getFrom() > trigger && Math.floor(event.getFrom() / 10) != Math.floor(event.getTo() / 10)) {
-            myself.getInventory().addItem(new ItemBuilder(Material.BEDROCK).canDrop(false).removeOnJoin(true).canSaveToEnderChest(false).deathDrop(true).internalName("perk_hermit").amount(32).build());
+        if (StreakRewardMath.crossedMilestones(Math.max(trigger, event.getFrom()), event.getTo(), 10) > 0) {
+            myself.getInventory().addItem(new ItemBuilder(Material.BEDROCK).canDrop(false).removeOnJoin(true).canSaveToEnderChest(false).deathDrop(true).internalName("perk_hermit").amount(16).build());
         }
     }
 
@@ -143,8 +145,9 @@ public class HermitMegaStreak extends AbstractPerk implements Listener, IPlayerD
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
         if (profile.getStreakKills() >= 50) {
-            coins.getAndAdd(Math.min(0.75, Math.floor((profile.getStreakKills() - 50) / 10)) * coins.get());
-            experience.getAndAdd(Math.min(0.75, Math.floor((profile.getStreakKills() - 50) / 10)) * experience.get());
+            double bonus = StreakRewardMath.hermitBonus(profile.getStreakKills());
+            coins.getAndAdd(bonus * coins.get());
+            experience.getAndAdd(bonus * experience.get());
         }
     }
 
@@ -171,7 +174,7 @@ public class HermitMegaStreak extends AbstractPerk implements Listener, IPlayerD
         }
         boolean resistanceFound = false;
         for (PotionEffect potionEffect : player.getActivePotionEffects()) {
-            if (potionEffect.getType().getName().equalsIgnoreCase("speed")) {
+            if (potionEffect.getType().equals(PotionEffectType.DAMAGE_RESISTANCE)) {
                 resistanceFound = true;
                 //自身有抗性提升 I 且时间小于<30秒时直接覆盖
                 if (potionEffect.getAmplifier() == 0 && potionEffect.getDuration() < 30 * 20 && profile.getStreakKills() >= 50) {
@@ -213,7 +216,7 @@ public class HermitMegaStreak extends AbstractPerk implements Listener, IPlayerD
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
         if (profile.getStreakKills() > 50) {
-            boostDamage.getAndAdd(Math.max(0.75, 0.003 * (profile.getStreakKills() - 50)));
+            boostDamage.getAndAdd(0.003 * (profile.getStreakKills() - 50));
         }
     }
 

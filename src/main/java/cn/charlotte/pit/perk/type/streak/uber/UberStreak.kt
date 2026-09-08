@@ -174,11 +174,11 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
         if (!hasUber(player)) return
 
         if (event.from < 100 && event.to >= 100) {
-            CC.boardCast(
+            cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.playerProfile.playerUuid,
                 MessageType.COMBAT,
                 "&c&l超级连杀! " + event.playerProfile.formattedNameWithRoman + " &7激活了 &c&l登峰造极 &7!"
             )
-            Bukkit.getOnlinePlayers().forEach { online: Player ->
+            cn.charlotte.pit.junxu.JunxuMessages.audience(event.playerProfile.playerUuid).forEach { online: Player ->
                 online.playSound(
                     online.location,
                     Sound.WITHER_SPAWN,

@@ -1,6 +1,7 @@
 package cn.charlotte.pit.events.impl;
 
 import cn.charlotte.pit.ThePit;
+import cn.charlotte.pit.events.EventBlockTracker;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.events.INormalEvent;
@@ -147,11 +148,12 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
 
         Bukkit.getPluginManager()
                 .registerEvents(this, ThePit.getInstance());
-        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+        Runnable spawn = () -> {
             location.getWorld().strikeLightningEffect(location);
             CC.boardCast("&6&l空投! &7一个新的空投已在地图降落!打开可以获得神话物品,声望等稀有物资!");
             chestOriginalType = location.getBlock().getType();
             chestOriginalData = location.getBlock().getData();
+            EventBlockTracker.get().captureBlock(EventBlockTracker.CARE_PACKAGE, location);
             location.getBlock().setType(Material.CHEST);
             chest = location;
 
@@ -201,7 +203,8 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
             };
             endTimer = new Cooldown(5, TimeUnit.MINUTES);
             runnable.runTaskLater(ThePit.getInstance(), 20 * 60 * 5);
-        });
+        };
+        spawn.run();
     }
 
     @Override
@@ -217,10 +220,7 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
                 }
             }
             PackageMenu.getItems().clear();
-            if (chest != null && chest.getBlock().getType() == Material.CHEST) {
-                chest.getBlock().setType(chestOriginalType);
-                chest.getBlock().setData(chestOriginalData);
-            }
+            EventBlockTracker.get().restoreImmediately(EventBlockTracker.CARE_PACKAGE);
             chestData = null;
             chest = null;
             endTimer = null;

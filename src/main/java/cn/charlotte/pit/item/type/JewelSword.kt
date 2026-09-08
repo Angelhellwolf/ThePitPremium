@@ -134,6 +134,7 @@ class JewelSword : IMythicItem(), Listener {
 
     @EventHandler
     fun onKill(event: PitKillEvent) {
+        if (!event.isProgressionEligible) return
         val killer = event.killer
         val lastDamageCause = event.target.lastDamageCause
         if (lastDamageCause is EntityDamageByEntityEvent) {

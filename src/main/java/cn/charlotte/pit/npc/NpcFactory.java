@@ -4,7 +4,6 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.event.PitProfileLoadedEvent;
 import cn.charlotte.pit.npc.runnable.NpcRunnable;
-import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.util.perf.PerfMetrics;
 import lombok.SneakyThrows;
 import net.jitse.npclib.NPCLib;
@@ -25,7 +24,6 @@ import java.util.List;
  * @Author: EmptyIrony
  * @Date: 2020/12/30 22:35
  */
-@AutoRegister
 public class NpcFactory implements Listener {
     private static final List<AbstractPitNPC> pitNpc = new ArrayList<>();
 

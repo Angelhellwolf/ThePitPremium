@@ -5,6 +5,7 @@ import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
+import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Bukkit;
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @WeaponOnly
 @BowOnly
-public class SharkEnchant extends AbstractEnchantment implements IAttackEntity {
+public class SharkEnchant extends AbstractEnchantment implements IAttackEntity, IPlayerShootEntity {
     public static float getDistance(final Location lc1, final Location lc2) {
         return (float) Math.sqrt(Math.pow(lc1.getX() - lc2.getX(), 2.0) + Math.pow(lc1.getY() - lc2.getY(), 2.0) + Math.pow(lc1.getZ() - lc2.getZ(), 2.0));
     }
@@ -73,7 +74,7 @@ public class SharkEnchant extends AbstractEnchantment implements IAttackEntity {
         for (Player p : Bukkit.getOnlinePlayers()
         ) {
             if (attacker.getWorld().getName().equals(p.getWorld().getName())) {
-                if (getDistance(p.getLocation(), attacker.getLocation()) <= 12) {
+                if (getDistance(p.getLocation(), attacker.getLocation()) <= 12 && p.getHealth() < 12) {
                     boostCount++;
                 }
             }
@@ -92,5 +93,9 @@ public class SharkEnchant extends AbstractEnchantment implements IAttackEntity {
         }
         boostRate = boostRate * boostCount * 0.01;
         boostDamage.set(boostDamage.get() + Math.min(0.30, boostRate));
+    }
+    @Override
+    public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        handleAttackEntity(enchantLevel, attacker, target, damage, finalDamage, boostDamage, cancel);
     }
 }

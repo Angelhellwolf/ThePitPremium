@@ -4,6 +4,8 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.game.runnable.TradeMonitorRunnable;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.AbstractPerk;
+import cn.charlotte.pit.events.EventBlockTracker;
+import cn.charlotte.pit.events.EventEntityTracker;
 import cn.charlotte.pit.runnable.ClearRunnable;
 import lombok.Getter;
 
@@ -21,6 +23,8 @@ public class Game {
 
 
     public void initRunnable() {
+        EventBlockTracker.get().init();
+        EventEntityTracker.get().init();
         new ClearRunnable()
                 .runTaskTimer(ThePit.getInstance(), 20, 20);
 

@@ -22,9 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Author: Misoryan
  * @Created_In: 2021/2/9 11:59
  */
-public class TastySoupPerk extends AbstractPerk implements IPlayerKilledEntity, IPlayerAssist, IAttackEntity, IPlayerShootEntity {
+public class TastySoupPerk extends AbstractPerk implements IPlayerKilledEntity, IPlayerAssist, IAttackEntity, IPlayerShootEntity, cn.charlotte.pit.parm.listener.IPlayerRespawn {
 
-    private final Map<UUID, Boolean> strength = new HashMap<>();
 
     @Override
     public String getInternalPerkName() {
@@ -78,7 +77,7 @@ public class TastySoupPerk extends AbstractPerk implements IPlayerKilledEntity, 
 
     @Override
     public void onPerkInactive(Player player) {
-
+        player.removeMetadata("tasty_soup_hit", ThePit.getInstance());
     }
 
     @Override
@@ -98,6 +97,7 @@ public class TastySoupPerk extends AbstractPerk implements IPlayerKilledEntity, 
         lines.add(" ");
         lines.add("&7食用 &a助攻浓汤 &7后额外获得以下效果:");
         lines.add("  &f▶ &c生命恢复 II &f(00:05)");
+        lines.add("&7Bot 助攻不发放助攻浓汤");
         return lines;
     }
 
@@ -151,19 +151,19 @@ public class TastySoupPerk extends AbstractPerk implements IPlayerKilledEntity, 
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        strength.putIfAbsent(attacker.getUniqueId(), false);
-        if (strength.get(attacker.getUniqueId())) {
+        if (!cancel.get() && attacker.hasMetadata("tasty_soup_hit")) {
             boostDamage.getAndAdd(0.15);
-            strength.put(attacker.getUniqueId(), false);
+            cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> attacker.removeMetadata("tasty_soup_hit", ThePit.getInstance()));
         }
     }
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        strength.putIfAbsent(attacker.getUniqueId(), false);
-        if (strength.get(attacker.getUniqueId())) {
+        if (!cancel.get() && attacker.hasMetadata("tasty_soup_hit")) {
             boostDamage.getAndAdd(0.15);
-            strength.put(attacker.getUniqueId(), false);
+            cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> attacker.removeMetadata("tasty_soup_hit", ThePit.getInstance()));
         }
     }
+    @Override
+    public void handleRespawn(int level, Player player) { onPerkInactive(player); }
 }

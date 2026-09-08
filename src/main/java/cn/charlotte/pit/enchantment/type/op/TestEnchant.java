@@ -66,7 +66,7 @@ public class TestEnchant extends AbstractEnchantment implements ITickTask, IAtta
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7description goes here";
+        return "&7管理员诊断附魔：输出触发与状态信息，不用于常规战斗";
     }
 
     @Override

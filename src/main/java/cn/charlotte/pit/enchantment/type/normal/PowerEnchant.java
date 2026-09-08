@@ -44,11 +44,22 @@ public class PowerEnchant extends AbstractEnchantment implements IPlayerShootEnt
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7使用弓箭造成的伤害 &c+" + (5 + 5 * enchantLevel) + "%";
+        return "&7使用弓箭造成的伤害 &c+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 7;
+            case 2:
+                return 12;
+            default:
+                return 20;
+        }
     }
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        boostDamage.set(boostDamage.get() - (0.05 + 0.05 * enchantLevel));
+        boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
     }
 }

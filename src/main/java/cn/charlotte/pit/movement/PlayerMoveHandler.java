@@ -55,6 +55,15 @@ public class PlayerMoveHandler implements MovementHandler, Listener {
         if (profile == null) {
             return;
         }
+        cn.charlotte.pit.junxu.JunxuManager junxu = ThePit.getInstance().getJunxuManager();
+        if (junxu != null && junxu.isWorld(to.getWorld())) {
+            profile.setLastActionTimestamp(System.currentTimeMillis());
+            profile.setInArena(junxu.isTraining(player, to));
+            if (profile.isLoaded() && player.getGameMode() != GameMode.CREATIVE && player.getGameMode() != GameMode.SPECTATOR) {
+                player.setGameMode(profile.isInArena() ? GameMode.SURVIVAL : GameMode.ADVENTURE);
+            }
+            return;
+        }
 
         final boolean horizontalBlockChanged = to.getBlockX() != from.getBlockX()
                 || to.getBlockZ() != from.getBlockZ();
@@ -227,12 +236,12 @@ public class PlayerMoveHandler implements MovementHandler, Listener {
 
         if (to.getWorld() != null
                 && to.getWorld().getBlockAt(to.getBlockX(), to.getBlockY() - 1, to.getBlockZ()).getType() == Material.SLIME_BLOCK) {
-            BlockIterator blockIterator = new BlockIterator(player.getLocation());
+            Location launchLocation = player.getLocation().clone();
+            launchLocation.setPitch(-30.0F);
+            BlockIterator blockIterator = new BlockIterator(launchLocation);
             for (int i = 0; i < 30; i++) {
                 blockIterator.next();
             }
-            to.setPitch(-30);
-            player.getLocation().setPitch(-30);
             VectorUtil.entityPush(player, blockIterator.next().getLocation(), 110);
 
             player.playSound(player.getLocation(), Sound.EXPLODE, 1, 1);

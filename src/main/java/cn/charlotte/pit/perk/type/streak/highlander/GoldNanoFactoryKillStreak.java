@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.highlander;
 
 import cn.charlotte.pit.ThePit;
+import cn.charlotte.pit.reward.KillRewardContext;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.AbstractPerk;
@@ -71,6 +73,7 @@ public class GoldNanoFactoryKillStreak extends AbstractPerk implements Listener 
         list.add(" ");
         list.add("&7触发时:");
         list.add("  &a▶ &7立刻在原地生成并拾取 &67 金锭");
+        list.add("  &7击杀Bot触发时仅获得生命恢复");
         list.add("  &a▶ &7立刻获得 &c生命恢复 IV &f(00:02)");
         return list;
     }
@@ -106,15 +109,16 @@ public class GoldNanoFactoryKillStreak extends AbstractPerk implements Listener 
         }
         //trigger check (every X streak)
         int streak = 7;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
-            for (int i = 0; i < 7; i++) {
-                Bukkit.getScheduler().runTask(ThePit.getInstance(), () ->
+            double coinMultiplier = KillRewardContext.bonusMultiplier(myself.getUniqueId(), RewardSource.LOOT);
+            for (int i = 0; coinMultiplier > 0 && i < 7; i++) {
+                Bukkit.getScheduler().runTask(ThePit.getInstance(), KillRewardContext.wrap(() ->
                 {
                     Item item = myself.getWorld().dropItemNaturally(myself.getLocation(), new ItemStack(Material.GOLD_INGOT, 1));
                     item.setMetadata("gold", new FixedMetadataValue(ThePit.getInstance(), RandomUtil.random.nextInt(3) + 3));
                     Bukkit.getPluginManager().callEvent(new PlayerPickupItemEvent(myself, item, 1));
-                });
+                }));
             }
             myself.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 2 * 20, 3), false);
         }

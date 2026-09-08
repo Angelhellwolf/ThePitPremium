@@ -44,7 +44,7 @@ public class BountySolventPotion extends AbstractPitItem implements Listener {
                         "&7受到来自被悬赏 &6&l1000g &7以上的玩家攻击",
                         "&7受到的伤害 &9-30%",
                         "",
-                        "&7获得赏金时赏金的获取量 &6+50%"
+                        "&7击杀真人并成功领取悬赏时，赏金收入 &6+50%"
                 )
                 .internalName(getInternalName())
                 .canSaveToEnderChest(true)
@@ -58,7 +58,7 @@ public class BountySolventPotion extends AbstractPitItem implements Listener {
 
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPotionDrank(PlayerItemConsumeEvent event) {
         if (ItemUtil.getInternalName(event.getItem()) != null && ItemUtil.getInternalName(event.getItem()).equalsIgnoreCase("bounty_solvent_potion")) {
             event.setCancelled(true);

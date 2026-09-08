@@ -19,7 +19,7 @@ public class RedPacketButton extends Button {
     public ItemStack getButtonItem(Player player) {
         return new ItemBuilder(Material.REDSTONE_BLOCK)
                 .name("&c红包")
-                .lore("", "&7里面会有什么呢", "")
+                .lore("&7右键投出，按距离分配给附近真人（排除 Bot）", "&7总发放金额不超过红包面额")
                 .internalName("red_packet")
                 .build();
     }

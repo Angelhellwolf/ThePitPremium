@@ -52,12 +52,13 @@ public class MultiExchangeLocationEnchant extends AbstractEnchantment implements
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "Its dead game";
+        return "&7箭矢命中后，随机交换命中点5格内玩家与射手的位置";
     }
 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (cancel.get() || !attacker.getWorld().equals(target.getWorld())) return;
         final List<Player> players = PlayerUtil.getNearbyPlayers(target.getLocation(), 5);
         if (!players.contains(attacker)) {
             players.add(attacker);

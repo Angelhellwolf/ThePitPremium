@@ -21,6 +21,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.scheduler.BukkitTask
 
 /**
  * @author Araykal
@@ -30,6 +31,8 @@ class DamagePlus : IEvent, INormalEvent, Listener, IScoreBoardInsert {
     private val killMap: MutableMap<String, EventData> = mutableMapOf()
     private val KILL_COUNT_THRESHOLD = 15
     private var isActive = false
+    private var effectTask: BukkitTask? = null
+    private var endTask: BukkitTask? = null
 
     override fun getEventInternalName() = "hunt"
 
@@ -38,28 +41,30 @@ class DamagePlus : IEvent, INormalEvent, Listener, IScoreBoardInsert {
     override fun requireOnline(): Int = eventOnlineRequired[eventInternalName]!!
 
     override fun onActive() {
+        killMap.clear()
         isActive = true
         CC.boardCast("&c&l猎杀!\n&7五分钟内获得：\n  &b速度 x2\n  &a跳跃提升 x3\n&7效果\n&7每击杀15名玩家将获得 &6声望 +1 &7最高可获得5声望.")
         Bukkit.getPluginManager()
             .registerEvents(this, ThePit.getInstance())
+        Bukkit.getOnlinePlayers().forEach(::playerEffect)
         runEffectTask()
-        Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), {
+        endTask?.cancel()
+        endTask = Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), {
             ThePit.getInstance().getEventFactory().inactiveEvent(this)
             isActive = false
         }, 5 * 20L * 60L)
     }
 
     private fun runEffectTask() {
-        object : BukkitRunnable() {
+        effectTask?.cancel()
+        effectTask = object : BukkitRunnable() {
             override fun run() {
                 if (isActive) {
                     Bukkit.getOnlinePlayers().forEach {
-                        playerEffect(it)
                         ParticleBuilder(it.location.clone().add(0.0, 2.0, 0.0), EnumParticle.REDSTONE)
                             .setCount(3).play()
                     }
                 } else {
-                    Bukkit.getOnlinePlayers().forEach { removeEffect(it) }
                     cancel()
                 }
             }
@@ -67,8 +72,13 @@ class DamagePlus : IEvent, INormalEvent, Listener, IScoreBoardInsert {
     }
 
     override fun onInactive() {
+        endTask?.cancel()
+        endTask = null
         HandlerList.unregisterAll(this)
         isActive = false
+        effectTask?.cancel()
+        effectTask = null
+        Bukkit.getOnlinePlayers().forEach(::removeEffect)
         CC.boardCast("&c&l猎杀! &7已结束")
     }
 
@@ -85,12 +95,14 @@ class DamagePlus : IEvent, INormalEvent, Listener, IScoreBoardInsert {
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
         if (isActive){
+            playerEffect(event.player)
             event.player.sendMessage(CC.translate("&c&l猎杀!\n&7五分钟内获得：\n  &b速度 x2\n  &a跳跃提升 x3\n&7效果\n&7每击杀8名玩家将获得 &6声望 +1"))
         }
     }
 
     @EventHandler
     fun onKill(event: PitKillEvent) {
+        if (!event.isProgressionEligible) return
         if (isActive) {
             val profile = PlayerProfile.getPlayerProfileByUuid(event.killer.uniqueId)
             val playerName = event.killer.name

@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.rare;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
@@ -57,25 +59,37 @@ public class ComboStunEnchant extends AbstractEnchantment implements IAttackEnti
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7每 &e5 &7次攻击对敌人施加 &4失衡 &7效果 (持续" + numFormat.format(0.4 * enchantLevel) + "秒) (8秒冷却)"
-                + "/s&7效果 &4失衡 &7: 失明,移动速度与攻击力极大幅度降低";
+        return "&7每 &e5 &7次攻击对敌人施加 &8缓慢 VIII&7, &8挖掘疲劳 XI &7与 &a跳跃提升 I &7(持续" + numFormat.format(getDuration(enchantLevel)) + "秒) (对每名玩家8秒冷却)";
+    }
+
+    private double getDuration(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 0.5;
+            case 2:
+                return 0.8;
+            default:
+                return 1.2;
+        }
     }
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || cancel.get()) return;
         Player victim = (Player) target;
-        if (cooldown.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired() && PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % 5 == 0) {
-            cooldown.put(attacker.getUniqueId(), new Cooldown(8, TimeUnit.SECONDS));
-            victim.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 8 * enchantLevel, 20));
-            victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 8 * enchantLevel, 20));
-            victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 8 * enchantLevel, 20));
-            victim.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 8 * enchantLevel, 20));
+        UUID key = victim.getUniqueId();
+        if (cooldown.getOrDefault(key, new Cooldown(0)).hasExpired() && CombatContext.meleeHits(attacker) % 5 == 0) {
+            cooldown.put(key, new Cooldown(8, TimeUnit.SECONDS));
+            int ticks = (int) Math.round(getDuration(enchantLevel) * 20);
+            victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, ticks, 7), true);
+            victim.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, ticks, 10), true);
+            victim.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, ticks, 0), true);
         }
     }
 
     @Override
     public String getText(int level, Player player) {
-        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getBowHit() : PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getMeleeHit());
+        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? CombatContext.bowHits(player) : CombatContext.meleeHits(player));
         int require = 5;
         if (cooldown.getOrDefault(player.getUniqueId(), new Cooldown(0)).hasExpired()) {
             return (hit % require == 0 ? "&a&l✔" : "&e&l" + (require - hit % require));

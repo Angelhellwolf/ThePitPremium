@@ -54,14 +54,15 @@ public class SolitudeEnchant extends AbstractEnchantment implements IPlayerDamag
     @Override
     @PlayerOnly
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        int size = PlayerUtil.getNearbyPlayers(myself.getLocation(), 7).size();
+        long size = PlayerUtil.getNearbyPlayers(myself.getLocation(), 7).stream()
+                .filter(player -> !player.getUniqueId().equals(myself.getUniqueId())).count();
 
         int sybilLevel = Utils.getEnchantLevel(myself.getInventory().getLeggings(), "sybil");
         if (sybilLevel > 0) {
             size += sybilLevel + 1;
         }
 
-        if (size <= (enchantLevel >= 2 ? 3 : 2)) {
+        if (size <= (enchantLevel >= 2 ? 2 : 1)) {
             boostDamage.getAndAdd(-0.1 * enchantLevel - 0.3);
         }
     }

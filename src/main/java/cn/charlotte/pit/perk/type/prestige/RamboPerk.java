@@ -88,6 +88,6 @@ public class RamboPerk extends AbstractPerk implements IPlayerKilledEntity {
         if ("rage_pit".equals(ThePit.getInstance().getEventFactory().getActiveEpicEventName())) {
             return;
         }
-        myself.setHealth(myself.getMaxHealth());
+        cn.charlotte.pit.util.PlayerUtil.heal(myself, Math.max(0, myself.getMaxHealth() - myself.getHealth()));
     }
 }

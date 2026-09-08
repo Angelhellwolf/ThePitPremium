@@ -71,6 +71,7 @@ public class CelebrityPerk extends AbstractPerk implements IPlayerKilledEntity {
         lines.add("&7&o\"旅途有终点。\"");
         lines.add("");
         lines.add("&7击杀获得的硬币 &6+100% &7.");
+        lines.add("&7金币与经验加成排除 Bot");
         return lines;
     }
 

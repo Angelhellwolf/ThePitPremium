@@ -16,6 +16,7 @@ object KingsQuests {
         Sugar.register()
         Wheat.register()
         YummyBread.register()
+        KingsQuestChickenSpawner.runTaskTimer(ThePit.getInstance(), 20L * 5, 20L * 15)
     }
 
     private fun Any.register() {

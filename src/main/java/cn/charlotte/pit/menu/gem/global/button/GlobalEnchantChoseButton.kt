@@ -40,7 +40,7 @@ class GlobalEnchantChoseButton(
                 "&7消耗: &b举世瞩目的宝石",
                 "",
                 if (Utils.canUseGen(item,true)) {
-                    if (enchantLevel >= 3) "&c已达最大等级" else
+                    if (enchantLevel >= enchantment.maxEnchantLevel) "&c已达最大等级" else
                         if (enchantment.rarity.parentType != EnchantmentRarity.RarityType.RARE) "&c无法升级此附魔！" else
                             "&a点击使用!"
                 } else "&c无法作用于此附魔上"
@@ -62,11 +62,13 @@ class GlobalEnchantChoseButton(
 
         val mythicItem = item.toMythicItem() ?: return
 
+        val gemIndex = (0 until 36).firstOrNull { ItemUtil.getInternalName(player.inventory.getItem(it)) == "global_attention_gem" } ?: return
         val indexedItem = player.inventory.getItem(index)
+        if (!Utils.canUseGen(indexedItem, true) || indexedItem == null || !indexedItem.isSimilar(item)) return
         val indexedMythicItem = indexedItem.toMythicItem()
         if (indexedMythicItem != null && isSameEnchant(mythicItem, indexedMythicItem)) {
             val enchantLevel = indexedMythicItem.enchantments[enchantment] ?: return
-            if (enchantLevel >= 3) {
+            if (enchantLevel >= enchantment.maxEnchantLevel) {
                 return
             }
 
@@ -98,7 +100,13 @@ class GlobalEnchantChoseButton(
 
             indexedMythicItem.boostedByGlobalGem = true
 
-            player.inventory.setItem(index, indexedMythicItem.toItemStack())
+            val result = indexedMythicItem.toItemStack()
+            val gemStack = player.inventory.getItem(gemIndex) ?: return
+            if (gemStack.amount == 1) player.inventory.setItem(gemIndex, null) else {
+                gemStack.amount--
+                player.inventory.setItem(gemIndex, gemStack)
+            }
+            player.inventory.setItem(index, result)
         } else {
             return
         }
@@ -106,18 +114,6 @@ class GlobalEnchantChoseButton(
         player.closeInventory()
         player.playSound(player.location, Sound.ANVIL_USE, 1.5f, 1.5f)
         player.sendMessage(CC.translate("&a使用成功!"))
-        player.inventory.forEachIndexed { index, itemStack ->
-            val internalName = ItemUtil.getInternalName(itemStack)
-            if ("global_attention_gem" == internalName) {
-                if (itemStack.amount == 1) {
-                    player.inventory.setItem(index, null)
-                } else {
-                    itemStack.amount--
-                    player.inventory.setItem(index, itemStack)
-                }
-                return
-            }
-        }
     }
 
     private fun isSameEnchant(itemA: cn.charlotte.pit.item.IMythicItem, itemB: cn.charlotte.pit.item.IMythicItem): Boolean {

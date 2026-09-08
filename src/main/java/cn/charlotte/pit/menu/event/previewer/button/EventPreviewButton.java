@@ -86,6 +86,7 @@ public class EventPreviewButton extends Button {
                         .build();
             }
         }
+        if (major) lines.add("&7活动计分仅限真人，排除 Bot 和军需处训练");
         ItemBuilder itemBuilder = new ItemBuilder(Material.SIGN)
                 .amount(page + 1)
                 .name("&7即将到来的" + (major ? "大" : "小") + "型事件")

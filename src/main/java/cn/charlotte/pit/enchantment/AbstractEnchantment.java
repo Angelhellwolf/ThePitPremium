@@ -8,6 +8,7 @@ import cn.charlotte.pit.enchantment.param.item.RodOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
+import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.time.TimeUtil;
 import lombok.Getter;
 import net.minecraft.server.v1_8_R3.*;
@@ -78,10 +79,15 @@ public abstract class AbstractEnchantment {
             String string = list.getString(i);
             String[] split = string.split(":");
             if (split.length != 2) {
-                return -1;
+                continue;
             }
             if (split[0].equals(this.getNbtName())) {
-                return Integer.parseInt(split[1]);
+                try {
+                    int level = Integer.parseInt(split[1].trim());
+                    if (level > 0) return level;
+                } catch (NumberFormatException ignored) {
+                    // A malformed entry must not disable valid entries later in the item.
+                }
             }
         }
         return -1;
@@ -91,6 +97,22 @@ public abstract class AbstractEnchantment {
     protected boolean bowOnly = this.getClass().isAnnotationPresent(BowOnly.class);
     protected boolean armorOnly = this.getClass().isAnnotationPresent(ArmorOnly.class);
     protected boolean rodOnly = this.getClass().isAnnotationPresent(RodOnly.class);
+
+    public boolean isWeaponOnly() {
+        return weaponOnly;
+    }
+
+    public boolean isBowOnly() {
+        return bowOnly;
+    }
+
+    public boolean isArmorOnly() {
+        return armorOnly;
+    }
+
+    public boolean isRodOnly() {
+        return rodOnly;
+    }
 
 
     public boolean canApply(ItemStack item) {
@@ -118,6 +140,13 @@ public abstract class AbstractEnchantment {
 
 
     public abstract String getUsefulnessLore(int enchantLevel);
+
+    public boolean isEffectActive(Player holder, Player opponent) {
+        if (PlayerUtil.isVenom(holder) || PlayerUtil.isSinkingMoonlight(holder)
+                || opponent != null && PlayerUtil.isVenom(opponent)) return false;
+        if (getRarity() == EnchantmentRarity.DARK_NORMAL || getRarity() == EnchantmentRarity.DARK_RARE) return true;
+        return !(opponent == null ? PlayerUtil.shouldIgnoreEnchant(holder) : PlayerUtil.shouldIgnoreEnchant(holder, opponent));
+    }
 
     @Override
     public boolean equals(Object o) {

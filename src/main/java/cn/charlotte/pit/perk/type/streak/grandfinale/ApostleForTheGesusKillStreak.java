@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.grandfinale;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.item.type.ChunkOfVileItem;
 import cn.charlotte.pit.item.type.mythic.MythicBowItem;
@@ -101,6 +103,7 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
         list.add("  &e▶ &78 的倍数: &b500 ~ 5000 经验值");
         list.add("  &e▶ &712 的倍数 : &6+4❤ 生命吸收");
         list.add("  &e▶ &713 的倍数 : &c+25% 攻击伤害 &f(00:30)");
+        list.add("&7Bot 击杀可推进连杀，但触发时不发放额外金币或经验");
         return list;
     }
 
@@ -136,7 +139,7 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
         }
         //trigger check (every X streak)
         int streak = 25;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             //1d100
             int dice = RandomUtil.random.nextInt(100) + 1;
@@ -190,14 +193,13 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
             }
             if (dice % 7 == 0) {
                 int diceCoins = RandomUtil.random.nextInt(4501) + 500;
-                profile.setCoins(profile.getCoins() + diceCoins);
-                profile.grindCoins(diceCoins);
-                myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &6" + diceCoins + " 硬币 &7."));
+                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.STREAK, diceCoins, 0);
+                myself.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&e&l掷骰! &7你获得了 &6%.2f 硬币 &7.", reward.getCoins())));
             }
             if (dice % 8 == 0) {
                 int diceExperience = RandomUtil.random.nextInt(4501) + 500;
-                profile.setExperience(profile.getExperience() + diceExperience);
-                myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &b" + diceExperience + " 经验值 &7."));
+                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.STREAK, 0, diceExperience);
+                myself.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&e&l掷骰! &7你获得了 &b%.2f 经验值 &7.", reward.getExperience())));
             }
             if (dice % 12 == 0) {
                 float heart = (((CraftPlayer) myself).getHandle()).getAbsorptionHearts();

@@ -38,7 +38,7 @@ public class WorkshopEntranceButton extends Button {
                 lines.add("&c请先在神话之井中放入神话之甲后重试!");
             }
         } else {
-            lines.add("&c你需要购买 &e天坑乱斗会员 &c后才能使用此功能!");
+            lines.add("&c你需要购买 &e天坑·会员 &c后才能使用此功能!");
         }
         return new ItemBuilder(Material.ANVIL)
                 .name((profile.getPrestige() >= 2 ? "&a" : "&c") + "前往染色工坊")
@@ -49,6 +49,10 @@ public class WorkshopEntranceButton extends Button {
     @Override
     public void clicked(Player player, int slot, ClickType clickType, int hotbarButton, ItemStack currentItem) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (!profile.isSupporter() && !PlayerUtil.isStaff(player)) {
+            player.sendMessage("§c需要天坑·会员资格才能使用染色工坊。");
+            return;
+        }
         if (profile.getEnchantingItem() != null && InventoryUtil.deserializeItemStack(profile.getEnchantingItem()) != null && InventoryUtil.deserializeItemStack(profile.getEnchantingItem()).getType().equals(Material.LEATHER_LEGGINGS)) {
             ItemStack itemStack = InventoryUtil.deserializeItemStack(profile.getEnchantingItem());
             String mythicColor = ItemUtil.getItemStringData(itemStack, "mythic_color");

@@ -69,6 +69,7 @@ public class CoinPrestigeBoostPerk extends AbstractPerk implements IPlayerKilled
         List<String> lines = new ArrayList<>();
         lines.add("&7每次升级:");
         lines.add("  &7击杀获得 &6+2.5% 硬币 &7.");
+        lines.add("&7以上击杀或助攻收益加成排除 Bot");
         return lines;
     }
 

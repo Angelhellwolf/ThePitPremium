@@ -65,60 +65,7 @@ public class PrestigeStatusButton extends Button {
                 }
                 new ConfirmMenu("确认要继续吗?", element -> {
                     if (element) {
-                        //精通操作 - Start
-
-                        profile.setCoins(0);
-                        profile.setExperience(0);
-                        profile.setGrindedCoins(0);
-                        profile.setPrestige(profile.getPrestige() + 1);
-                        profile.setBoughtPerk(new ArrayList<>());
-                        profile.setAutoBuyButtons(new ArrayList<>());
-                        if (PlayerUtil.isPlayerUnlockedPerk(player, "gold_stack")) {
-                            profile.setGoldStackAddon(0.0);
-                            profile.setGoldStackMax(profile.getGoldStackMax() + 0.1);
-                        }
-
-                        if (PlayerUtil.isPlayerUnlockedPerk(player, "xp_stack")) {
-                            profile.setXpStackAddon(0.0);
-                            profile.setXpStackMax(profile.getXpStackMax() + 0.2);
-                        }
-
-                        PerkData data = profile.getUnlockedPerkMap().get("FastPass");
-                        //FastPass Perk
-                        if (data != null) {
-                            profile.setExperience(LevelUtil.getLevelTotalExperience(profile.getPrestige(), 50));
-                        }
-
-                        for (PerkData perk : profile.getChosePerk().values()) {
-                            for (AbstractPerk abstractPerk : ThePit.getInstance()
-                                    .getPerkFactory()
-                                    .getPerks()) {
-                                if (abstractPerk.getInternalPerkName().equalsIgnoreCase(perk.getPerkInternalName())) {
-                                    abstractPerk.onPerkInactive(player);
-                                }
-                            }
-                        }
-                        profile.getChosePerk().clear();
-                        profile.getChosePerk().put(5, new PerkData("over_drive", 1));
-
-                        //PlayerUtil.clearPlayer(player);
-                        //InventoryUtil.supplyItems(player);
-
-                        int award = 10;
-                        if (profile.getPrestige() > 4) {
-                            award += 10;
-                        }
-                        if (profile.getPrestige() > 10) {
-                            award += 10;
-                        }
-                        if (profile.getPrestige() > 14) {
-                            award += 10;
-                        }
-                        profile.setRenown(profile.getRenown() + award);
-                        CC.boardCast(MessageType.PRESTIGE, "&e&l精通! &7" + RankUtil.getPlayerColoredName(player.getName()) + " &7解锁了精通 &e" + RomanUtil.convert(profile.getPrestige()) + " &7,gg!");
-                        TitleUtil.sendTitle(player, "&e&l精通!", "&7你解锁了精通 &e" + RomanUtil.convert(profile.getPrestige()) + " &7!", 20, 100, 20);
-                        player.playSound(player.getLocation(), Sound.ENDERDRAGON_GROWL, 1, 1);
-                        //精通操作 - End
+                        cn.charlotte.pit.perk.PrestigeProgression.advance(player);
 
                     } else {
                         new PrestigeMainMenu().openMenu(player);

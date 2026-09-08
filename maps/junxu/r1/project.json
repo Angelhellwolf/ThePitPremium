@@ -1,0 +1,9897 @@
+{
+  "schema_version": 1,
+  "id": "seventh-quartermaster",
+  "title": "第七军需处·余烬之约",
+  "target": "1.8.8",
+  "gameplay": "generic",
+  "size": [
+    61,
+    51,
+    61
+  ],
+  "palette": {
+    "air": {
+      "id": 0,
+      "data": 0
+    },
+    "stone": {
+      "id": 1,
+      "data": 0
+    },
+    "andesite": {
+      "id": 1,
+      "data": 5
+    },
+    "cobble": {
+      "id": 4,
+      "data": 0
+    },
+    "moss": {
+      "id": 48,
+      "data": 0
+    },
+    "brick": {
+      "id": 98,
+      "data": 0
+    },
+    "cracked": {
+      "id": 98,
+      "data": 2
+    },
+    "carved": {
+      "id": 98,
+      "data": 3
+    },
+    "wood": {
+      "id": 5,
+      "data": 5
+    },
+    "oak": {
+      "id": 5,
+      "data": 1
+    },
+    "beam": {
+      "id": 17,
+      "data": 13
+    },
+    "iron": {
+      "id": 42,
+      "data": 0
+    },
+    "gold": {
+      "id": 41,
+      "data": 0
+    },
+    "lamp": {
+      "id": 89,
+      "data": 0
+    },
+    "blue": {
+      "id": 95,
+      "data": 11
+    },
+    "violet": {
+      "id": 95,
+      "data": 10
+    },
+    "glass": {
+      "id": 95,
+      "data": 0
+    },
+    "black": {
+      "id": 173,
+      "data": 0
+    },
+    "books": {
+      "id": 47,
+      "data": 0
+    },
+    "red": {
+      "id": 35,
+      "data": 14
+    },
+    "banner": {
+      "id": 35,
+      "data": 11
+    },
+    "pale": {
+      "id": 159,
+      "data": 4
+    },
+    "sand": {
+      "id": 24,
+      "data": 2
+    },
+    "earth": {
+      "id": 159,
+      "data": 12
+    },
+    "grass": {
+      "id": 159,
+      "data": 13
+    }
+  },
+  "operations": [
+    {
+      "kind": "ellipsoid",
+      "center": [
+        30,
+        17,
+        30
+      ],
+      "radii": [
+        29,
+        6,
+        29
+      ],
+      "block": "stone"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        30,
+        12,
+        30
+      ],
+      "radii": [
+        22,
+        7,
+        22
+      ],
+      "block": "andesite"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        30,
+        8,
+        30
+      ],
+      "radii": [
+        15,
+        6,
+        16
+      ],
+      "block": "stone"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        30,
+        4,
+        30
+      ],
+      "radii": [
+        7,
+        4,
+        9
+      ],
+      "block": "black"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        12,
+        15,
+        20
+      ],
+      "radii": [
+        7,
+        6,
+        7
+      ],
+      "block": "cobble"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        45,
+        15,
+        18
+      ],
+      "radii": [
+        6,
+        6,
+        6
+      ],
+      "block": "cobble"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        18,
+        15,
+        44
+      ],
+      "radii": [
+        7,
+        6,
+        7
+      ],
+      "block": "cobble"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        42,
+        15,
+        46
+      ],
+      "radii": [
+        6,
+        6,
+        6
+      ],
+      "block": "cobble"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        8,
+        15,
+        32
+      ],
+      "radii": [
+        5,
+        6,
+        5
+      ],
+      "block": "cobble"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        50,
+        15,
+        32
+      ],
+      "radii": [
+        5,
+        6,
+        5
+      ],
+      "block": "cobble"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        19,
+        10,
+        24
+      ],
+      "radii": [
+        3,
+        4,
+        3
+      ],
+      "block": "moss"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        38,
+        10,
+        16
+      ],
+      "radii": [
+        3,
+        4,
+        3
+      ],
+      "block": "moss"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        25,
+        10,
+        42
+      ],
+      "radii": [
+        3,
+        4,
+        3
+      ],
+      "block": "moss"
+    },
+    {
+      "kind": "ellipsoid",
+      "center": [
+        44,
+        10,
+        35
+      ],
+      "radii": [
+        3,
+        4,
+        3
+      ],
+      "block": "moss"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        3,
+        30
+      ],
+      "to": [
+        30,
+        3,
+        30
+      ],
+      "block": "violet"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        3,
+        30
+      ],
+      "to": [
+        31,
+        3,
+        30
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        6,
+        30
+      ],
+      "to": [
+        30,
+        6,
+        30
+      ],
+      "block": "violet"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        6,
+        30
+      ],
+      "to": [
+        31,
+        6,
+        30
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        9,
+        30
+      ],
+      "to": [
+        30,
+        9,
+        30
+      ],
+      "block": "violet"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        9,
+        30
+      ],
+      "to": [
+        31,
+        9,
+        30
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        12,
+        30
+      ],
+      "to": [
+        30,
+        12,
+        30
+      ],
+      "block": "violet"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        12,
+        30
+      ],
+      "to": [
+        31,
+        12,
+        30
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        15,
+        30
+      ],
+      "to": [
+        30,
+        15,
+        30
+      ],
+      "block": "violet"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        15,
+        30
+      ],
+      "to": [
+        31,
+        15,
+        30
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        18,
+        30
+      ],
+      "to": [
+        30,
+        18,
+        30
+      ],
+      "block": "violet"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        18,
+        30
+      ],
+      "to": [
+        31,
+        18,
+        30
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        20,
+        3
+      ],
+      "to": [
+        57,
+        21,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        21,
+        3
+      ],
+      "to": [
+        2,
+        22,
+        57
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        21,
+        2
+      ],
+      "to": [
+        57,
+        22,
+        2
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        58,
+        21,
+        3
+      ],
+      "to": [
+        58,
+        22,
+        57
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        21,
+        58
+      ],
+      "to": [
+        57,
+        22,
+        58
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        22,
+        3
+      ],
+      "to": [
+        57,
+        22,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        20,
+        4
+      ],
+      "to": [
+        5,
+        22,
+        5
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        19,
+        5
+      ],
+      "to": [
+        6,
+        21,
+        6
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        6,
+        18,
+        6
+      ],
+      "to": [
+        7,
+        20,
+        7
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        17,
+        7
+      ],
+      "to": [
+        8,
+        19,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        16,
+        8
+      ],
+      "to": [
+        9,
+        18,
+        9
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        15,
+        9
+      ],
+      "to": [
+        10,
+        17,
+        10
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        14,
+        10
+      ],
+      "to": [
+        11,
+        16,
+        11
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        13,
+        11
+      ],
+      "to": [
+        12,
+        15,
+        12
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        12,
+        12
+      ],
+      "to": [
+        13,
+        14,
+        13
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        11,
+        13
+      ],
+      "to": [
+        14,
+        13,
+        14
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        10,
+        14
+      ],
+      "to": [
+        15,
+        12,
+        15
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        9,
+        15
+      ],
+      "to": [
+        16,
+        11,
+        16
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        16,
+        8,
+        16
+      ],
+      "to": [
+        17,
+        10,
+        17
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        7,
+        17
+      ],
+      "to": [
+        18,
+        9,
+        18
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        6,
+        18
+      ],
+      "to": [
+        19,
+        8,
+        19
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        10,
+        4
+      ],
+      "to": [
+        5,
+        21,
+        5
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        17,
+        3
+      ],
+      "to": [
+        6,
+        18,
+        6
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        56,
+        20,
+        4
+      ],
+      "to": [
+        57,
+        22,
+        5
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        19,
+        5
+      ],
+      "to": [
+        56,
+        21,
+        6
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        54,
+        18,
+        6
+      ],
+      "to": [
+        55,
+        20,
+        7
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        17,
+        7
+      ],
+      "to": [
+        54,
+        19,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        16,
+        8
+      ],
+      "to": [
+        53,
+        18,
+        9
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        51,
+        15,
+        9
+      ],
+      "to": [
+        52,
+        17,
+        10
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        14,
+        10
+      ],
+      "to": [
+        51,
+        16,
+        11
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        13,
+        11
+      ],
+      "to": [
+        50,
+        15,
+        12
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        12,
+        12
+      ],
+      "to": [
+        49,
+        14,
+        13
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        11,
+        13
+      ],
+      "to": [
+        48,
+        13,
+        14
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        10,
+        14
+      ],
+      "to": [
+        47,
+        12,
+        15
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        9,
+        15
+      ],
+      "to": [
+        46,
+        11,
+        16
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        8,
+        16
+      ],
+      "to": [
+        45,
+        10,
+        17
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        7,
+        17
+      ],
+      "to": [
+        44,
+        9,
+        18
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        6,
+        18
+      ],
+      "to": [
+        43,
+        8,
+        19
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        56,
+        10,
+        4
+      ],
+      "to": [
+        57,
+        21,
+        5
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        17,
+        3
+      ],
+      "to": [
+        58,
+        18,
+        6
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        20,
+        56
+      ],
+      "to": [
+        5,
+        22,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        19,
+        55
+      ],
+      "to": [
+        6,
+        21,
+        56
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        6,
+        18,
+        54
+      ],
+      "to": [
+        7,
+        20,
+        55
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        17,
+        53
+      ],
+      "to": [
+        8,
+        19,
+        54
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        16,
+        52
+      ],
+      "to": [
+        9,
+        18,
+        53
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        15,
+        51
+      ],
+      "to": [
+        10,
+        17,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        14,
+        50
+      ],
+      "to": [
+        11,
+        16,
+        51
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        13,
+        49
+      ],
+      "to": [
+        12,
+        15,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        12,
+        48
+      ],
+      "to": [
+        13,
+        14,
+        49
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        11,
+        47
+      ],
+      "to": [
+        14,
+        13,
+        48
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        10,
+        46
+      ],
+      "to": [
+        15,
+        12,
+        47
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        9,
+        45
+      ],
+      "to": [
+        16,
+        11,
+        46
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        16,
+        8,
+        44
+      ],
+      "to": [
+        17,
+        10,
+        45
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        7,
+        43
+      ],
+      "to": [
+        18,
+        9,
+        44
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        6,
+        42
+      ],
+      "to": [
+        19,
+        8,
+        43
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        10,
+        56
+      ],
+      "to": [
+        5,
+        21,
+        57
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        17,
+        55
+      ],
+      "to": [
+        6,
+        18,
+        58
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        56,
+        20,
+        56
+      ],
+      "to": [
+        57,
+        22,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        19,
+        55
+      ],
+      "to": [
+        56,
+        21,
+        56
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        54,
+        18,
+        54
+      ],
+      "to": [
+        55,
+        20,
+        55
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        17,
+        53
+      ],
+      "to": [
+        54,
+        19,
+        54
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        16,
+        52
+      ],
+      "to": [
+        53,
+        18,
+        53
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        51,
+        15,
+        51
+      ],
+      "to": [
+        52,
+        17,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        14,
+        50
+      ],
+      "to": [
+        51,
+        16,
+        51
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        13,
+        49
+      ],
+      "to": [
+        50,
+        15,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        12,
+        48
+      ],
+      "to": [
+        49,
+        14,
+        49
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        11,
+        47
+      ],
+      "to": [
+        48,
+        13,
+        48
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        10,
+        46
+      ],
+      "to": [
+        47,
+        12,
+        47
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        9,
+        45
+      ],
+      "to": [
+        46,
+        11,
+        46
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        8,
+        44
+      ],
+      "to": [
+        45,
+        10,
+        45
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        7,
+        43
+      ],
+      "to": [
+        44,
+        9,
+        44
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        6,
+        42
+      ],
+      "to": [
+        43,
+        8,
+        43
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        56,
+        10,
+        56
+      ],
+      "to": [
+        57,
+        21,
+        57
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        17,
+        55
+      ],
+      "to": [
+        58,
+        18,
+        58
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        19,
+        2
+      ],
+      "to": [
+        8,
+        24,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        25,
+        3
+      ],
+      "to": [
+        7,
+        35,
+        7
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        25,
+        4
+      ],
+      "to": [
+        6,
+        34,
+        6
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        35,
+        2
+      ],
+      "to": [
+        8,
+        36,
+        8
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        36,
+        2
+      ],
+      "to": [
+        2,
+        38,
+        2
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        36,
+        8
+      ],
+      "to": [
+        2,
+        38,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        36,
+        2
+      ],
+      "to": [
+        8,
+        38,
+        2
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        36,
+        8
+      ],
+      "to": [
+        8,
+        38,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        37,
+        4
+      ],
+      "to": [
+        6,
+        37,
+        6
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        40,
+        5
+      ],
+      "to": [
+        5,
+        41,
+        5
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        39,
+        5
+      ],
+      "to": [
+        5,
+        39,
+        5
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        27,
+        5
+      ],
+      "to": [
+        3,
+        31,
+        5
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        27,
+        5
+      ],
+      "to": [
+        7,
+        31,
+        5
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        27,
+        3
+      ],
+      "to": [
+        5,
+        31,
+        3
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        27,
+        7
+      ],
+      "to": [
+        5,
+        31,
+        7
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        41,
+        5
+      ],
+      "to": [
+        5,
+        47,
+        5
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        6,
+        44,
+        5
+      ],
+      "to": [
+        9,
+        47,
+        5
+      ],
+      "block": "banner"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        45,
+        5
+      ],
+      "to": [
+        7,
+        46,
+        5
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        45,
+        5
+      ],
+      "to": [
+        8,
+        45,
+        5
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        19,
+        2
+      ],
+      "to": [
+        58,
+        24,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        25,
+        3
+      ],
+      "to": [
+        57,
+        35,
+        7
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        54,
+        25,
+        4
+      ],
+      "to": [
+        56,
+        34,
+        6
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        35,
+        2
+      ],
+      "to": [
+        58,
+        36,
+        8
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        36,
+        2
+      ],
+      "to": [
+        52,
+        38,
+        2
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        36,
+        8
+      ],
+      "to": [
+        52,
+        38,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        58,
+        36,
+        2
+      ],
+      "to": [
+        58,
+        38,
+        2
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        58,
+        36,
+        8
+      ],
+      "to": [
+        58,
+        38,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        54,
+        37,
+        4
+      ],
+      "to": [
+        56,
+        37,
+        6
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        40,
+        5
+      ],
+      "to": [
+        55,
+        41,
+        5
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        39,
+        5
+      ],
+      "to": [
+        55,
+        39,
+        5
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        27,
+        5
+      ],
+      "to": [
+        53,
+        31,
+        5
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        57,
+        27,
+        5
+      ],
+      "to": [
+        57,
+        31,
+        5
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        27,
+        3
+      ],
+      "to": [
+        55,
+        31,
+        3
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        27,
+        7
+      ],
+      "to": [
+        55,
+        31,
+        7
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        41,
+        5
+      ],
+      "to": [
+        55,
+        47,
+        5
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        56,
+        44,
+        5
+      ],
+      "to": [
+        59,
+        47,
+        5
+      ],
+      "block": "banner"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        57,
+        45,
+        5
+      ],
+      "to": [
+        57,
+        46,
+        5
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        58,
+        45,
+        5
+      ],
+      "to": [
+        58,
+        45,
+        5
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        19,
+        52
+      ],
+      "to": [
+        8,
+        24,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        25,
+        53
+      ],
+      "to": [
+        7,
+        35,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        25,
+        54
+      ],
+      "to": [
+        6,
+        34,
+        56
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        35,
+        52
+      ],
+      "to": [
+        8,
+        36,
+        58
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        36,
+        52
+      ],
+      "to": [
+        2,
+        38,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        2,
+        36,
+        58
+      ],
+      "to": [
+        2,
+        38,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        36,
+        52
+      ],
+      "to": [
+        8,
+        38,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        36,
+        58
+      ],
+      "to": [
+        8,
+        38,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        4,
+        37,
+        54
+      ],
+      "to": [
+        6,
+        37,
+        56
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        40,
+        55
+      ],
+      "to": [
+        5,
+        41,
+        55
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        39,
+        55
+      ],
+      "to": [
+        5,
+        39,
+        55
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        3,
+        27,
+        55
+      ],
+      "to": [
+        3,
+        31,
+        55
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        27,
+        55
+      ],
+      "to": [
+        7,
+        31,
+        55
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        27,
+        53
+      ],
+      "to": [
+        5,
+        31,
+        53
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        27,
+        57
+      ],
+      "to": [
+        5,
+        31,
+        57
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        5,
+        41,
+        55
+      ],
+      "to": [
+        5,
+        47,
+        55
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        6,
+        44,
+        55
+      ],
+      "to": [
+        9,
+        47,
+        55
+      ],
+      "block": "banner"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        45,
+        55
+      ],
+      "to": [
+        7,
+        46,
+        55
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        45,
+        55
+      ],
+      "to": [
+        8,
+        45,
+        55
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        19,
+        52
+      ],
+      "to": [
+        58,
+        24,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        25,
+        53
+      ],
+      "to": [
+        57,
+        35,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        54,
+        25,
+        54
+      ],
+      "to": [
+        56,
+        34,
+        56
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        35,
+        52
+      ],
+      "to": [
+        58,
+        36,
+        58
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        36,
+        52
+      ],
+      "to": [
+        52,
+        38,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        52,
+        36,
+        58
+      ],
+      "to": [
+        52,
+        38,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        58,
+        36,
+        52
+      ],
+      "to": [
+        58,
+        38,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        58,
+        36,
+        58
+      ],
+      "to": [
+        58,
+        38,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        54,
+        37,
+        54
+      ],
+      "to": [
+        56,
+        37,
+        56
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        40,
+        55
+      ],
+      "to": [
+        55,
+        41,
+        55
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        39,
+        55
+      ],
+      "to": [
+        55,
+        39,
+        55
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        27,
+        55
+      ],
+      "to": [
+        53,
+        31,
+        55
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        57,
+        27,
+        55
+      ],
+      "to": [
+        57,
+        31,
+        55
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        27,
+        53
+      ],
+      "to": [
+        55,
+        31,
+        53
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        27,
+        57
+      ],
+      "to": [
+        55,
+        31,
+        57
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        55,
+        41,
+        55
+      ],
+      "to": [
+        55,
+        47,
+        55
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        56,
+        44,
+        55
+      ],
+      "to": [
+        59,
+        47,
+        55
+      ],
+      "block": "banner"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        57,
+        45,
+        55
+      ],
+      "to": [
+        57,
+        46,
+        55
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        58,
+        45,
+        55
+      ],
+      "to": [
+        58,
+        45,
+        55
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        22,
+        8
+      ],
+      "to": [
+        52,
+        22,
+        32
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        22,
+        7
+      ],
+      "to": [
+        36,
+        22,
+        34
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        22,
+        16
+      ],
+      "to": [
+        52,
+        22,
+        20
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        22,
+        29
+      ],
+      "to": [
+        50,
+        22,
+        33
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        9
+      ],
+      "to": [
+        30,
+        22,
+        9
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        13
+      ],
+      "to": [
+        30,
+        22,
+        13
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        17
+      ],
+      "to": [
+        30,
+        22,
+        17
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        21
+      ],
+      "to": [
+        30,
+        22,
+        21
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        25
+      ],
+      "to": [
+        30,
+        22,
+        25
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        29
+      ],
+      "to": [
+        30,
+        22,
+        29
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        23,
+        22,
+        8
+      ],
+      "to": [
+        23,
+        22,
+        32
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        37,
+        22,
+        8
+      ],
+      "to": [
+        37,
+        22,
+        32
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        23,
+        8
+      ],
+      "to": [
+        7,
+        30,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        23,
+        9
+      ],
+      "to": [
+        7,
+        31,
+        11
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        23,
+        16
+      ],
+      "to": [
+        7,
+        31,
+        18
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        23,
+        23
+      ],
+      "to": [
+        7,
+        31,
+        25
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        23,
+        29
+      ],
+      "to": [
+        7,
+        31,
+        31
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        25,
+        12
+      ],
+      "to": [
+        7,
+        29,
+        14
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        30,
+        12
+      ],
+      "to": [
+        7,
+        30,
+        14
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        25,
+        19
+      ],
+      "to": [
+        7,
+        29,
+        21
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        30,
+        19
+      ],
+      "to": [
+        7,
+        30,
+        21
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        25,
+        26
+      ],
+      "to": [
+        7,
+        29,
+        28
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        30,
+        26
+      ],
+      "to": [
+        7,
+        30,
+        28
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        23,
+        8
+      ],
+      "to": [
+        53,
+        30,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        23,
+        9
+      ],
+      "to": [
+        53,
+        31,
+        11
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        23,
+        16
+      ],
+      "to": [
+        53,
+        31,
+        18
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        23,
+        23
+      ],
+      "to": [
+        53,
+        31,
+        25
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        23,
+        29
+      ],
+      "to": [
+        53,
+        31,
+        31
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        25,
+        12
+      ],
+      "to": [
+        53,
+        29,
+        14
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        30,
+        12
+      ],
+      "to": [
+        53,
+        30,
+        14
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        25,
+        19
+      ],
+      "to": [
+        53,
+        29,
+        21
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        30,
+        19
+      ],
+      "to": [
+        53,
+        30,
+        21
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        25,
+        26
+      ],
+      "to": [
+        53,
+        29,
+        28
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        53,
+        30,
+        26
+      ],
+      "to": [
+        53,
+        30,
+        28
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        23,
+        8
+      ],
+      "to": [
+        52,
+        30,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        23,
+        8
+      ],
+      "to": [
+        10,
+        31,
+        8
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        23,
+        8
+      ],
+      "to": [
+        18,
+        31,
+        8
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        23,
+        8
+      ],
+      "to": [
+        24,
+        31,
+        8
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        36,
+        23,
+        8
+      ],
+      "to": [
+        36,
+        31,
+        8
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        23,
+        8
+      ],
+      "to": [
+        42,
+        31,
+        8
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        23,
+        8
+      ],
+      "to": [
+        50,
+        31,
+        8
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        25,
+        8
+      ],
+      "to": [
+        16,
+        29,
+        8
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        25,
+        8
+      ],
+      "to": [
+        48,
+        29,
+        8
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        23,
+        8
+      ],
+      "to": [
+        33,
+        29,
+        8
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        23,
+        8
+      ],
+      "to": [
+        26,
+        31,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        23,
+        8
+      ],
+      "to": [
+        34,
+        31,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        31,
+        8
+      ],
+      "to": [
+        34,
+        31,
+        8
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        30,
+        8
+      ],
+      "to": [
+        26,
+        30,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        30,
+        8
+      ],
+      "to": [
+        34,
+        30,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        29,
+        8
+      ],
+      "to": [
+        27,
+        29,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        33,
+        29,
+        8
+      ],
+      "to": [
+        33,
+        29,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        28,
+        8
+      ],
+      "to": [
+        28,
+        28,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        28,
+        8
+      ],
+      "to": [
+        32,
+        28,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        23,
+        32
+      ],
+      "to": [
+        52,
+        30,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        23,
+        32
+      ],
+      "to": [
+        10,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        23,
+        32
+      ],
+      "to": [
+        18,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        23,
+        32
+      ],
+      "to": [
+        24,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        36,
+        23,
+        32
+      ],
+      "to": [
+        36,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        23,
+        32
+      ],
+      "to": [
+        42,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        23,
+        32
+      ],
+      "to": [
+        50,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        25,
+        32
+      ],
+      "to": [
+        16,
+        29,
+        32
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        25,
+        32
+      ],
+      "to": [
+        48,
+        29,
+        32
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        23,
+        32
+      ],
+      "to": [
+        33,
+        29,
+        32
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        23,
+        32
+      ],
+      "to": [
+        26,
+        31,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        23,
+        32
+      ],
+      "to": [
+        34,
+        31,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        31,
+        32
+      ],
+      "to": [
+        34,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        30,
+        32
+      ],
+      "to": [
+        26,
+        30,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        30,
+        32
+      ],
+      "to": [
+        34,
+        30,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        29,
+        32
+      ],
+      "to": [
+        27,
+        29,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        33,
+        29,
+        32
+      ],
+      "to": [
+        33,
+        29,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        28,
+        32
+      ],
+      "to": [
+        28,
+        28,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        28,
+        32
+      ],
+      "to": [
+        32,
+        28,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        23,
+        9
+      ],
+      "to": [
+        22,
+        30,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        23,
+        15
+      ],
+      "to": [
+        22,
+        29,
+        21
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        23,
+        14
+      ],
+      "to": [
+        22,
+        31,
+        14
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        23,
+        22
+      ],
+      "to": [
+        22,
+        31,
+        22
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        31,
+        14
+      ],
+      "to": [
+        22,
+        31,
+        22
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        30,
+        14
+      ],
+      "to": [
+        22,
+        30,
+        14
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        30,
+        22
+      ],
+      "to": [
+        22,
+        30,
+        22
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        29,
+        15
+      ],
+      "to": [
+        22,
+        29,
+        15
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        29,
+        21
+      ],
+      "to": [
+        22,
+        29,
+        21
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        28,
+        16
+      ],
+      "to": [
+        22,
+        28,
+        16
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        28,
+        20
+      ],
+      "to": [
+        22,
+        28,
+        20
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        23,
+        27
+      ],
+      "to": [
+        22,
+        29,
+        31
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        23,
+        26
+      ],
+      "to": [
+        22,
+        31,
+        26
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        23,
+        32
+      ],
+      "to": [
+        22,
+        31,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        31,
+        26
+      ],
+      "to": [
+        22,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        30,
+        26
+      ],
+      "to": [
+        22,
+        30,
+        26
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        30,
+        32
+      ],
+      "to": [
+        22,
+        30,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        29,
+        27
+      ],
+      "to": [
+        22,
+        29,
+        27
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        29,
+        31
+      ],
+      "to": [
+        22,
+        29,
+        31
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        28,
+        28
+      ],
+      "to": [
+        22,
+        28,
+        28
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        28,
+        30
+      ],
+      "to": [
+        22,
+        28,
+        30
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        23,
+        9
+      ],
+      "to": [
+        38,
+        30,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        23,
+        15
+      ],
+      "to": [
+        38,
+        29,
+        21
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        23,
+        14
+      ],
+      "to": [
+        38,
+        31,
+        14
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        23,
+        22
+      ],
+      "to": [
+        38,
+        31,
+        22
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        31,
+        14
+      ],
+      "to": [
+        38,
+        31,
+        22
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        30,
+        14
+      ],
+      "to": [
+        38,
+        30,
+        14
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        30,
+        22
+      ],
+      "to": [
+        38,
+        30,
+        22
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        29,
+        15
+      ],
+      "to": [
+        38,
+        29,
+        15
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        29,
+        21
+      ],
+      "to": [
+        38,
+        29,
+        21
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        28,
+        16
+      ],
+      "to": [
+        38,
+        28,
+        16
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        28,
+        20
+      ],
+      "to": [
+        38,
+        28,
+        20
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        23,
+        27
+      ],
+      "to": [
+        38,
+        29,
+        31
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        23,
+        26
+      ],
+      "to": [
+        38,
+        31,
+        26
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        23,
+        32
+      ],
+      "to": [
+        38,
+        31,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        31,
+        26
+      ],
+      "to": [
+        38,
+        31,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        30,
+        26
+      ],
+      "to": [
+        38,
+        30,
+        26
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        30,
+        32
+      ],
+      "to": [
+        38,
+        30,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        29,
+        27
+      ],
+      "to": [
+        38,
+        29,
+        27
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        29,
+        31
+      ],
+      "to": [
+        38,
+        29,
+        31
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        28,
+        28
+      ],
+      "to": [
+        38,
+        28,
+        28
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        28,
+        30
+      ],
+      "to": [
+        38,
+        28,
+        30
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        9
+      ],
+      "to": [
+        9,
+        31,
+        9
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        25,
+        9
+      ],
+      "to": [
+        9,
+        25,
+        9
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        28
+      ],
+      "to": [
+        9,
+        31,
+        28
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        25,
+        28
+      ],
+      "to": [
+        9,
+        25,
+        28
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        23,
+        9
+      ],
+      "to": [
+        21,
+        31,
+        9
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        25,
+        9
+      ],
+      "to": [
+        21,
+        25,
+        9
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        23,
+        28
+      ],
+      "to": [
+        21,
+        31,
+        28
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        25,
+        28
+      ],
+      "to": [
+        21,
+        25,
+        28
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        23,
+        9
+      ],
+      "to": [
+        39,
+        31,
+        9
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        25,
+        9
+      ],
+      "to": [
+        39,
+        25,
+        9
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        23,
+        28
+      ],
+      "to": [
+        39,
+        31,
+        28
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        25,
+        28
+      ],
+      "to": [
+        39,
+        25,
+        28
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        51,
+        23,
+        9
+      ],
+      "to": [
+        51,
+        31,
+        9
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        51,
+        25,
+        9
+      ],
+      "to": [
+        51,
+        25,
+        9
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        51,
+        23,
+        28
+      ],
+      "to": [
+        51,
+        31,
+        28
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        51,
+        25,
+        28
+      ],
+      "to": [
+        51,
+        25,
+        28
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        31,
+        8
+      ],
+      "to": [
+        53,
+        31,
+        32
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        30,
+        8
+      ],
+      "to": [
+        8,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        30,
+        8
+      ],
+      "to": [
+        14,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        20,
+        30,
+        8
+      ],
+      "to": [
+        20,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        30,
+        8
+      ],
+      "to": [
+        26,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        30,
+        8
+      ],
+      "to": [
+        32,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        30,
+        8
+      ],
+      "to": [
+        38,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        30,
+        8
+      ],
+      "to": [
+        44,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        30,
+        8
+      ],
+      "to": [
+        50,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        30,
+        10
+      ],
+      "to": [
+        53,
+        30,
+        10
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        30,
+        18
+      ],
+      "to": [
+        53,
+        30,
+        18
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        30,
+        26
+      ],
+      "to": [
+        53,
+        30,
+        26
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        30,
+        32
+      ],
+      "to": [
+        53,
+        30,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        29,
+        13
+      ],
+      "to": [
+        14,
+        30,
+        13
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        28,
+        13
+      ],
+      "to": [
+        14,
+        28,
+        13
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        29,
+        25
+      ],
+      "to": [
+        14,
+        30,
+        25
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        28,
+        25
+      ],
+      "to": [
+        14,
+        28,
+        25
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        29,
+        13
+      ],
+      "to": [
+        46,
+        30,
+        13
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        28,
+        13
+      ],
+      "to": [
+        46,
+        28,
+        13
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        29,
+        25
+      ],
+      "to": [
+        46,
+        30,
+        25
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        28,
+        25
+      ],
+      "to": [
+        46,
+        28,
+        25
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        31,
+        12
+      ],
+      "to": [
+        30,
+        32,
+        12
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        30,
+        12
+      ],
+      "to": [
+        30,
+        30,
+        12
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        31,
+        24
+      ],
+      "to": [
+        30,
+        32,
+        24
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        30,
+        24
+      ],
+      "to": [
+        30,
+        30,
+        24
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        6,
+        32,
+        7
+      ],
+      "to": [
+        22,
+        32,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        32,
+        7
+      ],
+      "to": [
+        54,
+        32,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        7,
+        33,
+        7
+      ],
+      "to": [
+        21,
+        33,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        33,
+        7
+      ],
+      "to": [
+        53,
+        33,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        8,
+        34,
+        7
+      ],
+      "to": [
+        20,
+        34,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        34,
+        7
+      ],
+      "to": [
+        52,
+        34,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        35,
+        7
+      ],
+      "to": [
+        19,
+        35,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        41,
+        35,
+        7
+      ],
+      "to": [
+        51,
+        35,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        36,
+        7
+      ],
+      "to": [
+        18,
+        36,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        36,
+        7
+      ],
+      "to": [
+        50,
+        36,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        37,
+        7
+      ],
+      "to": [
+        17,
+        37,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        37,
+        7
+      ],
+      "to": [
+        49,
+        37,
+        33
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        23,
+        35,
+        8
+      ],
+      "to": [
+        37,
+        35,
+        32
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        25,
+        36,
+        10
+      ],
+      "to": [
+        35,
+        36,
+        30
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        37,
+        13
+      ],
+      "to": [
+        32,
+        37,
+        27
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        32,
+        8
+      ],
+      "to": [
+        24,
+        36,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        36,
+        32,
+        8
+      ],
+      "to": [
+        36,
+        36,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        25,
+        31,
+        10
+      ],
+      "to": [
+        35,
+        34,
+        30
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        35,
+        10
+      ],
+      "to": [
+        36,
+        35,
+        10
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        35,
+        16
+      ],
+      "to": [
+        36,
+        35,
+        16
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        35,
+        22
+      ],
+      "to": [
+        36,
+        35,
+        22
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        35,
+        28
+      ],
+      "to": [
+        36,
+        35,
+        28
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        35,
+        32
+      ],
+      "to": [
+        36,
+        35,
+        32
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        31,
+        9
+      ],
+      "to": [
+        20,
+        31,
+        12
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        32,
+        9
+      ],
+      "to": [
+        20,
+        35,
+        12
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        33,
+        8
+      ],
+      "to": [
+        20,
+        34,
+        8
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        31,
+        9
+      ],
+      "to": [
+        51,
+        31,
+        12
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        32,
+        9
+      ],
+      "to": [
+        51,
+        35,
+        12
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        33,
+        8
+      ],
+      "to": [
+        51,
+        34,
+        8
+      ],
+      "block": "glass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        23
+      ],
+      "to": [
+        11,
+        23,
+        23
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        24,
+        23
+      ],
+      "to": [
+        11,
+        29,
+        23
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        22
+      ],
+      "to": [
+        11,
+        24,
+        22
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        25,
+        22
+      ],
+      "to": [
+        11,
+        30,
+        22
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        21
+      ],
+      "to": [
+        11,
+        25,
+        21
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        26,
+        21
+      ],
+      "to": [
+        11,
+        31,
+        21
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        20
+      ],
+      "to": [
+        11,
+        26,
+        20
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        27,
+        20
+      ],
+      "to": [
+        11,
+        32,
+        20
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        19
+      ],
+      "to": [
+        11,
+        27,
+        19
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        28,
+        19
+      ],
+      "to": [
+        11,
+        33,
+        19
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        18
+      ],
+      "to": [
+        11,
+        28,
+        18
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        29,
+        18
+      ],
+      "to": [
+        11,
+        34,
+        18
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        17
+      ],
+      "to": [
+        11,
+        29,
+        17
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        30,
+        17
+      ],
+      "to": [
+        11,
+        35,
+        17
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        16
+      ],
+      "to": [
+        11,
+        30,
+        16
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        31,
+        16
+      ],
+      "to": [
+        11,
+        36,
+        16
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        15
+      ],
+      "to": [
+        11,
+        31,
+        15
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        32,
+        15
+      ],
+      "to": [
+        11,
+        37,
+        15
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        31,
+        12
+      ],
+      "to": [
+        11,
+        31,
+        15
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        32,
+        12
+      ],
+      "to": [
+        11,
+        35,
+        15
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        23
+      ],
+      "to": [
+        51,
+        23,
+        23
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        24,
+        23
+      ],
+      "to": [
+        51,
+        29,
+        23
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        22
+      ],
+      "to": [
+        51,
+        24,
+        22
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        25,
+        22
+      ],
+      "to": [
+        51,
+        30,
+        22
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        21
+      ],
+      "to": [
+        51,
+        25,
+        21
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        26,
+        21
+      ],
+      "to": [
+        51,
+        31,
+        21
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        20
+      ],
+      "to": [
+        51,
+        26,
+        20
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        27,
+        20
+      ],
+      "to": [
+        51,
+        32,
+        20
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        19
+      ],
+      "to": [
+        51,
+        27,
+        19
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        28,
+        19
+      ],
+      "to": [
+        51,
+        33,
+        19
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        18
+      ],
+      "to": [
+        51,
+        28,
+        18
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        29,
+        18
+      ],
+      "to": [
+        51,
+        34,
+        18
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        17
+      ],
+      "to": [
+        51,
+        29,
+        17
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        30,
+        17
+      ],
+      "to": [
+        51,
+        35,
+        17
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        16
+      ],
+      "to": [
+        51,
+        30,
+        16
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        31,
+        16
+      ],
+      "to": [
+        51,
+        36,
+        16
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        23,
+        15
+      ],
+      "to": [
+        51,
+        31,
+        15
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        32,
+        15
+      ],
+      "to": [
+        51,
+        37,
+        15
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        31,
+        12
+      ],
+      "to": [
+        51,
+        31,
+        15
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        32,
+        12
+      ],
+      "to": [
+        51,
+        35,
+        15
+      ],
+      "block": "air"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        23,
+        23,
+        3
+      ],
+      "to": [
+        25,
+        24,
+        5
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        25,
+        4
+      ],
+      "to": [
+        24,
+        30,
+        4
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        26,
+        4
+      ],
+      "to": [
+        24,
+        26,
+        4
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        35,
+        23,
+        3
+      ],
+      "to": [
+        37,
+        24,
+        5
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        36,
+        25,
+        4
+      ],
+      "to": [
+        36,
+        30,
+        4
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        36,
+        26,
+        4
+      ],
+      "to": [
+        36,
+        26,
+        4
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        23,
+        4
+      ],
+      "to": [
+        24,
+        32,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        36,
+        23,
+        4
+      ],
+      "to": [
+        36,
+        32,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        32,
+        4
+      ],
+      "to": [
+        36,
+        32,
+        4
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        24,
+        31,
+        4
+      ],
+      "to": [
+        24,
+        31,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        36,
+        31,
+        4
+      ],
+      "to": [
+        36,
+        31,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        25,
+        30,
+        4
+      ],
+      "to": [
+        25,
+        30,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        35,
+        30,
+        4
+      ],
+      "to": [
+        35,
+        30,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        29,
+        4
+      ],
+      "to": [
+        26,
+        29,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        29,
+        4
+      ],
+      "to": [
+        34,
+        29,
+        4
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        23,
+        32,
+        3
+      ],
+      "to": [
+        37,
+        33,
+        8
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        25,
+        34,
+        4
+      ],
+      "to": [
+        35,
+        34,
+        7
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        35,
+        4
+      ],
+      "to": [
+        34,
+        35,
+        7
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        36,
+        4
+      ],
+      "to": [
+        33,
+        36,
+        7
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        37,
+        4
+      ],
+      "to": [
+        32,
+        37,
+        7
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        29,
+        33,
+        3
+      ],
+      "to": [
+        31,
+        35,
+        3
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        34,
+        2
+      ],
+      "to": [
+        30,
+        34,
+        2
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        20,
+        26,
+        6
+      ],
+      "to": [
+        20,
+        32,
+        6
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        27,
+        6
+      ],
+      "to": [
+        21,
+        31,
+        6
+      ],
+      "block": "banner"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        20,
+        28,
+        5
+      ],
+      "to": [
+        20,
+        30,
+        5
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        26,
+        6
+      ],
+      "to": [
+        40,
+        32,
+        6
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        27,
+        6
+      ],
+      "to": [
+        41,
+        31,
+        6
+      ],
+      "block": "banner"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        28,
+        5
+      ],
+      "to": [
+        40,
+        30,
+        5
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        22,
+        3
+      ],
+      "to": [
+        33,
+        22,
+        11
+      ],
+      "block": "red"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        25,
+        22,
+        23
+      ],
+      "to": [
+        25,
+        22,
+        23
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        22,
+        22
+      ],
+      "to": [
+        26,
+        22,
+        22
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        22,
+        23
+      ],
+      "to": [
+        26,
+        22,
+        23
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        26,
+        22,
+        24
+      ],
+      "to": [
+        26,
+        22,
+        24
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        22,
+        21
+      ],
+      "to": [
+        27,
+        22,
+        21
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        22,
+        22
+      ],
+      "to": [
+        27,
+        22,
+        22
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        22,
+        24
+      ],
+      "to": [
+        27,
+        22,
+        24
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        22,
+        25
+      ],
+      "to": [
+        27,
+        22,
+        25
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        22,
+        20
+      ],
+      "to": [
+        28,
+        22,
+        20
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        22,
+        21
+      ],
+      "to": [
+        28,
+        22,
+        21
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        22,
+        25
+      ],
+      "to": [
+        28,
+        22,
+        25
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        22,
+        26
+      ],
+      "to": [
+        28,
+        22,
+        26
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        29,
+        22,
+        19
+      ],
+      "to": [
+        29,
+        22,
+        19
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        29,
+        22,
+        20
+      ],
+      "to": [
+        29,
+        22,
+        20
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        29,
+        22,
+        26
+      ],
+      "to": [
+        29,
+        22,
+        26
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        29,
+        22,
+        27
+      ],
+      "to": [
+        29,
+        22,
+        27
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        18
+      ],
+      "to": [
+        30,
+        22,
+        18
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        19
+      ],
+      "to": [
+        30,
+        22,
+        19
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        27
+      ],
+      "to": [
+        30,
+        22,
+        27
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        28
+      ],
+      "to": [
+        30,
+        22,
+        28
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        22,
+        19
+      ],
+      "to": [
+        31,
+        22,
+        19
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        22,
+        20
+      ],
+      "to": [
+        31,
+        22,
+        20
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        22,
+        26
+      ],
+      "to": [
+        31,
+        22,
+        26
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        22,
+        27
+      ],
+      "to": [
+        31,
+        22,
+        27
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        22,
+        20
+      ],
+      "to": [
+        32,
+        22,
+        20
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        22,
+        21
+      ],
+      "to": [
+        32,
+        22,
+        21
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        22,
+        25
+      ],
+      "to": [
+        32,
+        22,
+        25
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        22,
+        26
+      ],
+      "to": [
+        32,
+        22,
+        26
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        33,
+        22,
+        21
+      ],
+      "to": [
+        33,
+        22,
+        21
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        33,
+        22,
+        22
+      ],
+      "to": [
+        33,
+        22,
+        22
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        33,
+        22,
+        24
+      ],
+      "to": [
+        33,
+        22,
+        24
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        33,
+        22,
+        25
+      ],
+      "to": [
+        33,
+        22,
+        25
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        22,
+        22
+      ],
+      "to": [
+        34,
+        22,
+        22
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        22,
+        23
+      ],
+      "to": [
+        34,
+        22,
+        23
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        34,
+        22,
+        24
+      ],
+      "to": [
+        34,
+        22,
+        24
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        35,
+        22,
+        23
+      ],
+      "to": [
+        35,
+        22,
+        23
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        29,
+        23,
+        22
+      ],
+      "to": [
+        31,
+        23,
+        24
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        24,
+        23
+      ],
+      "to": [
+        30,
+        24,
+        23
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        25,
+        23
+      ],
+      "to": [
+        30,
+        25,
+        23
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        26,
+        23
+      ],
+      "to": [
+        30,
+        26,
+        23
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        23,
+        23
+      ],
+      "to": [
+        28,
+        23,
+        23
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        23,
+        23
+      ],
+      "to": [
+        32,
+        23,
+        23
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        23,
+        21
+      ],
+      "to": [
+        30,
+        23,
+        21
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        23,
+        25
+      ],
+      "to": [
+        30,
+        23,
+        25
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        23,
+        10
+      ],
+      "to": [
+        20,
+        26,
+        10
+      ],
+      "block": "books"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        27,
+        10
+      ],
+      "to": [
+        20,
+        27,
+        10
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        23,
+        26
+      ],
+      "to": [
+        20,
+        26,
+        26
+      ],
+      "block": "books"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        27,
+        26
+      ],
+      "to": [
+        20,
+        27,
+        26
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        23,
+        13
+      ],
+      "to": [
+        15,
+        23,
+        14
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        24,
+        14
+      ],
+      "to": [
+        15,
+        24,
+        14
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        23,
+        13
+      ],
+      "to": [
+        19,
+        23,
+        14
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        19,
+        24,
+        14
+      ],
+      "to": [
+        19,
+        24,
+        14
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        16,
+        23,
+        23
+      ],
+      "to": [
+        20,
+        23,
+        24
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        29,
+        18
+      ],
+      "to": [
+        18,
+        30,
+        18
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        28,
+        18
+      ],
+      "to": [
+        18,
+        28,
+        18
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        23,
+        28
+      ],
+      "to": [
+        13,
+        23,
+        28
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        16,
+        23,
+        28
+      ],
+      "to": [
+        16,
+        23,
+        28
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        19,
+        23,
+        28
+      ],
+      "to": [
+        19,
+        23,
+        28
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        41,
+        23,
+        23
+      ],
+      "to": [
+        47,
+        23,
+        27
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        41,
+        24,
+        23
+      ],
+      "to": [
+        47,
+        24,
+        27
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        25,
+        24
+      ],
+      "to": [
+        43,
+        25,
+        26
+      ],
+      "block": "grass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        25,
+        25
+      ],
+      "to": [
+        44,
+        25,
+        25
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        25,
+        23
+      ],
+      "to": [
+        46,
+        26,
+        24
+      ],
+      "block": "stone"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        25,
+        26
+      ],
+      "to": [
+        47,
+        25,
+        26
+      ],
+      "block": "red"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        41,
+        26,
+        10
+      ],
+      "to": [
+        41,
+        26,
+        10
+      ],
+      "block": "grass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        41,
+        27,
+        10
+      ],
+      "to": [
+        41,
+        27,
+        10
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        26,
+        10
+      ],
+      "to": [
+        42,
+        26,
+        10
+      ],
+      "block": "earth"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        27,
+        10
+      ],
+      "to": [
+        42,
+        27,
+        10
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        26,
+        10
+      ],
+      "to": [
+        43,
+        26,
+        10
+      ],
+      "block": "grass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        27,
+        10
+      ],
+      "to": [
+        43,
+        27,
+        10
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        26,
+        10
+      ],
+      "to": [
+        44,
+        26,
+        10
+      ],
+      "block": "grass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        27,
+        10
+      ],
+      "to": [
+        44,
+        27,
+        10
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        26,
+        10
+      ],
+      "to": [
+        45,
+        26,
+        10
+      ],
+      "block": "earth"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        27,
+        10
+      ],
+      "to": [
+        45,
+        27,
+        10
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        26,
+        10
+      ],
+      "to": [
+        46,
+        26,
+        10
+      ],
+      "block": "grass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        27,
+        10
+      ],
+      "to": [
+        46,
+        27,
+        10
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        26,
+        10
+      ],
+      "to": [
+        47,
+        26,
+        10
+      ],
+      "block": "grass"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        27,
+        10
+      ],
+      "to": [
+        47,
+        27,
+        10
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        26,
+        10
+      ],
+      "to": [
+        48,
+        26,
+        10
+      ],
+      "block": "earth"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        27,
+        10
+      ],
+      "to": [
+        48,
+        27,
+        10
+      ],
+      "block": "blue"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        23,
+        13
+      ],
+      "to": [
+        47,
+        23,
+        14
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        23,
+        28
+      ],
+      "to": [
+        42,
+        23,
+        28
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        23,
+        28
+      ],
+      "to": [
+        46,
+        23,
+        28
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        23,
+        30
+      ],
+      "to": [
+        13,
+        23,
+        30
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        24,
+        31
+      ],
+      "to": [
+        13,
+        27,
+        31
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        25,
+        31
+      ],
+      "to": [
+        12,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        14,
+        25,
+        31
+      ],
+      "to": [
+        14,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        13,
+        28,
+        31
+      ],
+      "to": [
+        13,
+        28,
+        31
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        23,
+        30
+      ],
+      "to": [
+        17,
+        23,
+        30
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        24,
+        31
+      ],
+      "to": [
+        17,
+        27,
+        31
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        16,
+        25,
+        31
+      ],
+      "to": [
+        16,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        18,
+        25,
+        31
+      ],
+      "to": [
+        18,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        28,
+        31
+      ],
+      "to": [
+        17,
+        28,
+        31
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        23,
+        30
+      ],
+      "to": [
+        21,
+        23,
+        30
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        24,
+        31
+      ],
+      "to": [
+        21,
+        27,
+        31
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        20,
+        25,
+        31
+      ],
+      "to": [
+        20,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        22,
+        25,
+        31
+      ],
+      "to": [
+        22,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        28,
+        31
+      ],
+      "to": [
+        21,
+        28,
+        31
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        23,
+        30
+      ],
+      "to": [
+        39,
+        23,
+        30
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        24,
+        31
+      ],
+      "to": [
+        39,
+        27,
+        31
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        38,
+        25,
+        31
+      ],
+      "to": [
+        38,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        25,
+        31
+      ],
+      "to": [
+        40,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        28,
+        31
+      ],
+      "to": [
+        39,
+        28,
+        31
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        23,
+        30
+      ],
+      "to": [
+        43,
+        23,
+        30
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        24,
+        31
+      ],
+      "to": [
+        43,
+        27,
+        31
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        42,
+        25,
+        31
+      ],
+      "to": [
+        42,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        25,
+        31
+      ],
+      "to": [
+        44,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        28,
+        31
+      ],
+      "to": [
+        43,
+        28,
+        31
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        23,
+        30
+      ],
+      "to": [
+        47,
+        23,
+        30
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        24,
+        31
+      ],
+      "to": [
+        47,
+        27,
+        31
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        46,
+        25,
+        31
+      ],
+      "to": [
+        46,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        25,
+        31
+      ],
+      "to": [
+        48,
+        25,
+        31
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        28,
+        31
+      ],
+      "to": [
+        47,
+        28,
+        31
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        27,
+        22,
+        33
+      ],
+      "to": [
+        27,
+        22,
+        33
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        28,
+        22,
+        33
+      ],
+      "to": [
+        28,
+        22,
+        33
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        29,
+        22,
+        33
+      ],
+      "to": [
+        29,
+        22,
+        33
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        33
+      ],
+      "to": [
+        30,
+        22,
+        33
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        31,
+        22,
+        33
+      ],
+      "to": [
+        31,
+        22,
+        33
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        32,
+        22,
+        33
+      ],
+      "to": [
+        32,
+        22,
+        33
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        33,
+        22,
+        33
+      ],
+      "to": [
+        33,
+        22,
+        33
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        22,
+        34
+      ],
+      "to": [
+        43,
+        22,
+        56
+      ],
+      "block": "sand"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        22,
+        34
+      ],
+      "to": [
+        17,
+        22,
+        56
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        22,
+        34
+      ],
+      "to": [
+        43,
+        22,
+        56
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        22,
+        34
+      ],
+      "to": [
+        43,
+        22,
+        34
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        22,
+        56
+      ],
+      "to": [
+        43,
+        22,
+        56
+      ],
+      "block": "wood"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        22,
+        37
+      ],
+      "to": [
+        21,
+        22,
+        53
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        22,
+        37
+      ],
+      "to": [
+        39,
+        22,
+        53
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        22,
+        37
+      ],
+      "to": [
+        39,
+        22,
+        37
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        22,
+        53
+      ],
+      "to": [
+        39,
+        22,
+        53
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        20,
+        22,
+        42
+      ],
+      "to": [
+        20,
+        22,
+        42
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        25,
+        22,
+        42
+      ],
+      "to": [
+        25,
+        22,
+        42
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        42
+      ],
+      "to": [
+        30,
+        22,
+        42
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        35,
+        22,
+        42
+      ],
+      "to": [
+        35,
+        22,
+        42
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        22,
+        42
+      ],
+      "to": [
+        40,
+        22,
+        42
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        20,
+        22,
+        50
+      ],
+      "to": [
+        20,
+        22,
+        50
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        25,
+        22,
+        50
+      ],
+      "to": [
+        25,
+        22,
+        50
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        22,
+        50
+      ],
+      "to": [
+        30,
+        22,
+        50
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        35,
+        22,
+        50
+      ],
+      "to": [
+        35,
+        22,
+        50
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        40,
+        22,
+        50
+      ],
+      "to": [
+        40,
+        22,
+        50
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        22,
+        34
+      ],
+      "to": [
+        15,
+        22,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        34
+      ],
+      "to": [
+        15,
+        30,
+        34
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        25,
+        34
+      ],
+      "to": [
+        15,
+        25,
+        34
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        42
+      ],
+      "to": [
+        15,
+        30,
+        42
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        25,
+        42
+      ],
+      "to": [
+        15,
+        25,
+        42
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        50
+      ],
+      "to": [
+        15,
+        30,
+        50
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        25,
+        50
+      ],
+      "to": [
+        15,
+        25,
+        50
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        57
+      ],
+      "to": [
+        15,
+        30,
+        57
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        25,
+        57
+      ],
+      "to": [
+        15,
+        25,
+        57
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        34
+      ],
+      "to": [
+        15,
+        31,
+        34
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        42
+      ],
+      "to": [
+        15,
+        31,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        31,
+        34
+      ],
+      "to": [
+        15,
+        31,
+        42
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        30,
+        34
+      ],
+      "to": [
+        15,
+        30,
+        34
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        30,
+        42
+      ],
+      "to": [
+        15,
+        30,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        29,
+        35
+      ],
+      "to": [
+        15,
+        29,
+        35
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        29,
+        41
+      ],
+      "to": [
+        15,
+        29,
+        41
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        28,
+        36
+      ],
+      "to": [
+        15,
+        28,
+        36
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        28,
+        40
+      ],
+      "to": [
+        15,
+        28,
+        40
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        42
+      ],
+      "to": [
+        15,
+        31,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        50
+      ],
+      "to": [
+        15,
+        31,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        31,
+        42
+      ],
+      "to": [
+        15,
+        31,
+        50
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        30,
+        42
+      ],
+      "to": [
+        15,
+        30,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        30,
+        50
+      ],
+      "to": [
+        15,
+        30,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        29,
+        43
+      ],
+      "to": [
+        15,
+        29,
+        43
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        29,
+        49
+      ],
+      "to": [
+        15,
+        29,
+        49
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        28,
+        44
+      ],
+      "to": [
+        15,
+        28,
+        44
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        28,
+        48
+      ],
+      "to": [
+        15,
+        28,
+        48
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        50
+      ],
+      "to": [
+        15,
+        31,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        57
+      ],
+      "to": [
+        15,
+        31,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        31,
+        50
+      ],
+      "to": [
+        15,
+        31,
+        57
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        30,
+        50
+      ],
+      "to": [
+        15,
+        30,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        30,
+        57
+      ],
+      "to": [
+        15,
+        30,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        29,
+        51
+      ],
+      "to": [
+        15,
+        29,
+        51
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        29,
+        56
+      ],
+      "to": [
+        15,
+        29,
+        56
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        28,
+        52
+      ],
+      "to": [
+        15,
+        28,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        28,
+        55
+      ],
+      "to": [
+        15,
+        28,
+        55
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        22,
+        34
+      ],
+      "to": [
+        45,
+        22,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        34
+      ],
+      "to": [
+        45,
+        30,
+        34
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        25,
+        34
+      ],
+      "to": [
+        45,
+        25,
+        34
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        42
+      ],
+      "to": [
+        45,
+        30,
+        42
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        25,
+        42
+      ],
+      "to": [
+        45,
+        25,
+        42
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        50
+      ],
+      "to": [
+        45,
+        30,
+        50
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        25,
+        50
+      ],
+      "to": [
+        45,
+        25,
+        50
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        57
+      ],
+      "to": [
+        45,
+        30,
+        57
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        25,
+        57
+      ],
+      "to": [
+        45,
+        25,
+        57
+      ],
+      "block": "gold"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        34
+      ],
+      "to": [
+        45,
+        31,
+        34
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        42
+      ],
+      "to": [
+        45,
+        31,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        31,
+        34
+      ],
+      "to": [
+        45,
+        31,
+        42
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        30,
+        34
+      ],
+      "to": [
+        45,
+        30,
+        34
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        30,
+        42
+      ],
+      "to": [
+        45,
+        30,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        29,
+        35
+      ],
+      "to": [
+        45,
+        29,
+        35
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        29,
+        41
+      ],
+      "to": [
+        45,
+        29,
+        41
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        28,
+        36
+      ],
+      "to": [
+        45,
+        28,
+        36
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        28,
+        40
+      ],
+      "to": [
+        45,
+        28,
+        40
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        42
+      ],
+      "to": [
+        45,
+        31,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        50
+      ],
+      "to": [
+        45,
+        31,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        31,
+        42
+      ],
+      "to": [
+        45,
+        31,
+        50
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        30,
+        42
+      ],
+      "to": [
+        45,
+        30,
+        42
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        30,
+        50
+      ],
+      "to": [
+        45,
+        30,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        29,
+        43
+      ],
+      "to": [
+        45,
+        29,
+        43
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        29,
+        49
+      ],
+      "to": [
+        45,
+        29,
+        49
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        28,
+        44
+      ],
+      "to": [
+        45,
+        28,
+        44
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        28,
+        48
+      ],
+      "to": [
+        45,
+        28,
+        48
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        50
+      ],
+      "to": [
+        45,
+        31,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        57
+      ],
+      "to": [
+        45,
+        31,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        31,
+        50
+      ],
+      "to": [
+        45,
+        31,
+        57
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        30,
+        50
+      ],
+      "to": [
+        45,
+        30,
+        50
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        30,
+        57
+      ],
+      "to": [
+        45,
+        30,
+        57
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        29,
+        51
+      ],
+      "to": [
+        45,
+        29,
+        51
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        29,
+        56
+      ],
+      "to": [
+        45,
+        29,
+        56
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        28,
+        52
+      ],
+      "to": [
+        45,
+        28,
+        52
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        28,
+        55
+      ],
+      "to": [
+        45,
+        28,
+        55
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        23,
+        58
+      ],
+      "to": [
+        15,
+        31,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        23,
+        58
+      ],
+      "to": [
+        45,
+        31,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        31,
+        58
+      ],
+      "to": [
+        45,
+        31,
+        58
+      ],
+      "block": "beam"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        15,
+        30,
+        58
+      ],
+      "to": [
+        15,
+        30,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        45,
+        30,
+        58
+      ],
+      "to": [
+        45,
+        30,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        16,
+        29,
+        58
+      ],
+      "to": [
+        16,
+        29,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        44,
+        29,
+        58
+      ],
+      "to": [
+        44,
+        29,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        17,
+        28,
+        58
+      ],
+      "to": [
+        17,
+        28,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        43,
+        28,
+        58
+      ],
+      "to": [
+        43,
+        28,
+        58
+      ],
+      "block": "brick"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        29,
+        58
+      ],
+      "to": [
+        21,
+        30,
+        58
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        21,
+        28,
+        58
+      ],
+      "to": [
+        21,
+        28,
+        58
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        29,
+        58
+      ],
+      "to": [
+        30,
+        30,
+        58
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        30,
+        28,
+        58
+      ],
+      "to": [
+        30,
+        28,
+        58
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        29,
+        58
+      ],
+      "to": [
+        39,
+        30,
+        58
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        39,
+        28,
+        58
+      ],
+      "to": [
+        39,
+        28,
+        58
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        37
+      ],
+      "to": [
+        9,
+        23,
+        37
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        23,
+        37
+      ],
+      "to": [
+        12,
+        23,
+        37
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        23,
+        39
+      ],
+      "to": [
+        10,
+        23,
+        39
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        45
+      ],
+      "to": [
+        9,
+        23,
+        45
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        23,
+        45
+      ],
+      "to": [
+        12,
+        23,
+        45
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        23,
+        47
+      ],
+      "to": [
+        10,
+        23,
+        47
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        9,
+        23,
+        51
+      ],
+      "to": [
+        9,
+        23,
+        51
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        12,
+        23,
+        51
+      ],
+      "to": [
+        12,
+        23,
+        51
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        10,
+        23,
+        53
+      ],
+      "to": [
+        10,
+        23,
+        53
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        23,
+        37
+      ],
+      "to": [
+        47,
+        23,
+        37
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        23,
+        37
+      ],
+      "to": [
+        50,
+        23,
+        37
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        23,
+        39
+      ],
+      "to": [
+        48,
+        23,
+        39
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        23,
+        45
+      ],
+      "to": [
+        47,
+        23,
+        45
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        23,
+        45
+      ],
+      "to": [
+        50,
+        23,
+        45
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        23,
+        47
+      ],
+      "to": [
+        48,
+        23,
+        47
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        47,
+        23,
+        51
+      ],
+      "to": [
+        47,
+        23,
+        51
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        50,
+        23,
+        51
+      ],
+      "to": [
+        50,
+        23,
+        51
+      ],
+      "block": "oak"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        48,
+        23,
+        53
+      ],
+      "to": [
+        48,
+        23,
+        53
+      ],
+      "block": "carved"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        28,
+        35
+      ],
+      "to": [
+        11,
+        29,
+        35
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        27,
+        35
+      ],
+      "to": [
+        11,
+        27,
+        35
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        28,
+        43
+      ],
+      "to": [
+        11,
+        29,
+        43
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        27,
+        43
+      ],
+      "to": [
+        11,
+        27,
+        43
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        28,
+        53
+      ],
+      "to": [
+        11,
+        29,
+        53
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        11,
+        27,
+        53
+      ],
+      "to": [
+        11,
+        27,
+        53
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        28,
+        35
+      ],
+      "to": [
+        49,
+        29,
+        35
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        27,
+        35
+      ],
+      "to": [
+        49,
+        27,
+        35
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        28,
+        43
+      ],
+      "to": [
+        49,
+        29,
+        43
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        27,
+        43
+      ],
+      "to": [
+        49,
+        27,
+        43
+      ],
+      "block": "lamp"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        28,
+        53
+      ],
+      "to": [
+        49,
+        29,
+        53
+      ],
+      "block": "iron"
+    },
+    {
+      "kind": "cuboid",
+      "from": [
+        49,
+        27,
+        53
+      ],
+      "to": [
+        49,
+        27,
+        53
+      ],
+      "block": "lamp"
+    }
+  ],
+  "markers": [
+    {
+      "id": "arrival",
+      "role": "spawn",
+      "pos": [
+        30,
+        23,
+        11
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "exit",
+      "role": "exit",
+      "pos": [
+        30,
+        23,
+        5
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "enchant",
+      "role": "npc",
+      "pos": [
+        18,
+        23,
+        18
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "talent",
+      "role": "npc",
+      "pos": [
+        42,
+        23,
+        18
+      ],
+      "yaw": 90
+    },
+    {
+      "id": "mastery",
+      "role": "npc",
+      "pos": [
+        24,
+        23,
+        30
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "core",
+      "role": "objective",
+      "pos": [
+        30,
+        24,
+        23
+      ]
+    },
+    {
+      "id": "training_min",
+      "role": "boundary",
+      "pos": [
+        17,
+        23,
+        34
+      ]
+    },
+    {
+      "id": "training_max",
+      "role": "boundary",
+      "pos": [
+        43,
+        30,
+        56
+      ]
+    },
+    {
+      "id": "projection_01",
+      "role": "player_spawn",
+      "pos": [
+        20,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_02",
+      "role": "player_spawn",
+      "pos": [
+        25,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_03",
+      "role": "player_spawn",
+      "pos": [
+        30,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_04",
+      "role": "player_spawn",
+      "pos": [
+        35,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_05",
+      "role": "player_spawn",
+      "pos": [
+        40,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_06",
+      "role": "player_spawn",
+      "pos": [
+        20,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_07",
+      "role": "player_spawn",
+      "pos": [
+        25,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_08",
+      "role": "player_spawn",
+      "pos": [
+        30,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_09",
+      "role": "player_spawn",
+      "pos": [
+        35,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_10",
+      "role": "player_spawn",
+      "pos": [
+        40,
+        23,
+        50
+      ],
+      "yaw": 180
+    }
+  ],
+  "metadata": {
+    "theme": "悬浮于虚空裂隙中的远征军补给堡垒",
+    "coordinates": "minimum corner; world base y=48; x/z separated by 512 blocks",
+    "primary_floor_y": 22,
+    "clear_height": 8,
+    "arena_size": [
+      27,
+      23
+    ],
+    "geometry_seed": "deterministic; no random source",
+    "legacy_details": "generate.py adds verified 1.8 stairs, iron bars, signs, crates, anvils and enchantment tables after inert validation"
+  }
+}

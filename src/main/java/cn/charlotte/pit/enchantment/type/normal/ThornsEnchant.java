@@ -48,9 +48,11 @@ public class ThornsEnchant extends AbstractEnchantment implements IPlayerDamaged
     }
 
     @Override
+    @cn.charlotte.pit.enchantment.param.event.PlayerOnly
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(attacker instanceof Player) || cn.charlotte.pit.util.combat.SecondaryDamage.isFromSecondary(attacker, myself)) return;
         if (myself.getHealth() / myself.getMaxHealth() <= 0.25) {
-            ((Player) attacker).damage((0.5F * (enchantLevel + 1)) * 2, myself);
+            cn.charlotte.pit.util.combat.SecondaryDamage.reflection(myself, (Player) attacker, enchantLevel + 1);
         }
     }
 }

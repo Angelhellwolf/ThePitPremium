@@ -2,6 +2,8 @@ package cn.charlotte.pit.runnable
 
 import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.getPitProfile
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.reward.RewardSource
 import cn.charlotte.pit.util.RandomList
 import cn.charlotte.pit.util.chat.CC
 import cn.charlotte.pit.util.item.ItemBuilder
@@ -76,28 +78,30 @@ object SewersRunnable: BukkitRunnable(), Listener {
 
         val player = e.player
         if (e.clickedBlock.location == existSewersChest) {
+            e.isCancelled = true
             claim(player)
         }
     }
 
     private fun claim(player: Player) {
+        val profile = player.getPitProfile()
+        if (!profile.isLoaded || profile.isBot) return
         existSewersChest?.block?.type = Material.AIR
         existSewersChest = null
         lastClaimed = System.currentTimeMillis()
 
-        val profile = player.getPitProfile()
 
         val id = randomList.random() ?: return
         player.playSound(player.location, Sound.LEVEL_UP, 1f, 1f)
         player.sendMessage(CC.translate("&9下水道! &7你领取了下水道奖励."))
         when(id) {
             "xp" -> {
-                profile.experience += 100
-                profile.applyExperienceToPlayer(player)
+                val reward = RewardService.grant(profile, RewardSource.LOOT, 0.0, 100.0)
+                player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&9下水道! &b+%.2f &7经验", reward.experience)))
             }
             "gold" -> {
-                profile.coins += 200
-                profile.grindCoins(200.0)
+                val reward = RewardService.grant(profile, RewardSource.LOOT, 200.0, 0.0)
+                player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&9下水道! &6+%.2f &7硬币", reward.coins)))
             }
             "diamond_chestplate" -> {
                 player.inventory.addItem(
@@ -110,20 +114,20 @@ object SewersRunnable: BukkitRunnable(), Listener {
                 )
             }
             "diamond_leggings" -> {
-                ItemBuilder(Material.DIAMOND_LEGGINGS)
+                player.inventory.addItem(ItemBuilder(Material.DIAMOND_LEGGINGS)
                     .deathDrop(true)
                     .canSaveToEnderChest(true)
                     .canTrade(true)
                     .internalName("shopItem")
-                    .buildWithUnbreakable()
+                    .buildWithUnbreakable())
             }
             "diamond_boots" -> {
-                ItemBuilder(Material.DIAMOND_BOOTS)
+                player.inventory.addItem(ItemBuilder(Material.DIAMOND_BOOTS)
                     .deathDrop(true)
                     .canSaveToEnderChest(true)
                     .canTrade(true)
                     .internalName("shopItem")
-                    .buildWithUnbreakable()
+                    .buildWithUnbreakable())
             }
             "rubbish" -> {
                 player.inventory.addItem(

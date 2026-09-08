@@ -8,6 +8,7 @@ import cn.charlotte.pit.menu.viewer.button.EnderChestViewerMenu;
 import cn.charlotte.pit.menu.viewer.button.InventoryViewerMenu;
 import cn.charlotte.pit.menu.viewer.button.PitPassiveStatusButton;
 import cn.charlotte.pit.menu.viewer.button.PitStatusButton;
+import cn.charlotte.pit.menu.viewer.button.StashViewerMenu;
 import cn.charlotte.pit.menu.viewer.button.admin.TradeDataViewerButton;
 import cn.charlotte.pit.perk.AbstractPerk;
 import cn.charlotte.pit.util.PlayerUtil;
@@ -49,6 +50,7 @@ public class StatusViewerMenu extends Menu {
             profile.getPlayerOption().setInventoryVisibility(true);
             profile.getPlayerOption().setEnderChestVisibility(true);
             profile.getPlayerOption().setProfileVisibility(true);
+            profile.getPlayerOption().setStashVisibility(true);
         }
         PlayerInv inventory = profile.getInventory();
         Map<Integer, Button> button = new HashMap<>();
@@ -278,6 +280,23 @@ public class StatusViewerMenu extends Menu {
                     return;
                 }
                 new EnderChestViewerMenu(profile).openMenu(player);
+            }
+        });
+        button.put(26, new Button() {
+            @Override
+            public ItemStack getButtonItem(Player player) {
+                if (!profile.getPlayerOption().isStashVisibility() && !PlayerUtil.isStaff(player)) {
+                    return new ItemBuilder(Material.TRAPPED_CHEST).name("&6寄存箱").lore("&7查看这名玩家寄存箱中的物品.", " ", "&c此玩家选择隐藏了寄存箱信息,你无法查看!").build();
+                }
+                return new ItemBuilder(Material.TRAPPED_CHEST).name("&6寄存箱").lore("&7查看这名玩家寄存箱中的物品.", " ", "&e点击查看!").build();
+            }
+
+            @Override
+            public void clicked(Player player, int slot, ClickType clickType, int hotbarButton, ItemStack currentItem) {
+                if (!profile.getPlayerOption().isStashVisibility() && !PlayerUtil.isStaff(player)) {
+                    return;
+                }
+                new StashViewerMenu(profile).openMenu(player);
             }
         });
         return button;

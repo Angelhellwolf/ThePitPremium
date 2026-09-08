@@ -110,7 +110,7 @@ public class MarathonPerk extends AbstractPerk implements IAttackEntity, IPlayer
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         if (attacker.getInventory().getBoots() == null || attacker.getInventory().getBoots().getType() == Material.AIR) {
             if (attacker.hasPotionEffect(PotionEffectType.SPEED)) {
-                boostDamage.getAndAdd(0.15);
+                boostDamage.getAndAdd(0.18);
             }
         }
     }

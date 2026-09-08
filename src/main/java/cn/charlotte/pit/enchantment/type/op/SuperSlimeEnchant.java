@@ -45,9 +45,7 @@ public class SuperSlimeEnchant extends AbstractEnchantment implements Listener {
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7击杀玩家可以召唤/复活史莱姆宠物协助战斗(上限1),"
-                + "/s&7每次提升连杀数可以提升史莱姆等级(上限20级)."
-                + "/s&7史莱姆升级会提升史莱姆的生命上限,攻击力与护甲值";
+        return "&7此附魔当前暂停使用，暂不召唤或升级宠物";
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
@@ -67,7 +65,7 @@ public class SuperSlimeEnchant extends AbstractEnchantment implements Listener {
 //                int enchantLevel = getItemEnchantLevel(myself.getInventory().getLeggings());
 //                PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
 //                int streak = 1;
-//                if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+//                if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
 //                    final Slime slime = (Slime) data.getEntity();
 //                    if (slime.getSize() < 20) {
 //                        slime.setSize(slime.getSize() + 1);

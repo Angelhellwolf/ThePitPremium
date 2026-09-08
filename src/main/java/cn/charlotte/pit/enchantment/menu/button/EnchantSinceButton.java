@@ -52,7 +52,7 @@ public class EnchantSinceButton extends Button {
         if (item == null || item.getType() == Material.AIR) {
             return;
         }
-        profile.setEnchantingScience(InventoryUtil.serializeItemStack(new ItemStack(Material.AIR)));
+        profile.setEnchantingScience(null);
         player.getInventory().addItem(item);
         player.playSound(player.getLocation(), Sound.CHICKEN_EGG_POP, 1, 0.65F);
 

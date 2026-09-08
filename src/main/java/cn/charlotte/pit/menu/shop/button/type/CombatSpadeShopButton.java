@@ -35,7 +35,7 @@ public class CombatSpadeShopButton extends AbstractShopButton implements Listene
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         lines.add("&7攻击穿有钻石装备的玩家时,");
         lines.add("&7此玩家每穿有一件 &b钻石装备 &7,");
-        lines.add("&7战斗之铲的基础攻击力 &c+1(0.5❤) &7.");
+        lines.add("&7战斗之铲的基础攻击力 &c+0.5(0.25❤) &7.");
         lines.add("&7&o实际效果请以此处商店描述为准");
         lines.add(" ");
         lines.add("&7&o死亡后消失");
@@ -68,7 +68,7 @@ public class CombatSpadeShopButton extends AbstractShopButton implements Listene
         List<String> lines = new ArrayList<>();
         lines.add("&7攻击穿有钻石装备的玩家时,");
         lines.add("&7此玩家每穿有一件 &b钻石装备 &7,");
-        lines.add("&7战斗之铲的基础攻击力 &c+1(0.5❤) &7.");
+        lines.add("&7战斗之铲的基础攻击力 &c+0.5(0.25❤) &7.");
         lines.add("&7&o实际效果请以商店描述为准");
 
         return new ItemStack[]{new ItemBuilder(Material.DIAMOND_SPADE)

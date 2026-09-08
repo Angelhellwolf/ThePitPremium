@@ -91,7 +91,7 @@ class UberDrop : AbstractPitItem(), Listener {
             .lore(
                 "&7死亡时保留",
                 "",
-                "&e拿着并右键获得物品!"
+                "&e手持并右键可放置的方块，抽取一项奖励!"
             )
             .dontStack()
             .build()

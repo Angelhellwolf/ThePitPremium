@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "tool": "remiaft-maptool",
+  "tool_version": "1.0.0",
+  "id": "seventh-quartermaster",
+  "title": "第七军需处·余烬之约",
+  "target": "1.8.8",
+  "gameplay": "generic",
+  "size": [
+    61,
+    51,
+    61
+  ],
+  "coordinateSystem": "local integer block coordinates; x width, y height, z length; marker pos is feet block",
+  "pasteAnchor": [
+    0,
+    0,
+    0
+  ],
+  "runtimeIntegration": "not_verified",
+  "sha256": {
+    "blueprintCanonical": "e384913b890a2abdaf01aac914342fa7bc3fd25850cbf231ac4475b99c44d6b0",
+    "schematic": "dbb3a5954080282d3562bcb3a54614497c1523a8c7f3e170dc48d371ab407165"
+  },
+  "markers": [
+    {
+      "id": "arrival",
+      "role": "spawn",
+      "pos": [
+        30,
+        23,
+        11
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "exit",
+      "role": "exit",
+      "pos": [
+        30,
+        23,
+        5
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "enchant",
+      "role": "npc",
+      "pos": [
+        18,
+        23,
+        18
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "talent",
+      "role": "npc",
+      "pos": [
+        42,
+        23,
+        18
+      ],
+      "yaw": 90
+    },
+    {
+      "id": "mastery",
+      "role": "npc",
+      "pos": [
+        24,
+        23,
+        30
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "core",
+      "role": "objective",
+      "pos": [
+        30,
+        24,
+        23
+      ]
+    },
+    {
+      "id": "training_min",
+      "role": "boundary",
+      "pos": [
+        17,
+        23,
+        34
+      ]
+    },
+    {
+      "id": "training_max",
+      "role": "boundary",
+      "pos": [
+        43,
+        30,
+        56
+      ]
+    },
+    {
+      "id": "projection_01",
+      "role": "player_spawn",
+      "pos": [
+        20,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_02",
+      "role": "player_spawn",
+      "pos": [
+        25,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_03",
+      "role": "player_spawn",
+      "pos": [
+        30,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_04",
+      "role": "player_spawn",
+      "pos": [
+        35,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_05",
+      "role": "player_spawn",
+      "pos": [
+        40,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_06",
+      "role": "player_spawn",
+      "pos": [
+        20,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_07",
+      "role": "player_spawn",
+      "pos": [
+        25,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_08",
+      "role": "player_spawn",
+      "pos": [
+        30,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_09",
+      "role": "player_spawn",
+      "pos": [
+        35,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_10",
+      "role": "player_spawn",
+      "pos": [
+        40,
+        23,
+        50
+      ],
+      "yaw": 180
+    }
+  ],
+  "statistics": {
+    "volume": 189771,
+    "nonAirBlocks": 45896,
+    "operationCount": 685,
+    "markerCount": 18,
+    "paletteCount": 25,
+    "workEstimate": 135763,
+    "blockCounts": {
+      "0": 143875,
+      "1": 19124,
+      "4": 5203,
+      "5": 5448,
+      "17": 1069,
+      "24": 1037,
+      "35": 156,
+      "41": 115,
+      "42": 204,
+      "47": 64,
+      "48": 564,
+      "89": 27,
+      "95": 638,
+      "98": 11208,
+      "159": 14,
+      "173": 1025
+    }
+  },
+  "limitations": [
+    "Structural checks only; runtime gameplay integration is not verified.",
+    "No game-plugin configuration, team registration or live playtest is performed.",
+    "Bed, shop, generator, portal and objective markers do not create runtime objects.",
+    "Only static blocks are exported; physics, lighting and world protection are not verified."
+  ],
+  "metadata": {
+    "theme": "悬浮于虚空裂隙中的远征军补给堡垒",
+    "coordinates": "minimum corner; world base y=48; x/z separated by 512 blocks",
+    "primary_floor_y": 22,
+    "clear_height": 8,
+    "arena_size": [
+      27,
+      23
+    ],
+    "geometry_seed": "deterministic; no random source",
+    "legacy_details": "generate.py adds verified 1.8 stairs, iron bars, signs, crates, anvils and enchantment tables after inert validation"
+  }
+}

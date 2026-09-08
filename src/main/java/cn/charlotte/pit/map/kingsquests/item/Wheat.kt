@@ -14,6 +14,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockGrowEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.material.Crops
@@ -21,6 +22,27 @@ import kotlin.random.Random
 
 @AutoRegister
 object Wheat: AbstractPitItem(), Listener {
+
+    private const val EXTRA_GROWTH_STAGES = 1
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    fun onGrow(event: BlockGrowEvent) {
+        if (event.block.type != Material.CROPS || event.newState.type != Material.CROPS) {
+            return
+        }
+
+        // A vanilla growth tick advances wheat by one stage. Advance the event's
+        // resulting state once more so wheat grows at roughly twice the normal
+        // speed without changing the world's randomTickSpeed gamerule.
+        val crops = event.newState.data as? Crops ?: return
+        val growthStates = CropState.values()
+        val acceleratedStage = minOf(
+            CropState.RIPE.ordinal,
+            crops.state.ordinal + EXTRA_GROWTH_STAGES
+        )
+        crops.state = growthStates[acceleratedStage]
+        event.newState.data = crops
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     fun onBreak(event: BlockBreakEvent) {
@@ -103,7 +125,9 @@ object Wheat: AbstractPitItem(), Listener {
             .canSaveToEnderChest(true)
             .name(itemDisplayName)
             .lore(
-                "&7死亡时保留"
+                "&7死亡时保留",
+                "&7采收成熟小麦获得；每 64 个右键工作台",
+                "&7合成为一个干草块，或右键熔炉烘焙面包"
             )
             .build()
     }

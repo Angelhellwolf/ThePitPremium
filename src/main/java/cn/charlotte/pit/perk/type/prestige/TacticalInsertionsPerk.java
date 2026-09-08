@@ -65,7 +65,7 @@ public class TacticalInsertionsPerk extends AbstractPerk {
 
     @Override
     public PerkType getPerkType() {
-        return null;
+        return PerkType.PERK;
     }
 
     @Override

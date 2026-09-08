@@ -2,6 +2,8 @@ package cn.charlotte.pit.listener;
 
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.data.sub.PerkData;
 import cn.charlotte.pit.data.sub.PlayerBanData;
 import cn.charlotte.pit.data.sub.PlayerInv;
@@ -83,7 +85,9 @@ public class PlayerListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         ThePit pit = ThePit.getInstance();
         Player player = event.getPlayer();
-        PlayerUtil.clearPlayer(player, true);
+        // The profile-load completion path applies max health after ViaVersion has
+        // created its entity tracker. Avoid UPDATE_ATTRIBUTES during PlayerJoinEvent.
+        PlayerUtil.clearPlayer(player, true, true, false);
         if (!pit.getPitConfig().getSpawnLocations().isEmpty()) {
             Location location = pit.getPitConfig()
                     .getSpawnLocations()
@@ -133,6 +137,15 @@ public class PlayerListener implements Listener {
             }
         } else {
             this.welcomePlayer(player);
+            if (RewardService.isNoob(profile)) {
+                java.text.DecimalFormat percent = new java.text.DecimalFormat("0.##");
+                player.sendMessage(CC.translate("&a&l新手成长! &7当前玩法经验 &a+"
+                        + percent.format((cn.charlotte.pit.config.NewConfiguration.INSTANCE.getNoobRewardMultiplier() - 1) * 100)
+                        + "%&7，金币 &a+"
+                        + percent.format((cn.charlotte.pit.config.NewConfiguration.INSTANCE.getNoobCoinRewardMultiplier() - 1) * 100)
+                        + "%&7（0–" + cn.charlotte.pit.config.NewConfiguration.INSTANCE.getNoobMaxPrestige()
+                        + "精通且未满级）。战斗伤害一视同仁。"));
+            }
         }
 
         PlayerInv playerInv = profile.getInventory();
@@ -268,13 +281,14 @@ public class PlayerListener implements Listener {
                 if (level > 0) {
                     gold += level * 10;
                     if (level >= 3) {
-                        PlayerUtil.heal(player, 2);
+                        float heart = (((org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer) player).getHandle()).getAbsorptionHearts();
+                        (((org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.min(heart + 2, 8));
                     }
                 }
-                profile.setCoins(profile.getCoins() + gold);
+                RewardService.Receipt reward = RewardService.grant(profile, RewardSource.LOOT, gold, 0);
 
                 profile.setGoldPicked(profile.getGoldPicked() + 1);
-                player.sendMessage(CC.translate("&6&l捡起硬币! &7从地上找到了&6 " + gold + " &7硬币!"));
+                player.sendMessage(CC.translate("&6&l捡起硬币! &7从地上找到了&6 " + numFormat.format(reward.getCoins()) + " &7硬币!"));
                 player.playSound(player.getLocation(), Sound.NOTE_PLING, 1, 1.8F);
             }
         } else if (ThePit.mode == Mode.Normal) {
@@ -316,6 +330,7 @@ public class PlayerListener implements Listener {
         if (item == null || item.getType() == Material.AIR) {
             return;
         }
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (player.getGameMode() != GameMode.CREATIVE && item.getType() == Material.SKULL_ITEM && item.getDurability() == 3 && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) && "golden_head".equals(ItemUtil.getInternalName(item))) {
             e.setCancelled(true);
             if (System.currentTimeMillis() - goldenAppleCooldown.getOrDefault(player.getUniqueId(), 0L) <= 1000L) {
@@ -329,10 +344,10 @@ public class PlayerListener implements Listener {
             player.removePotionEffect(PotionEffectType.REGENERATION);
             player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 140, 0), true);
             player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 80, 1), true);
-            (((CraftPlayer) player).getHandle()).setAbsorptionHearts(6.0F);
-            if (PlayerUtil.isPlayerUnlockedPerk(player, "yummy_perk")) {
+            (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.max(((CraftPlayer) player).getHandle().getAbsorptionHearts(), 6.0F));
+            if (PlayerUtil.isPlayerUnlockedPerk(player, "yummy_perk") && !cn.charlotte.pit.reward.BotRewards.isTrainingItem(item)) {
                 PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-                profile.setCoins(profile.getCoins() + 3);
+                RewardService.grant(profile, RewardSource.PERK, 3, 0);
             }
         } else if (item.getType() == Material.BAKED_POTATO) {
             if ("angry_potato".equals(ItemUtil.getInternalName(item))) {
@@ -346,7 +361,7 @@ public class PlayerListener implements Listener {
                 PlayerUtil.takeOneItemInHand(player);
                 player.removePotionEffect(PotionEffectType.REGENERATION);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 80, 1), true);
-                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(4.0F);
+                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.max(((CraftPlayer) player).getHandle().getAbsorptionHearts(), 4.0F));
             }
         } else if (item.getType() == Material.MAGMA_CREAM) {
             if ("broken_soul".equals(ItemUtil.getInternalName(item))) {
@@ -361,7 +376,7 @@ public class PlayerListener implements Listener {
                 PlayerUtil.heal(player, 8);
                 player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 60, 1), true);
-                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(6.0F);
+                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.max(((CraftPlayer) player).getHandle().getAbsorptionHearts(), 6.0F));
             }
         } else if (item.getType() == Material.MONSTER_EGG) {
             if ("first_aid_egg".equals(ItemUtil.getInternalName(item))) {
@@ -387,10 +402,11 @@ public class PlayerListener implements Listener {
                 player.playSound(player.getLocation(), Sound.EAT, 1F, 1F);
                 goldenAppleCooldown.put(player.getUniqueId(), System.currentTimeMillis());
                 PlayerUtil.takeOneItemInHand(player);
+                player.setMetadata("tasty_soup_hit", new FixedMetadataValue(ThePit.getInstance(), true));
                 PlayerUtil.heal(player, 2);
                 player.removePotionEffect(PotionEffectType.SPEED);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 7, 0), true);
-                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.min(8F, ((CraftPlayer) player).getHandle().getAbsorptionHearts() + 2F));
+                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.max(((CraftPlayer) player).getHandle().getAbsorptionHearts(), Math.min(8F, ((CraftPlayer) player).getHandle().getAbsorptionHearts() + 2F)));
             }
             if ("perk_tasty_soup_assist".equals(ItemUtil.getInternalName(item))) {
                 e.setCancelled(true);
@@ -401,11 +417,12 @@ public class PlayerListener implements Listener {
                 player.playSound(player.getLocation(), Sound.EAT, 1F, 1F);
                 goldenAppleCooldown.put(player.getUniqueId(), System.currentTimeMillis());
                 PlayerUtil.takeOneItemInHand(player);
+                player.setMetadata("tasty_soup_hit", new FixedMetadataValue(ThePit.getInstance(), true));
                 player.removePotionEffect(PotionEffectType.REGENERATION);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 5, 1), true);
                 player.removePotionEffect(PotionEffectType.SPEED);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 7, 0), true);
-                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.min(8F, ((CraftPlayer) player).getHandle().getAbsorptionHearts() + 2F));
+                (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.max(((CraftPlayer) player).getHandle().getAbsorptionHearts(), Math.min(8F, ((CraftPlayer) player).getHandle().getAbsorptionHearts() + 2F)));
             }
         } else if (item.getType() == Material.CACTUS) {
             if ("cactus".equals(ItemUtil.getInternalName(item))) {
@@ -438,22 +455,42 @@ public class PlayerListener implements Listener {
                 e.getPlayer().sendMessage(CC.translate("&f牛奶! &7你喝下了牛奶"));
                 e.getPlayer().playSound(e.getPlayer().getLocation(), Sound.DRINK, 1f, 1f);
             }
+        } else if ((item.getType() == Material.COOKED_BEEF || item.getType() == Material.RAW_BEEF)
+                && "tasty_steak".equals(ItemUtil.getInternalName(item))
+                && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)) {
+            e.setCancelled(true);
+            if (System.currentTimeMillis() - goldenAppleCooldown.getOrDefault(player.getUniqueId(), 0L) <= 1000L) {
+                e.setUseItemInHand(Event.Result.DENY);
+                return;
+            }
+            player.playSound(player.getLocation(), Sound.EAT, 1F, 1F);
+            goldenAppleCooldown.put(player.getUniqueId(), System.currentTimeMillis());
+            PlayerUtil.takeOneItemInHand(player);
+            player.removePotionEffect(PotionEffectType.REGENERATION);
+            player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 60, 1), true);
+            CraftPlayer craftPlayer = (CraftPlayer) player;
+            craftPlayer.getHandle().setAbsorptionHearts(Math.min(6.0F, craftPlayer.getHandle().getAbsorptionHearts() + 2.0F));
+            int stacks = Math.min(5, player.hasMetadata("tasty_steak_stacks")
+                    ? player.getMetadata("tasty_steak_stacks").get(0).asInt() + 1
+                    : 1);
+            player.setMetadata("tasty_steak_stacks", new FixedMetadataValue(ThePit.getInstance(), stacks));
+            player.setMetadata("tasty_steak_until", new FixedMetadataValue(ThePit.getInstance(), System.currentTimeMillis() + 50_000L));
         }
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPlayerEat(PlayerItemConsumeEvent event) {
         Player player = event.getPlayer();
 
         if (event.getItem() != null && event.getItem().getType() == Material.GOLDEN_APPLE) {
-            (((CraftPlayer) event.getPlayer()).getHandle()).setAbsorptionHearts(8.0F);
+            (((CraftPlayer) event.getPlayer()).getHandle()).setAbsorptionHearts(Math.max(((CraftPlayer) player).getHandle().getAbsorptionHearts(), 8.0F));
             PlayerUtil.takeOneItemInHand(player);
             player.playSound(player.getLocation(), Sound.EAT, 1F, 1F);
             player.removePotionEffect(PotionEffectType.REGENERATION);
             player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1), true);
-            if (PlayerUtil.isPlayerUnlockedPerk(player, "yummy_perk")) {
+            if (PlayerUtil.isPlayerUnlockedPerk(player, "yummy_perk") && !cn.charlotte.pit.reward.BotRewards.isTrainingItem(event.getItem())) {
                 PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-                profile.setCoins(profile.getCoins() + 3);
+                RewardService.grant(profile, RewardSource.PERK, 3, 0);
             }
 
             event.setCancelled(true);
@@ -469,7 +506,7 @@ public class PlayerListener implements Listener {
             player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 24 * 20, 0), true);
             player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
             player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 4 * 20, 1), true);
-            profile.setExperience(profile.getExperience() + 27);
+            if (!cn.charlotte.pit.reward.BotRewards.isTrainingItem(event.getItem())) RewardService.grant(profile, RewardSource.PERK, 0, 27);
 
             event.setCancelled(true);
         }
@@ -478,6 +515,7 @@ public class PlayerListener implements Listener {
 
     @EventHandler
     public void onKill(PitKillEvent event) {
+        if (!event.isProgressionEligible()) return;
         final Player killer = event.getKiller();
         final Cooldown cooldown = firstAidEggCooldown.get(killer.getUniqueId());
         if (cooldown != null && !cooldown.hasExpired()) {
@@ -547,6 +585,13 @@ public class PlayerListener implements Listener {
             if (event.getAction() == Action.RIGHT_CLICK_BLOCK || event.getAction() == Action.RIGHT_CLICK_AIR) {
                 event.setCancelled(true);
 
+                Integer money = ItemUtil.getItemIntData(event.getItem(), "money");
+                String sender = ItemUtil.getItemStringData(event.getItem(), "sender");
+                if (money == null || money <= 0 || !event.getPlayer().getUniqueId().toString().equals(sender)) {
+                    event.getPlayer().sendMessage(CC.translate("&c红包无效或你并非红包的主人"));
+                    return;
+                }
+
                 if (event.getPlayer().getItemInHand().getAmount() > 1) {
                     event.getPlayer().getItemInHand().setAmount(event.getPlayer().getItemInHand().getAmount() - 1);
                 } else {
@@ -558,13 +603,6 @@ public class PlayerListener implements Listener {
                 tntPrimed.setFuseTicks(30);
                 for (int i = 0; i < 20; i++) {
                     blockIterator.next();
-                }
-
-                Integer money = ItemUtil.getItemIntData(event.getItem(), "money");
-                String sender = ItemUtil.getItemStringData(event.getItem(), "sender");
-                if (!event.getPlayer().getUniqueId().toString().equals(sender)) {
-                    event.getPlayer().sendMessage(CC.translate("&C你并非红包的主人"));
-                    return;
                 }
 
                 tntPrimed.setMetadata("money", new FixedMetadataValue(ThePit.getInstance(), money));
@@ -583,30 +621,24 @@ public class PlayerListener implements Listener {
                 Location location = event.getEntity().getLocation();
                 float radius = event.getRadius();
 
-                List<Player> players = PlayerUtil.getNearbyPlayers(location, radius);
-                Map<Player, Double> distanceMap = new HashMap<>();
-                double distanceSum = players.stream().mapToDouble(player -> {
-                    double distance = player.getLocation().distance(location);
-                    distanceMap.put(player, distance);
-                    return distance;
-                }).sum();
-
-                int money = event.getEntity().getMetadata("money").get(0).asInt();
+                if (event.getEntity().hasMetadata("red_packet_settled")) return;
+                event.getEntity().setMetadata("red_packet_settled", new FixedMetadataValue(ThePit.getInstance(), true));
+                int money = Math.max(0, event.getEntity().getMetadata("money").get(0).asInt());
                 String shooter = event.getEntity().getMetadata("shooter").get(0).asString();
-
-                for (Map.Entry<Player, Double> entry : distanceMap.entrySet()) {
-                    Double distance = entry.getValue();
-                    Player player = entry.getKey();
-
-
-                    double value = 1 - (distance / (distanceSum));
-                    int given = (int) (money * value);
-                    PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(UUID.fromString(shooter));
-                    String name = profile.getPlayerName();
-
-                    player.sendMessage(CC.translate("&c&l红包! &7你接受到了来自 &6" + name + " &7的红包 &6+" + given + "硬币&7(#" + numFormat.format(value * 100) + "%)"));
-                    PlayerProfile profileByUuid = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-                    profileByUuid.setCoins(profileByUuid.getCoins() + given);
+                PlayerProfile sender = PlayerProfile.getPlayerProfileByUuid(UUID.fromString(shooter));
+                List<Player> recipients = PlayerUtil.getNearbyPlayers(location, radius).stream().filter(player -> {
+                    PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+                    return profile.isLoaded() && !profile.isBot();
+                }).collect(java.util.stream.Collectors.toList());
+                double[] distances = recipients.stream().mapToDouble(player -> player.getLocation().distance(location)).toArray();
+                int[] shares = cn.charlotte.pit.reward.CoinDistribution.byDistance(money, distances);
+                for (int i = 0; i < shares.length; i++) {
+                    if (shares[i] <= 0) continue;
+                    Player player = recipients.get(i);
+                    PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+                    profile.setCoins(profile.getCoins() + shares[i]);
+                    player.sendMessage(CC.translate("&c&l红包! &7来自 &6" + sender.getPlayerName() + " &6+" + shares[i]
+                            + " 硬币 &7(" + numFormat.format(100.0 * shares[i] / money) + "%)"));
                 }
 
             }
@@ -693,8 +725,8 @@ public class PlayerListener implements Listener {
     public void onEnchant(PitPlayerEnchantEvent event) {
         List<AbstractEnchantment> beforeEnchants = new ArrayList<>(event.getBeforeItem().getEnchantments().keySet());
         List<AbstractEnchantment> afterEnchants = new ArrayList<>(event.getAfterItem().getEnchantments().keySet());
-        beforeEnchants.removeIf(enchant -> enchant.getRarity() != EnchantmentRarity.RARE);
-        afterEnchants.removeIf(enchant -> enchant.getRarity() != EnchantmentRarity.RARE);
+        beforeEnchants.removeIf(enchant -> enchant.getRarity().getParentType() != EnchantmentRarity.RarityType.RARE);
+        afterEnchants.removeIf(enchant -> enchant.getRarity().getParentType() != EnchantmentRarity.RarityType.RARE);
         if (beforeEnchants.isEmpty() && !afterEnchants.isEmpty()) {
             Stream<AbstractMedal> stream = ThePit.getInstance().getMedalFactory().getMedals().stream()
                     .filter(abstractMedal -> abstractMedal.getInternalName().equals("GET_RARE_ENCHANT"));

@@ -29,7 +29,7 @@ public class MythicRepairKit extends AbstractPitItem implements Listener {
                         "&c无法用于交易",
                         "&7手持要修复的神话物品,在背包内右键点击神话工匠包,",
                         "&7即可恢复手上的神话物品全部生命.",
-                        "&7(神话工匠包会在使用后消耗)"
+                        "&7(每次消耗一个；幸运之甲不可修复)"
                 )
                 .internalName("mythic_repair_kit")
                 .canSaveToEnderChest(true)
@@ -83,7 +83,10 @@ public class MythicRepairKit extends AbstractPitItem implements Listener {
                 //if player is holding mythic item
                 if (event.getClick() == ClickType.RIGHT && ItemUtil.getItemIntData(itemInHand, "maxLive") != null && ItemUtil.getItemIntData(itemInHand, "maxLive") > 0) {
                     event.setCancelled(true);
-                    event.setCurrentItem(new ItemStack(Material.AIR));
+                    if (mythicItem.getLive() >= mythicItem.getMaxLive()) return;
+                    ItemStack remaining = item.clone();
+                    remaining.setAmount(item.getAmount() - 1);
+                    event.setCurrentItem(remaining.getAmount() <= 0 ? new ItemStack(Material.AIR) : remaining);
                     mythicItem.loadFromItemStack(itemInHand);
 
                     mythicItem.setLive(mythicItem.getMaxLive());

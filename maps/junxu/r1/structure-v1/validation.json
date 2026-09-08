@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "schema_version": 1,
+  "blueprint_id": "seventh-quartermaster",
+  "runtimeIntegration": "not_verified",
+  "statistics": {
+    "volume": 189771,
+    "nonAirBlocks": 45896,
+    "operationCount": 685,
+    "markerCount": 18,
+    "paletteCount": 25,
+    "workEstimate": 135763,
+    "blockCounts": {
+      "0": 143875,
+      "1": 19124,
+      "4": 5203,
+      "5": 5448,
+      "17": 1069,
+      "24": 1037,
+      "35": 156,
+      "41": 115,
+      "42": 204,
+      "47": 64,
+      "48": 564,
+      "89": 27,
+      "95": 638,
+      "98": 11208,
+      "159": 14,
+      "173": 1025
+    }
+  },
+  "checks": [
+    "schema",
+    "legacy_palette",
+    "shape_bounds",
+    "work_budget",
+    "marker_bounds",
+    "spawn_clearance",
+    "gameplay_marker_structure"
+  ],
+  "errors": [],
+  "limitations": [
+    "Structural checks only; runtime gameplay integration is not verified.",
+    "No game-plugin configuration, team registration or live playtest is performed.",
+    "Bed, shop, generator, portal and objective markers do not create runtime objects.",
+    "Only static blocks are exported; physics, lighting and world protection are not verified."
+  ]
+}

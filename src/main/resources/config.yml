@@ -200,7 +200,25 @@ debug:
     pitch: 38.875862
     yaw: -273.7115
 #金币倍数
-booster: 3.0
+booster: 1.0
+reward-calendar:
+  enabled: true
+  # 周一至周五 1 倍，周六日 2 倍；下列官方放假区间优先。调休上班的周末仍按周末 2 倍。
+  # 来源：https://www.beijing.gov.cn/so/topics/1100000088/holiday.html （2026 年国务院放假安排）
+  # 新年度官方通知发布后，在此补充当年的日期区间；不猜测未发布的调休安排。
+  periods:
+    - '2026-01-01,2026-01-03,3,元旦'
+    - '2026-02-15,2026-02-23,5,春节'
+    - '2026-04-04,2026-04-06,3,清明节'
+    - '2026-05-01,2026-05-05,3,劳动节'
+    - '2026-06-19,2026-06-21,3,端午节'
+    - '2026-09-25,2026-09-27,3,中秋节'
+    - '2026-10-01,2026-10-07,5,国庆节'
+# 旧版兼容项：已停止按“未输出时长”扣除真人奖励，这两项不再参与结算。
+# 新手奖励在 custom.yml 的 noob-rewards 中配置（默认自身+50%，击杀新手-30%）。
+inactive-kill-reward:
+  after-seconds: 30
+  multiplier: 0.5
 #宵禁设置
 curfew:
   #启用
@@ -214,3 +232,40 @@ server-name: "&e天坑乱斗"
 #https://tool.lu/timestamp/
 #时间戳网址↑
 genesis-start-date: 1675339795842
+public-simulated-players:
+  # 固定三名；全天运行。身份持久化到 public-player-identities.dat，不按死亡/区块重载新增身份。
+  # 名称会检查本服 Mongo 玩家记录和 usercache.json；重名自动换用可用后缀。
+  # 皮肤数据首次复制为 public-player-skins.properties，可修改 value/signature 后重启。
+  respawn-delay-ticks: 30
+  # 成长档案保存为 public-player-progress.json；只在出生区自动购买、配装和精通。
+  auto-progression: true
+  renown-priorities: ['Tenacity', 'extra_heart_perm_perk', 'Dirty', 'first_strike']
+  area:
+    min-x: -140
+    max-x: 140
+    min-z: -140
+    max-z: 140
+    min-y: 50
+    entry-y: 84
+  jump-center:
+    x: 0.5
+    z: 0.5
+  profiles:
+    - name: MapleRush
+      preferred-perks: ['Strength', 'Vampire', 'Gladiator', 'SafetySecond']
+      spawn-index: 0
+      skin-index: 0
+      departure-delay-ticks: 25
+      route: ['10,-3', '8.6,-3.5']
+    - name: YukiHaze
+      preferred-perks: ['Vampire', 'Gladiator', 'Strength', 'SafetySecond']
+      spawn-index: 3
+      skin-index: 1
+      departure-delay-ticks: 55
+      route: ['-6,-9.3', '-3.5,-8.6']
+    - name: NoxTrail
+      preferred-perks: ['Gladiator', 'Strength', 'Vampire', 'SafetySecond']
+      spawn-index: 6
+      skin-index: 2
+      departure-delay-ticks: 85
+      route: ['3.5,10', '2.5,9.4']

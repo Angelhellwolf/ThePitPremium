@@ -33,8 +33,7 @@ public class NoRealDamageBuff extends AbstractPitBuff implements IPlayerDamaged 
 
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
-        myself.setHealth(myself.getHealth() + finalDamage.get());
+        if (finalDamage.get() > 0 && finalDamage.get() < 1000) finalDamage.set(0);
     }
 
     @Override
@@ -42,4 +41,3 @@ public class NoRealDamageBuff extends AbstractPitBuff implements IPlayerDamaged 
         return "NoRealDamagerBuff()";
     }
 }
-

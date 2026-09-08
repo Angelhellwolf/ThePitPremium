@@ -1,6 +1,7 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.CoinTransfers;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
@@ -54,22 +55,40 @@ public class PitPocketEnchant extends AbstractEnchantment implements IAttackEnti
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7攻击玩家时偷取对方 &6" + (10 + 5 * enchantLevel) + " 硬币 &7(" + (30 - 5 * enchantLevel) + "秒冷却)";
+        return ("&7攻击真人玩家时最多偷取对方 &6" + getSteal(enchantLevel) + " 硬币 &7(" + getCooldownSeconds(enchantLevel) + "秒冷却)") + "/s" + "&7仅对真人目标触发（排除 Bot）";
+    }
+
+    private int getSteal(int enchantLevel) {
+        return 10 + 5 * enchantLevel;
+    }
+
+    private int getCooldownSeconds(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 25;
+            case 2:
+                return 20;
+            default:
+                return 13;
+        }
     }
 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || cancel.get() || damage <= 0) return;
+        cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> {
         COOLDOWN.putIfAbsent(attacker.getUniqueId(), new Cooldown(0));
         Player targetPlayer = (Player) target;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
         PlayerProfile targetProfile = PlayerProfile.getPlayerProfileByUuid(targetPlayer.getUniqueId());
         if (COOLDOWN.get(attacker.getUniqueId()).hasExpired()) {
-            COOLDOWN.put(attacker.getUniqueId(), new Cooldown(30 - 5L * enchantLevel, TimeUnit.SECONDS));
-            targetProfile.setCoins(targetProfile.getCoins() - (10 + 5 * enchantLevel));
-            profile.setCoins(profile.getCoins() + (10 + 5 * enchantLevel));
-            attacker.sendMessage(CC.translate("&6&l偷取硬币! &7你从 " + targetProfile.getFormattedName() + " &7处偷取了 &6" + (10 + 5 * enchantLevel) + " 硬币 &7!"));
+            double steal = CoinTransfers.transfer(targetProfile, profile, getSteal(enchantLevel));
+            if (steal <= 0) return;
+            COOLDOWN.put(attacker.getUniqueId(), new Cooldown(getCooldownSeconds(enchantLevel), TimeUnit.SECONDS));
+            attacker.sendMessage(CC.translate("&6&l偷取硬币! &7你从 " + targetProfile.getFormattedName() + " &7处偷取了 &6" + steal + " 硬币 &7!"));
         }
+        });
     }
 
 }

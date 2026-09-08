@@ -13,7 +13,8 @@ import java.util.List;
  * @Author: Misoryan
  * @Created_In: 2021/3/29 19:01
  */
-public class HeresyPerk extends AbstractPerk {
+@cn.charlotte.pit.perk.Passive
+public class HeresyPerk extends AbstractPerk implements cn.charlotte.pit.parm.listener.IAttackEntity, cn.charlotte.pit.parm.listener.IPlayerShootEntity {
     @Override
     public String getInternalPerkName() {
         return "heresy_perk";
@@ -71,7 +72,7 @@ public class HeresyPerk extends AbstractPerk {
                 lines.add("&7下一等级:");
                 lines.add("  &8- &7允许你将 &5暗黑之甲 &7提升至 &eII 阶");
                 lines.add("  &8- &7降低合成暗黑之甲的 &5暗聚块 &7消耗: &f3 ➝ &d2");
-                lines.add("  &8- &7合成解锁: &4暴怒之甲");
+                lines.add("  &8- &7暴怒之甲需另行解锁 &4极度愤怒");
                 break;
             }
         }
@@ -96,5 +97,28 @@ public class HeresyPerk extends AbstractPerk {
     @Override
     public void onPerkInactive(Player player) {
 
+    }
+
+    @Override
+    @cn.charlotte.pit.enchantment.param.event.PlayerOnly
+    public void handleAttackEntity(int level, Player attacker, org.bukkit.entity.Entity target, double damage,
+            com.google.common.util.concurrent.AtomicDouble trueDamage, com.google.common.util.concurrent.AtomicDouble boost,
+            java.util.concurrent.atomic.AtomicBoolean cancel) {
+        if (level < 2 || cancel.get() || !(target instanceof Player)) return;
+        for (org.bukkit.inventory.ItemStack item : ((Player) target).getInventory().getArmorContents()) {
+            if (item != null && item.getType().name().startsWith("LEATHER_")) {
+                boost.addAndGet(0.05);
+                return;
+            }
+        }
+    }
+
+    @Override
+    @cn.charlotte.pit.enchantment.param.event.PlayerOnly
+    @cn.charlotte.pit.parm.type.BowOnly
+    public void handleShootEntity(int level, Player attacker, org.bukkit.entity.Entity target, double damage,
+            com.google.common.util.concurrent.AtomicDouble trueDamage, com.google.common.util.concurrent.AtomicDouble boost,
+            java.util.concurrent.atomic.AtomicBoolean cancel) {
+        handleAttackEntity(level, attacker, target, damage, trueDamage, boost, cancel);
     }
 }

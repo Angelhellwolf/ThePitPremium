@@ -2,6 +2,8 @@ package cn.charlotte.pit.listener
 
 import cn.charlotte.pit.config.NewConfiguration
 import cn.charlotte.pit.getPitProfile
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.reward.RewardSource
 import cn.charlotte.pit.util.chat.CC
 import io.lumine.xikage.mythicmobs.api.bukkit.events.MythicMobDeathEvent
 import org.bukkit.entity.LivingEntity
@@ -39,10 +41,11 @@ object MythicMobListener : Listener {
         val expToAdd = expRange.random().toDouble()
 
         val killMessage = NewConfiguration.mythicMobs[mob.type.internalName]?.killMessage
-        killer.getPitProfile().coins += coinsToAdd
-        killer.getPitProfile().experience += expToAdd
+        val reward = RewardService.grant(killer.getPitProfile(), RewardSource.MYTHIC_MOB, coinsToAdd, expToAdd)
         if (killMessage != null) {
-            killer.sendMessage(CC.translate(killMessage.replace("{mobName}", mob.type.displayName).replace("{exp}",expToAdd.toString()).replace("{coin}",coinsToAdd.toString())))
+            killer.sendMessage(CC.translate(killMessage.replace("{mobName}", mob.type.displayName)
+                .replace("{exp}", String.format(java.util.Locale.ROOT, "%.2f", reward.experience))
+                .replace("{coin}", String.format(java.util.Locale.ROOT, "%.2f", reward.coins))))
         }
     }
 

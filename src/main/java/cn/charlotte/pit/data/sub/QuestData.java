@@ -15,6 +15,10 @@ public class QuestData {
     private int current;
     private int total;
     private Set<String> killed;
+    private Boolean nightQuest;
+
+    public Boolean getNightQuest() { return nightQuest; }
+    public void setNightQuest(Boolean nightQuest) { this.nightQuest = nightQuest; }
 
     public QuestData() {
         this.killed = new HashSet<>();

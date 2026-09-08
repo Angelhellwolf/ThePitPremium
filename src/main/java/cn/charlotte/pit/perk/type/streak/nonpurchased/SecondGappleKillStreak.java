@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.nonpurchased;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.AbstractPerk;
@@ -67,6 +69,7 @@ public class SecondGappleKillStreak extends AbstractPerk implements Listener {
         list.add("  &a▶ &7立刻获得 &6+5 硬币");
         list.add("  &a▶ &7立刻获得 &b+5 经验值");
         list.add("  &a▶ &7立刻获得 &f1 * &e金苹果");
+        list.add("&7Bot 击杀可推进连杀，但触发时不发放额外金币或经验");
         return list;
     }
 
@@ -103,9 +106,8 @@ public class SecondGappleKillStreak extends AbstractPerk implements Listener {
         }
         //trigger check (every X streak)
         int streak = 3;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
-            profile.setExperience(profile.getExperience() + 5);
-            profile.setCoins(profile.getCoins() + 5);
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
+            RewardService.grant(profile, RewardSource.STREAK, 5, 5);
             if (PlayerUtil.getAmountOfActiveHealingPerk(myself) <= 1 && PlayerUtil.getPlayerHealItemAmount(myself) < PlayerUtil.getPlayerHealItemLimit(myself)) {
                 myself.getInventory().addItem(new ItemBuilder(Material.GOLDEN_APPLE).canDrop(false).canSaveToEnderChest(false).deathDrop(true)
                         .removeOnJoin(true)

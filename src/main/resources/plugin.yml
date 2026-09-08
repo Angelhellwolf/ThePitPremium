@@ -7,4 +7,17 @@ api-version: 1.8
 main: cn.charlotte.pit.ThePit
 load: POSTWORLD
 depend: [ ProtocolLib ]
-softdepend: [ WorldEdit, FastAsyncWorldEdit, PlayerPoints, LuckPerms, packetevents ]
+softdepend: [ WorldEdit, FastAsyncWorldEdit, PlayerPoints, RemiaftValue, LuckPerms, packetevents, PlaceholderAPI, ViaVersion, Citizens, ServerManager, SpiterLoader ]
+
+commands:
+  junxu:
+    description: 第七军需处管理、邀请与返回
+    usage: /junxu
+
+permissions:
+  junxu.use:
+    description: 使用军需处菜单、访客命令；创建和邀请还会检查付费契约
+    default: true
+  junxu.admin:
+    description: 创建军需官、设置安全返回点、查看模板与诊断
+    default: op

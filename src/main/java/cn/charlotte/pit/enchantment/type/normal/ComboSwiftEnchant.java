@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
@@ -55,7 +57,7 @@ public class ComboSwiftEnchant extends AbstractEnchantment implements IAttackEnt
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % (enchantLevel >= 2 ? 3 : 4) == 0) {
+        if (CombatContext.meleeHits(attacker) % (enchantLevel >= 2 ? 3 : 4) == 0) {
             attacker.removePotionEffect(PotionEffectType.SPEED);
             attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * (enchantLevel + 2), (enchantLevel >= 2 ? 1 : 0)), true);
         }
@@ -63,7 +65,7 @@ public class ComboSwiftEnchant extends AbstractEnchantment implements IAttackEnt
 
     @Override
     public String getText(int level, Player player) {
-        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getBowHit() : PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getMeleeHit());
+        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? CombatContext.bowHits(player) : CombatContext.meleeHits(player));
         int require = level >= 2 ? 3 : 4;
         return (hit % require == 0 ? "&a&l✔" : "&e&l" + (require - hit % require));
     }

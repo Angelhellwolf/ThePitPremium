@@ -8,4 +8,7 @@ public interface IPrepareEvent {
 
     void onPreActive();
 
+    default void onPreInactive() {
+    }
+
 }

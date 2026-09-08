@@ -113,7 +113,7 @@ public class GrandFinaleMegaStreak extends AbstractPerk implements Listener, Meg
         //trigger check (get X streak)
         if (event.getFrom() < trigger && event.getTo() >= trigger) {
             myself.sendMessage(CC.translate("&c&l杰作! &7你自爆了并获得 &e1 声望 &7."));
-            CC.boardCast("&c&l杰作! " + event.getPlayerProfile().getFormattedName() + " &7达到了 &c50 &7连杀并谢幕了!");
+            cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.getPlayerProfile().getPlayerUuid(), "&c&l杰作! " + event.getPlayerProfile().getFormattedName() + " &7达到了 &c50 &7连杀并谢幕了!");
             PlayerUtil.deadPlayer(myself);
             event.getPlayerProfile().setRenown(event.getPlayerProfile().getRenown() + 1);
             Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {

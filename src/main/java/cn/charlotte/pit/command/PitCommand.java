@@ -61,6 +61,11 @@ public class PitCommand {
     private final DecimalFormat numFormat = new DecimalFormat("0.00");
     private final Map<UUID, Cooldown> COOLDOWN_SHOW = new HashMap<>();
 
+    @Command(names = {"pitrules", "pit rules"})
+    public void gameplayRules(Player player) {
+        GameplayRules.show(player);
+    }
+
     @Command(
             names = {
                     "option",
@@ -123,7 +128,7 @@ public class PitCommand {
     public void previewEvents(Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (!profile.isSupporter() && !PlayerUtil.isStaff(player)) {
-            player.sendMessage(CC.translate("&c你需要购买 &e天坑乱斗会员 &c才可以使用此指令!"));
+            player.sendMessage(CC.translate("&c你需要购买 &e天坑·会员 &c才可以使用此指令!"));
             return;
         }
         new EventPreviewerMenu().openMenu(player);
@@ -142,7 +147,7 @@ public class PitCommand {
     public void show(Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (!profile.isSupporter() && !PlayerUtil.isStaff(player)) {
-            player.sendMessage(CC.translate("&c你需要购买 &e天坑乱斗会员 &c才可以使用此指令!"));
+            player.sendMessage(CC.translate("&c你需要购买 &e天坑·会员 &c才可以使用此指令!"));
             return;
         }
         COOLDOWN_SHOW.putIfAbsent(player.getUniqueId(), new Cooldown(0));
@@ -361,9 +366,9 @@ public class PitCommand {
     public void onCheckKillRecap(Player player) {
 
         try {
-            KillRecap killRecap = KillRecap.recapMap.get(player.getUniqueId());
+            KillRecap killRecap = KillRecap.getRecentRecap(player.getUniqueId());
             if (killRecap == null || killRecap.getKiller() == null || killRecap.getAssistData() == null) {
-                player.sendMessage(CC.translate("&c&l错误! &7未找到有效的近期死亡回放数据,抱歉!"));
+                player.sendMessage(CC.translate("&c&l错误! &7未找到五分钟内的死亡回放数据."));
                 return;
             }
 
@@ -380,13 +385,7 @@ public class PitCommand {
                     .newLine()
                     .add(
                             BookUtil.TextBuilder
-                                    .of(CC.translate("&0此系统仍在开发中,"))
-                                    .build()
-                    )
-                    .newLine()
-                    .add(
-                            BookUtil.TextBuilder
-                                    .of(CC.translate("&0展示数据不保证100%准确!"))
+                                    .of(CC.translate("&8记录于 " + Math.max(0L, (System.currentTimeMillis() - killRecap.getCompleteTime()) / 1000L) + " 秒前"))
                                     .build()
                     )
                     .newLine()
@@ -441,12 +440,16 @@ public class PitCommand {
                 killerCoin.append(CC.translate("&f首杀奖励: &6+" + numFormat.format(killRecap.getNotStreakCoin())))
                         .append("\n");
             }
+            if (killRecap.getStreakCoin() > 0) {
+                killerCoin.append(CC.translate("&f连杀奖励: &6+" + numFormat.format(killRecap.getStreakCoin())))
+                        .append("\n");
+            }
             if (killRecap.getLevelDisparityCoin() > 0) {
                 killerCoin.append(CC.translate("&f等级/装备差距: &6+" + numFormat.format(killRecap.getLevelDisparityCoin())))
                         .append("\n");
             }
-            if (killRecap.getOtherCoin() > 0) {
-                killerCoin.append(CC.translate("&f其他奖励: &6+" + numFormat.format(killRecap.getOtherCoin())))
+            if (Math.abs(killRecap.getOtherCoin()) > 0.01) {
+                killerCoin.append(CC.translate("&f其他修正: &6" + (killRecap.getOtherCoin() > 0 ? "+" : "") + numFormat.format(killRecap.getOtherCoin())))
                         .append("\n");
             }
 
@@ -457,12 +460,16 @@ public class PitCommand {
                 killerExp.append(CC.translate("&f首杀奖励: &b+" + numFormat.format(killRecap.getNotStreakExp())))
                         .append("\n");
             }
+            if (killRecap.getStreakExp() > 0) {
+                killerExp.append(CC.translate("&f连杀奖励: &b+" + numFormat.format(killRecap.getStreakExp())))
+                        .append("\n");
+            }
             if (killRecap.getLevelDisparityExp() > 0) {
                 killerExp.append(CC.translate("&f等级/装备差距: &b+" + numFormat.format(killRecap.getLevelDisparityExp())))
                         .append("\n");
             }
-            if (killRecap.getOtherExp() > 0) {
-                killerExp.append(CC.translate("&f其他奖励: &b+" + numFormat.format(killRecap.getOtherExp())))
+            if (Math.abs(killRecap.getOtherExp()) > 0.01) {
+                killerExp.append(CC.translate("&f其他修正: &b" + (killRecap.getOtherExp() > 0 ? "+" : "") + numFormat.format(killRecap.getOtherExp())))
                         .append("\n");
             }
             pageBuilder.add(
@@ -481,14 +488,15 @@ public class PitCommand {
 
             pages.add(pageBuilder.build());
 
-            int i = 1;
-            pageBuilder = new BookUtil.PageBuilder().add(
-                    BookUtil.TextBuilder
-                            .of(CC.translate("&0助攻 (" + killRecap.getAssistData().size() + "):"))
-                            .build()).newLine();
-            for (KillRecap.AssistData assistData : killRecap.getAssistData()) {
+            int i = 0;
+            if (!killRecap.getAssistData().isEmpty()) {
+                pageBuilder = new BookUtil.PageBuilder().add(
+                        BookUtil.TextBuilder
+                                .of(CC.translate("&0&l助攻 (" + killRecap.getAssistData().size() + "):"))
+                                .build()).newLine();
+                for (KillRecap.AssistData assistData : killRecap.getAssistData()) {
                 StringBuilder assistCoin = new StringBuilder();
-                assistCoin.append(CC.translate("&f基础奖励: &6+" + numFormat.format(killRecap.getBaseCoin() * assistData.getPercentage())))
+                assistCoin.append(CC.translate("&f基础奖励: &6+" + numFormat.format(assistData.getBaseCoin())))
                         .append("\n");
                 if (assistData.getStreakCoin() > 0) {
                     assistCoin.append(CC.translate("&f连杀奖励: &6+" + numFormat.format(assistData.getStreakCoin())))
@@ -499,7 +507,7 @@ public class PitCommand {
                             .append("\n");
                 }
                 StringBuilder assistExp = new StringBuilder();
-                assistExp.append(CC.translate("&f基础奖励: &b+" + numFormat.format(killRecap.getBaseExp() * assistData.getPercentage())))
+                assistExp.append(CC.translate("&f基础奖励: &b+" + numFormat.format(assistData.getBaseExp())))
                         .append("\n");
                 if (assistData.getStreakExp() > 0) {
                     assistExp.append(CC.translate("&f连杀奖励: &b+" + numFormat.format(assistData.getStreakExp())))
@@ -530,23 +538,31 @@ public class PitCommand {
                         .newLine()
                         .newLine();
                 i++;
-                if (i >= 5) {
+                if (i >= 4) {
                     pages.add(pageBuilder.build());
-                    pageBuilder = new BookUtil.PageBuilder();
+                    pageBuilder = new BookUtil.PageBuilder().add(
+                            BookUtil.TextBuilder.of(CC.translate("&0&l助攻 (续):")).build()).newLine();
                     i = 0;
                 }
             }
             if (i > 0) {
                 pages.add(pageBuilder.build());
             }
-            i = 1;
-            pageBuilder = new BookUtil.PageBuilder().add(
-                    BookUtil.TextBuilder
-                            .of(CC.translate("&0&l伤害日志 (" + killRecap.getDamageLogs().size() + "):"))
-                            .build()).newLine();
-            for (KillRecap.DamageData damageData : killRecap.getDamageLogs()) {
+            }
+            i = 0;
+            if (!killRecap.getDamageLogs().isEmpty()) {
+                pageBuilder = new BookUtil.PageBuilder().add(
+                        BookUtil.TextBuilder
+                                .of(CC.translate("&0&l战斗记录 (" + killRecap.getDamageLogs().size() + "):"))
+                                .build()).newLine();
+                for (KillRecap.DamageData damageData : killRecap.getDamageLogs()) {
+                long damageAt = damageData.getTimestamp();
+                if (damageAt <= 0 && damageData.getTimer() != null) {
+                    damageAt = damageData.getTimer().getStart();
+                }
+                long secondsBeforeDeath = Math.max(0L, (killRecap.getCompleteTime() - damageAt) / 1000L);
                 BookUtil.TextBuilder builder = BookUtil.TextBuilder
-                        .of(CC.translate("&7" + ((killRecap.getCompleteTime() - damageData.getTimer().getStart()) / 1000) + "秒前  &c" + numFormat.format(damageData.getDamage()) + " " + (damageData.isMelee() ? "近战" : "远程")));
+                        .of(CC.translate("&7" + secondsBeforeDeath + "秒前  &c" + numFormat.format(damageData.getDamage()) + "❤ " + (damageData.isMelee() ? "近战" : "远程")));
                 if (damageData.getUsedItem() != null && damageData.getUsedItem().getType() != Material.AIR) {
                     builder.onHover(BookUtil.HoverAction.showItem(damageData.getUsedItem()));
                 }
@@ -555,9 +571,7 @@ public class PitCommand {
                 ).newLine();
                 String damageHover = CC.translate((damageData.isAttack() ? "&c攻击" : "&c受到攻击")) +
                         "\n" +
-                        CC.translate("&7攻击后" + (damageData.isAttack() ? "此玩家" : "自身") + "剩余血量: &c" + numFormat.format(damageData.getAfterHealth()) +
-                                "\n" +
-                                CC.translate("&7附魔/天赋 附加伤害: &c" + numFormat.format(damageData.getBoostDamage())));
+                        CC.translate("&7命中后" + (damageData.isAttack() ? "对方" : "自身") + "血量: &c" + numFormat.format(damageData.getAfterHealth()) + "❤");
                 pageBuilder.add(
                         BookUtil.TextBuilder
                                 .of(CC.translate((damageData.isAttack() ? "&0⚔ " : "&0☬ ") + damageData.getDisplayName()))
@@ -565,14 +579,16 @@ public class PitCommand {
                                 .build()
                 ).newLine().newLine();
                 i++;
-                if (i >= 5) {
+                if (i >= 4) {
                     pages.add(pageBuilder.build());
-                    pageBuilder = new BookUtil.PageBuilder();
+                    pageBuilder = new BookUtil.PageBuilder().add(
+                            BookUtil.TextBuilder.of(CC.translate("&0&l战斗记录 (续):")).build()).newLine();
                     i = 0;
                 }
             }
             if (i > 0) {
                 pages.add(pageBuilder.build());
+            }
             }
             BookUtil.openPlayer(player,
                     BookUtil.writtenBook()

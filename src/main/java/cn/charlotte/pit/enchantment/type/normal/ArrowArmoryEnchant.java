@@ -67,11 +67,11 @@ public class ArrowArmoryEnchant extends AbstractEnchantment implements Listener 
     public int getExtraArrowRequirement(int enchantLevel) {
         switch (enchantLevel) {
             case 1:
-                return 2;
+                return 3;
             case 2:
-                return 4;
+                return 5;
             default:
-                return 7;
+                return 8;
         }
     }
 

@@ -5,7 +5,6 @@ import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
-import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Material;
@@ -19,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Created_In: 2021/1/17 22:47
  */
 @WeaponOnly
-public class AntiBowSpammerEnchantW extends AbstractEnchantment implements IAttackEntity, IPlayerShootEntity {
+public class AntiBowSpammerEnchantW extends AbstractEnchantment implements IAttackEntity {
     @Override
     public String getEnchantName() {
         return "神射手反制";
@@ -47,24 +46,26 @@ public class AntiBowSpammerEnchantW extends AbstractEnchantment implements IAtta
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7攻击手持弓的玩家造成的伤害 &c+" + (10 + enchantLevel * 10) + "%";
+        return "&7攻击手持弓的玩家造成的伤害 &c+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 10;
+            case 2:
+                return 25;
+            default:
+                return 40;
+        }
     }
 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player victim = (Player) target;
-        if (victim.getItemInHand().getType().equals(Material.BOW)) {
-            boostDamage.set(boostDamage.get() + (0.1 + enchantLevel * 0.1));
-        }
-    }
-
-    @Override
-    @PlayerOnly
-    public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        Player victim = (Player) target;
-        if (victim.getItemInHand().getType().equals(Material.BOW)) {
-            boostDamage.set(boostDamage.get() + (0.1 + enchantLevel * 0.1));
+        if (victim.getItemInHand() != null && victim.getItemInHand().getType().equals(Material.BOW)) {
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
     }
 }

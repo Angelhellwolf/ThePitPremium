@@ -103,7 +103,7 @@ public class WitherCraftKillStreak extends AbstractPerk implements Listener {
         }
         //trigger check (every X streak)
         int streak = 25;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             if (profile.getEnchantingItem() == null) {
                 return;

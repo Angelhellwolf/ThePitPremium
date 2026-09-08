@@ -3,6 +3,7 @@ package cn.charlotte.pit.perk.type.prestige;
 import cn.charlotte.pit.parm.listener.IPlayerKilledEntity;
 import cn.charlotte.pit.perk.AbstractPerk;
 import cn.charlotte.pit.perk.PerkType;
+import cn.charlotte.pit.util.combat.CombatPotions;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -82,7 +83,6 @@ public class DirtyPerk extends AbstractPerk implements IPlayerKilledEntity {
 
     @Override
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
-        myself.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-        myself.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 4, 1), true);
+        if (enchantLevel > 0) CombatPotions.refresh(myself, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 4, 1));
     }
 }

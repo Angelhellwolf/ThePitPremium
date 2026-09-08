@@ -2,6 +2,8 @@ package cn.charlotte.pit.command;
 
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.addon.impl.GachaPool;
+import cn.charlotte.pit.api.PointsAPI;
+import cn.charlotte.pit.api.PurchasePointsAPI;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.config.PitConfig;
 import cn.charlotte.pit.data.PlayerInvBackup;
@@ -53,6 +55,7 @@ import lombok.SneakyThrows;
 import net.md_5.bungee.api.chat.ClickEvent;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -73,7 +76,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 2 * @Author: EmptyIrony
@@ -81,6 +86,11 @@ import java.util.UUID;
  * 4
  */
 public class PitAdminCommand {
+    @Command(names = "pitadmin gameplaycheck", permissionNode = "pit.admin")
+    public void gameplayCheck(CommandSender sender) {
+        cn.charlotte.pit.util.combat.GameplayRuntimeCheck.report(ThePit.getInstance()).forEach(sender::sendMessage);
+    }
+    private static final Set<UUID> RENAME_PROCESSING = ConcurrentHashMap.newKeySet();
     private final Gson gson = new Gson();
     private final DateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     private final List<UUID> requestDrop = new ArrayList<>();
@@ -560,8 +570,7 @@ public class PitAdminCommand {
 
     @Command(
             names = "pitAdmin change",
-            permissionNode = "pit.admin",
-            async = true
+            permissionNode = "pit.admin"
     )
     public void setPlayerLevel(CommandSender sender, @Parameter(name = "target", defaultValue = "self") Player target, @Parameter(name = "type") String type, @Parameter(name = "amount") int amount) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
@@ -781,10 +790,9 @@ public class PitAdminCommand {
             permissionNode = "pit.admin"
     )
     public void giveSupporter(CommandSender sender, @Parameter(name = "target", defaultValue = "self") Player target) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
-        profile.setSupporter(true);
-        profile.setSupporterGivenByAdmin(true);
-        sender.sendMessage("给了");
+        cn.charlotte.pit.supporter.SupporterService service = cn.charlotte.pit.supporter.SupporterService.get();
+        if (service == null) sender.sendMessage("赞助者数据库尚未就绪。");
+        else service.setPermanent(sender, target, true);
     }
 
     @Command(
@@ -792,9 +800,9 @@ public class PitAdminCommand {
             permissionNode = "pit.admin"
     )
     public void takeMySupporter(Player player, @Parameter(name = "target", defaultValue = "self") Player target) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
-        profile.setSupporter(false);
-        profile.setSupporterGivenByAdmin(false);
+        cn.charlotte.pit.supporter.SupporterService service = cn.charlotte.pit.supporter.SupporterService.get();
+        if (service == null) player.sendMessage("赞助者数据库尚未就绪。");
+        else service.setPermanent(player, target, false);
     }
 
     @Command(
@@ -1846,21 +1854,195 @@ public class PitAdminCommand {
     }
 
     @Command(
-            names = "rename",
-            permissionNode = "pit.rename"
+            names = "rename"
     )
-    public void rename(Player player, @Parameter(name = "重命名") String name) {
-        ItemStack item = player.getItemInHand();
-        IMythicItem mythicItem = MythicUtil.getMythicItem(item);
-        if (mythicItem == null) {
-            player.sendMessage(CC.translate("&c需要为神话物品才可以重命名"));
+    public void rename(Player player, @Parameter(name = "名称", wildcard = true) String name) {
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        boolean staff = PlayerUtil.isStaff(player);
+        if (!profile.isSupporter() && !staff && !player.hasPermission("pit.rename")) {
+            player.sendMessage(CC.translate("&c你需要有效的 &e天坑·会员 &c才可以使用 /rename。"));
+            player.sendMessage("§7示例: §f/rename &c赤焰之刃");
             return;
         }
 
-        mythicItem.setCustomName(CC.translate(name));
-        player.setItemInHand(mythicItem.toItemStack());
+        name = name.trim();
+        if (name.indexOf('§') >= 0) {
+            player.sendMessage("§c请使用英文符号 & 输入颜色代码，不要直接输入 §。示例: §f/rename &c赤焰之刃");
+            return;
+        }
 
-        player.sendMessage(CC.translate("&a成功"));
+        final String translatedName = CC.translate(name);
+        String visibleName = ChatColor.stripColor(translatedName);
+        if (visibleName == null || visibleName.trim().isEmpty()) {
+            player.sendMessage(CC.translate("&c物品名称不能为空。"));
+            return;
+        }
+        if (visibleName.length() > 32) {
+            player.sendMessage(CC.translate("&c物品名称最多 32 个可见字符。"));
+            return;
+        }
+
+        final ItemStack item = player.getItemInHand();
+        IMythicItem mythicItem = MythicUtil.getMythicItem(item);
+        if (mythicItem == null) {
+            player.sendMessage(CC.translate("&c请手持一件神话物品后再使用 /rename。"));
+            return;
+        }
+
+        if (staff) {
+            applyRename(player, player.getInventory().getHeldItemSlot(), mythicItem, translatedName);
+            player.sendMessage(CC.translate("&a重命名成功: &r") + translatedName);
+            return;
+        }
+
+        int dailyLimit = NewConfiguration.INSTANCE.getRenameDailyFreeLimit();
+        int weeklyLimit = NewConfiguration.INSTANCE.getRenameWeeklyFreeLimit();
+        if (profile.hasFreeRename(dailyLimit, weeklyLimit)) {
+            applyRename(player, player.getInventory().getHeldItemSlot(), mythicItem, translatedName);
+            profile.consumeFreeRename(dailyLimit, weeklyLimit);
+            persistRenameQuota(profile);
+
+            player.sendMessage(CC.translate("&a免费重命名成功: &r") + translatedName);
+            player.sendMessage(CC.translate("&7剩余免费次数: &a今日 "
+                    + profile.getRenameDailyFreeRemaining(dailyLimit) + "/" + dailyLimit
+                    + " &7| &a本周 " + profile.getRenameWeeklyFreeRemaining(weeklyLimit) + "/" + weeklyLimit));
+            return;
+        }
+
+        beginPaidRename(player, item.clone(), translatedName);
+    }
+
+    private void beginPaidRename(Player player, ItemStack expectedItem, String translatedName) {
+        PointsAPI pointsAPI = ThePit.getInstance().getPointsAPI();
+        if (!(pointsAPI instanceof PurchasePointsAPI)
+                || !((PurchasePointsAPI) pointsAPI).isAvailable()) {
+            player.sendMessage(CC.translate("&cRemiaftValue 暂未就绪，当前无法进行付费改名。"));
+            return;
+        }
+
+        if (!RENAME_PROCESSING.add(player.getUniqueId())) {
+            player.sendMessage(CC.translate("&e你的上一笔改名请求仍在处理中，请勿重复提交。"));
+            return;
+        }
+
+        PurchasePointsAPI purchaseAPI = (PurchasePointsAPI) pointsAPI;
+        int cost = NewConfiguration.INSTANCE.getRenameExtraCost();
+        int preferredSlot = player.getInventory().getHeldItemSlot();
+        player.sendMessage(CC.translate("&e免费额度已用完，正在扣除 &d" + cost + " 点券&e..."));
+
+        Bukkit.getScheduler().runTaskAsynchronously(ThePit.getInstance(), () -> {
+            boolean charged = false;
+            try {
+                charged = purchaseAPI.tryCostPoints(player, cost, "天坑·会员物品改名");
+            } catch (Exception exception) {
+                ThePit.getInstance().getLogger().warning("改名点券扣除失败: " + exception.getMessage());
+            }
+
+            final boolean chargeResult = charged;
+            Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> finishPaidRename(
+                    player, purchaseAPI, expectedItem, preferredSlot, translatedName, cost, chargeResult));
+        });
+    }
+
+    private void finishPaidRename(Player player, PurchasePointsAPI purchaseAPI, ItemStack expectedItem,
+                                  int preferredSlot, String translatedName, int cost, boolean charged) {
+        if (!charged) {
+            RENAME_PROCESSING.remove(player.getUniqueId());
+            purchaseAPI.refreshPoints(player);
+            if (player.isOnline()) {
+                player.sendMessage(CC.translate("&c改名失败：点券不足或 RemiaftValue 暂不可用。"));
+            }
+            return;
+        }
+
+        try {
+            if (!player.isOnline()) {
+                refundPaidRename(player, purchaseAPI, cost, "玩家离线");
+                return;
+            }
+
+            int itemSlot = findMatchingItemSlot(player, expectedItem, preferredSlot);
+            if (itemSlot < 0) {
+                player.sendMessage(CC.translate("&c未找到刚才手持的神话物品，本次改名已取消并退回点券。"));
+                refundPaidRename(player, purchaseAPI, cost, "原物品已移动或不存在");
+                return;
+            }
+
+            IMythicItem mythicItem = MythicUtil.getMythicItem(player.getInventory().getItem(itemSlot));
+            if (mythicItem == null) {
+                player.sendMessage(CC.translate("&c原物品已发生变化，本次改名已取消并退回点券。"));
+                refundPaidRename(player, purchaseAPI, cost, "原物品不再是神话物品");
+                return;
+            }
+
+            applyRename(player, itemSlot, mythicItem, translatedName);
+            RENAME_PROCESSING.remove(player.getUniqueId());
+            player.sendMessage(CC.translate("&a付费重命名成功，已扣除 &d" + cost + " 点券&a: &r") + translatedName);
+        } catch (Exception exception) {
+            ThePit.getInstance().getLogger().warning("应用付费改名失败: " + exception.getMessage());
+            refundPaidRename(player, purchaseAPI, cost, "应用物品名称失败");
+        }
+    }
+
+    private void refundPaidRename(Player player, PurchasePointsAPI purchaseAPI, int cost, String reason) {
+        Bukkit.getScheduler().runTaskAsynchronously(ThePit.getInstance(), () -> {
+            boolean refunded = false;
+            try {
+                refunded = purchaseAPI.refundPoints(player, cost, "天坑·会员改名失败退款: " + reason);
+            } catch (Exception exception) {
+                ThePit.getInstance().getLogger().severe("改名点券退款失败: " + exception.getMessage());
+            }
+
+            final boolean refundResult = refunded;
+            Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+                RENAME_PROCESSING.remove(player.getUniqueId());
+                if (!player.isOnline()) {
+                    return;
+                }
+                if (refundResult) {
+                    player.sendMessage(CC.translate("&a已退回 &d" + cost + " 点券&a。"));
+                } else {
+                    player.sendMessage(CC.translate("&c自动退款失败，请联系管理员处理本次 " + cost + " 点券扣款。"));
+                }
+            });
+        });
+    }
+
+    private int findMatchingItemSlot(Player player, ItemStack expectedItem, int preferredSlot) {
+        ItemStack preferred = player.getInventory().getItem(preferredSlot);
+        if (isSameItem(preferred, expectedItem)) {
+            return preferredSlot;
+        }
+
+        for (int slot = 0; slot < player.getInventory().getSize(); slot++) {
+            if (slot != preferredSlot && isSameItem(player.getInventory().getItem(slot), expectedItem)) {
+                return slot;
+            }
+        }
+        return -1;
+    }
+
+    private boolean isSameItem(ItemStack first, ItemStack second) {
+        return first != null && second != null
+                && first.getAmount() == second.getAmount()
+                && first.isSimilar(second);
+    }
+
+    private void applyRename(Player player, int slot, IMythicItem mythicItem, String translatedName) {
+        mythicItem.setCustomName(translatedName);
+        player.getInventory().setItem(slot, mythicItem.toItemStack());
+        player.updateInventory();
+    }
+
+    private void persistRenameQuota(PlayerProfile profile) {
+        Bukkit.getScheduler().runTaskAsynchronously(ThePit.getInstance(), () -> {
+            try {
+                profile.save(null);
+            } catch (Exception exception) {
+                ThePit.getInstance().getLogger().severe("保存改名免费额度失败: " + exception.getMessage());
+            }
+        });
+
     }
 
 }

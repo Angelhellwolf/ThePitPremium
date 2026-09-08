@@ -9,9 +9,6 @@ import cn.charlotte.pit.parm.listener.IAttackEntity;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
-import net.minecraft.server.v1_8_R3.ItemArmor;
-import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -25,6 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @WeaponOnly
 @BowOnly
 public class DiamondBreakerEnchant extends AbstractEnchantment implements IAttackEntity, IPlayerShootEntity {
+    private static final int MAX_BOOST_PERCENT = 25;
+
     @Override
     public String getEnchantName() {
         return "钻石破坏者";
@@ -52,32 +51,41 @@ public class DiamondBreakerEnchant extends AbstractEnchantment implements IAttac
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7攻击穿着 &b钻石装备 &7的玩家造成的伤害 &c+" + (4 * enchantLevel) + "%";
+        return "&7目标每穿着一件 &b钻石护甲&7，造成的伤害 &c+" + getBoostPercent(enchantLevel) + "%"
+                + "/s&7总伤害加成最多 &c+" + MAX_BOOST_PERCENT + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        return Math.max(0, Math.min(3, enchantLevel)) * 5;
+    }
+
+    private int countDiamondArmor(Player victim) {
+        int pieces = 0;
+        for (ItemStack armor : victim.getInventory().getArmorContents()) {
+            if (armor == null) continue;
+            switch (armor.getType()) {
+                case DIAMOND_HELMET:
+                case DIAMOND_CHESTPLATE:
+                case DIAMOND_LEGGINGS:
+                case DIAMOND_BOOTS:
+                    pieces++;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return pieces;
     }
 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        Player victim = (Player) target;
-        for (ItemStack armor : victim.getInventory().getArmorContents()) {
-            if (armor != null && armor.getType() != Material.AIR && armor.getType().name().contains("DIAMOND")) {
-                if (CraftItemStack.asNMSCopy(armor).getItem() instanceof ItemArmor) {
-                    boostDamage.set(boostDamage.get() + (0.04 * enchantLevel));
-                }
-            }
-        }
+        boostDamage.getAndAdd(Math.min(MAX_BOOST_PERCENT, countDiamondArmor((Player) target) * getBoostPercent(enchantLevel)) * 0.01);
     }
 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        Player victim = (Player) target;
-        for (ItemStack armor : victim.getInventory().getArmorContents()) {
-            if (armor != null && armor.getType() != Material.AIR && armor.getType().name().contains("DIAMOND")) {
-                if (CraftItemStack.asNMSCopy(armor).getItem() instanceof ItemArmor) {
-                    boostDamage.set(boostDamage.get() + (0.04 * enchantLevel));
-                }
-            }
-        }
+        boostDamage.getAndAdd(Math.min(MAX_BOOST_PERCENT, countDiamondArmor((Player) target) * getBoostPercent(enchantLevel)) * 0.01);
     }
 }

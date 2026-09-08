@@ -54,11 +54,27 @@ public class NametagBoard {
      */
     public Scoreboard getScoreboard() {
         Player player = Bukkit.getPlayer(getUuid());
-        if (getHandler().isHook() || player.getScoreboard() != Bukkit.getScoreboardManager().getMainScoreboard()) {
-            return player.getScoreboard();
-        } else {
+        if (player == null) {
             return Bukkit.getScoreboardManager().getNewScoreboard();
         }
+        Scoreboard current = player.getScoreboard();
+        // Reuse a board created by Assemble / ServerManager. Never write teams onto
+        // the shared main scoreboard — that hides TAB prefixes for everyone else.
+        if (current != null && current != Bukkit.getScoreboardManager().getMainScoreboard()) {
+            return current;
+        }
+        return Bukkit.getScoreboardManager().getNewScoreboard();
+    }
+
+    /**
+     * 1.8 team prefix/suffix is capped at 16 chars. Longer values throw and
+     * abort the whole nametag/TAB refresh.
+     */
+    private static String limitComponent(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.length() <= 16 ? text : text.substring(0, 16);
     }
 
     /**
@@ -125,11 +141,15 @@ public class NametagBoard {
             toReturn.add(team.getName());
             this.getBufferedTeams().remove(team.getName());
 
-            String prefix = bufferedNametag.getPrefix() != null ? bufferedNametag.getPrefix() : ChatColor.RESET.toString();
-            String suffix = bufferedNametag.getSuffix() != null ? bufferedNametag.getSuffix() : ChatColor.RESET.toString();
+            String prefix = limitComponent(bufferedNametag.getPrefix() != null ? bufferedNametag.getPrefix() : ChatColor.RESET.toString());
+            String suffix = limitComponent(bufferedNametag.getSuffix() != null ? bufferedNametag.getSuffix() : ChatColor.RESET.toString());
 
-            team.setPrefix(prefix);
-            team.setSuffix(suffix);
+            if (!prefix.equals(team.getPrefix())) {
+                team.setPrefix(prefix);
+            }
+            if (!suffix.equals(team.getSuffix())) {
+                team.setSuffix(suffix);
+            }
 
             if (bufferedNametag.getPlayer() != null) {
                 if (!team.hasEntry(bufferedNametag.getPlayer().getName())) {
@@ -144,7 +164,9 @@ public class NametagBoard {
             }
 
             // Friendly Invisibility.
-            team.setCanSeeFriendlyInvisibles(bufferedNametag.isFriendlyInvis());
+            if (team.canSeeFriendlyInvisibles() != bufferedNametag.isFriendlyInvis()) {
+                team.setCanSeeFriendlyInvisibles(bufferedNametag.isFriendlyInvis());
+            }
         }
 
         // Unregister teams that are no longer in use.
@@ -193,7 +215,9 @@ public class NametagBoard {
         Player player = Bukkit.getPlayer(getUuid());
 
         this.updateHealthBelow(player, scoreboard);
-        this.updateNametags(player, scoreboard);
+        if (!handler.isServerManagerManaged()) {
+            this.updateNametags(player, scoreboard);
+        }
     }
 
     /**
@@ -205,4 +229,3 @@ public class NametagBoard {
     }
 
 }
-

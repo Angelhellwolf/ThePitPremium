@@ -76,7 +76,7 @@ public class TacticalRetreatKillStreak extends AbstractPerk implements Listener 
 
     @Override
     public PerkType getPerkType() {
-        return null;
+        return PerkType.KILL_STREAK;
     }
 
     @Override
@@ -100,7 +100,7 @@ public class TacticalRetreatKillStreak extends AbstractPerk implements Listener 
         }
         //trigger check (every X streak)
         int streak = 7;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             myself.removePotionEffect(PotionEffectType.WEAKNESS);
             myself.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 5, 3), false);
             myself.removePotionEffect(PotionEffectType.REGENERATION);

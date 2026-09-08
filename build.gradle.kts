@@ -29,7 +29,17 @@ repositories {
 }
 
 dependencies {
-    compileOnly(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("com.h2database:h2:2.1.214")
+    // FAWE overrides part of the WorldEdit API this source targets. Put it first
+    // so duplicate classes resolve to FAWE, while retaining WorldEdit-only classes.
+    compileOnly(files("libs/fawe-1.0.jar"))
+    compileOnly(fileTree(mapOf(
+        "dir" to "libs",
+        "include" to listOf("*.jar"),
+        "exclude" to listOf("fawe-1.0.jar")
+    )))
     compileOnly("org.mongodb:mongo-java-driver:3.12.11")
     compileOnly("org.mongojack:mongojack:4.8.1")
     compileOnly("org.mongodb:mongodb-driver-sync:5.2.0")
@@ -97,4 +107,12 @@ tasks.withType<Javadoc> {
 }
 kotlin {
     jvmToolchain(11)
+}
+
+// Tests exercise Bukkit interfaces against mocks using the same local API jars.
+configurations.testRuntimeClasspath {
+    extendsFrom(configurations.compileOnly.get())
+}
+configurations.testCompileClasspath {
+    extendsFrom(configurations.compileOnly.get())
 }

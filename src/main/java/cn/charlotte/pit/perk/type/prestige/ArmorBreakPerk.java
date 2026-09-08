@@ -56,10 +56,10 @@ public class ArmorBreakPerk extends AbstractPerk implements IAttackEntity, IPlay
     @Override
     public List<String> getDescription(Player player) {
         List<String> lines = new ArrayList<>();
-        lines.add("&7命中目标穿戴护甲超过3件时,");
-        lines.add("&7I:  附带 &c0.5❤ &f必中&7伤害");
-        lines.add("&7II: 附带 &c0.75❤ &f必中&7伤害");
-        lines.add("&7III: 附带 &c1❤ &f必中&7伤害");
+        lines.add("&7命中穿戴四件护甲的玩家时,");
+        lines.add("&7I / II / III: 普通伤害 &c+5% / +10% / +15%");
+        lines.add("&7近战与弓箭均生效,受护甲与抗性减免");
+        lines.add("&7不再附加真实或必中伤害");
         return lines;
     }
 
@@ -86,16 +86,16 @@ public class ArmorBreakPerk extends AbstractPerk implements IAttackEntity, IPlay
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (countEquippedArmor((Player) target) > 3) {
-            finalDamage.getAndAdd(getTrueDamage(enchantLevel));
+        if (!cancel.get() && enchantLevel > 0 && countEquippedArmor((Player) target) == 4) {
+            boostDamage.getAndAdd(getDamageBonus(enchantLevel));
         }
     }
 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (countEquippedArmor((Player) target) > 3) {
-            finalDamage.getAndAdd(getTrueDamage(enchantLevel));
+        if (!cancel.get() && enchantLevel > 0 && countEquippedArmor((Player) target) == 4) {
+            boostDamage.getAndAdd(getDamageBonus(enchantLevel));
         }
     }
 
@@ -109,13 +109,13 @@ public class ArmorBreakPerk extends AbstractPerk implements IAttackEntity, IPlay
         return count;
     }
 
-    private double getTrueDamage(int level) {
+    private double getDamageBonus(int level) {
         if (level <= 1) {
-            return 1.0D; // 0.5❤
+            return 0.05D;
         }
         if (level == 2) {
-            return 1.5D; // 0.75❤
+            return 0.10D;
         }
-        return 2.0D; // 1❤
+        return 0.15D;
     }
 }

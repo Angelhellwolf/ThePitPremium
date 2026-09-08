@@ -6,6 +6,7 @@ import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
+import cn.charlotte.pit.parm.listener.IPlayerAssist;
 import cn.charlotte.pit.parm.listener.IPlayerKilledEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
@@ -19,7 +20,7 @@ import org.bukkit.entity.Player;
 @WeaponOnly
 @BowOnly
 @ArmorOnly
-public class HermesEnchant extends AbstractEnchantment implements IPlayerKilledEntity {
+public class HermesEnchant extends AbstractEnchantment implements IPlayerKilledEntity, IPlayerAssist {
     @Override
     public String getEnchantName() {
         return "赫耳墨斯";
@@ -52,7 +53,7 @@ public class HermesEnchant extends AbstractEnchantment implements IPlayerKilledE
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         int coins = this.getCoins(enchantLevel);
-        return "&7击杀获得 &6+" + coins + " 硬币";
+        return ("&7击杀获得 &6+" + coins + " 硬币 &7(助攻获得减半)") + "/s" + "&7以上金币或经验加成排除 Bot";
     }
 
 
@@ -61,5 +62,11 @@ public class HermesEnchant extends AbstractEnchantment implements IPlayerKilledE
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         int extraCoins = this.getCoins(enchantLevel);
         coins.set(coins.get() + extraCoins);
+    }
+
+    @Override
+    @PlayerOnly
+    public void handlePlayerAssist(int enchantLevel, Player myself, Entity target, double damage, double finalDamage, AtomicDouble coins, AtomicDouble experience) {
+        coins.set(coins.get() + this.getCoins(enchantLevel) / 2.0);
     }
 }

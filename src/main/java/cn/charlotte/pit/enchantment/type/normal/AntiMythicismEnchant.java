@@ -8,6 +8,7 @@ import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
+import cn.charlotte.pit.util.item.ItemUtil;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -56,7 +57,7 @@ public class AntiMythicismEnchant extends AbstractEnchantment implements IAttack
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player victim = (Player) target;
-        if (victim.getInventory().getLeggings() != null && victim.getInventory().getLeggings().getType().equals(Material.LEATHER_LEGGINGS)) {
+        if ("mythic_leggings".equals(ItemUtil.getInternalName(victim.getInventory().getLeggings()))) {
             boostDamage.set(boostDamage.get() + (0.04 * enchantLevel));
         }
     }
@@ -65,7 +66,7 @@ public class AntiMythicismEnchant extends AbstractEnchantment implements IAttack
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player victim = (Player) target;
-        if (victim.getInventory().getLeggings() != null && victim.getInventory().getLeggings().getType().equals(Material.LEATHER_LEGGINGS)) {
+        if ("mythic_leggings".equals(ItemUtil.getInternalName(victim.getInventory().getLeggings()))) {
             boostDamage.set(boostDamage.get() + (0.04 * enchantLevel));
         }
     }

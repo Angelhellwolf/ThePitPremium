@@ -1,6 +1,8 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
@@ -59,7 +61,7 @@ public class StrikeGoldEnchant extends AbstractEnchantment implements IAttackEnt
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7击中玩家时获得 &6" + enchantLevel + " 硬币 &7(1秒冷却)";
+        return ("&7击中玩家时获得 &6" + enchantLevel + " 硬币 &7(1秒冷却)") + "/s" + "&7仅对真人目标触发（排除 Bot）";
     }
 
     @Override
@@ -70,20 +72,32 @@ public class StrikeGoldEnchant extends AbstractEnchantment implements IAttackEnt
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (cooldown.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired()) {
-            cooldown.put(attacker.getUniqueId(), new Cooldown(1, TimeUnit.SECONDS));
-            PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
-            profile.setCoins(profile.getCoins() + enchantLevel);
-        }
+        if (!eligibleTarget(target, damage, cancel)) return;
+        cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> {
+            if (cooldown.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired()) {
+                cooldown.put(attacker.getUniqueId(), new Cooldown(1, TimeUnit.SECONDS));
+                PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
+                RewardService.grant(profile, RewardSource.ENCHANT, enchantLevel, 0);
+            }
+        });
     }
 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (cooldown.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired()) {
-            cooldown.put(attacker.getUniqueId(), new Cooldown(1, TimeUnit.SECONDS));
-            PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
-            profile.setCoins(profile.getCoins() + enchantLevel);
-        }
+        if (!eligibleTarget(target, damage, cancel)) return;
+        cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> {
+            if (cooldown.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired()) {
+                cooldown.put(attacker.getUniqueId(), new Cooldown(1, TimeUnit.SECONDS));
+                PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
+                RewardService.grant(profile, RewardSource.ENCHANT, enchantLevel, 0);
+            }
+        });
+    }
+
+    private boolean eligibleTarget(Entity target, double damage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || !Double.isFinite(damage) || damage <= 0 || cancel.get()) return false;
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
+        return profile.isLoaded() && !profile.isBot();
     }
 }

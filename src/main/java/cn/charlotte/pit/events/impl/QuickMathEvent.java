@@ -3,6 +3,8 @@ package cn.charlotte.pit.events.impl;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.events.INormalEvent;
 import cn.charlotte.pit.medal.impl.challenge.QuickMathsMedal;
@@ -17,10 +19,16 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 /**
  * @Author: Misoryan
@@ -37,6 +45,7 @@ public class QuickMathEvent implements IEvent, INormalEvent, Listener {
     private int top = 0;
 
     private boolean ended = false;
+    private BukkitTask endTask;
 
     @Override
     public String getEventInternalName() {
@@ -55,6 +64,7 @@ public class QuickMathEvent implements IEvent, INormalEvent, Listener {
 
     @Override
     public void onActive() {
+        ended = false;
         randomEquation();
         if (!"x".equals(equationType)) {
             randomNumber(10, 100);
@@ -71,44 +81,92 @@ public class QuickMathEvent implements IEvent, INormalEvent, Listener {
         }
         Bukkit.getPluginManager()
                 .registerEvents(this, ThePit.getInstance());
-        Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
-            if (!ended) {
-                ThePit.getInstance()
-                        .getEventFactory()
-                        .inactiveEvent(this);
-            }
-        }, 5 * 60 * 20L);
+        if (endTask != null) {
+            endTask.cancel();
+        }
+        endTask = Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), this::endIfStillRunning, 5 * 60 * 20L);
     }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onChat(AsyncPlayerChatEvent e) {
-        if (e.getMessage().contains(TheEquation + "")) {
-            if (!alreadyAnswered.add(e.getPlayer().getUniqueId())) {
-                e.getRecipients().clear();
-                e.getRecipients().add(e.getPlayer());
-            } else {
-                e.setCancelled(true);
-                top++;
-                PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(e.getPlayer().getUniqueId());
-                if (System.currentTimeMillis() - startTime <= 2.5 * 1000) {
-                    new QuickMathsMedal().addProgress(profile, 1);
-                }
-                CC.boardCast("&5&l速算! &e#" + top + " " + profile.getFormattedName() + " &7在 &e" + TimeUtil.millisToRoundedTime(System.currentTimeMillis() - startTime) + " &7内回答正确!");
-                profile.setCoins(profile.getCoins() + 200);
-                profile.grindCoins(200);
-                profile.setExperience(profile.getExperience() + 100);
-                if (top >= 5) {
-                    ThePit.getInstance()
-                            .getEventFactory()
-                            .inactiveEvent(this);
-                }
+        String message = e.getMessage() == null ? "" : e.getMessage().trim();
+        Player player = e.getPlayer();
+        long receivedAt = System.currentTimeMillis();
+        AnswerResult result;
+        if (Bukkit.isPrimaryThread()) {
+            result = handleCorrectAnswer(player, message, receivedAt);
+        } else {
+            Future<AnswerResult> task = Bukkit.getScheduler().callSyncMethod(ThePit.getInstance(),
+                    () -> handleCorrectAnswer(player, message, receivedAt));
+            try {
+                result = task.get(5, TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                task.cancel(false);
+                Thread.currentThread().interrupt();
+                return;
+            } catch (ExecutionException | TimeoutException failure) {
+                task.cancel(false);
+                ThePit.getInstance().getLogger().log(Level.WARNING, "Quick math answer processing failed", failure);
+                return;
             }
         }
+        if (result == AnswerResult.UNMATCHED) {
+            return;
+        }
+        if (result == AnswerResult.ALREADY_ANSWERED) {
+            e.getRecipients().clear();
+            e.getRecipients().add(player);
+            return;
+        }
+        e.setCancelled(true);
+    }
+
+    private AnswerResult handleCorrectAnswer(Player player, String message, long receivedAt) {
+        // All mutable round state, including de-duplication, belongs to the main thread.
+        if (ended || top >= 5 || player == null || !player.isOnline() || receivedAt < startTime
+                || !message.equals(String.valueOf(TheEquation))) {
+            return AnswerResult.UNMATCHED;
+        }
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (profile == PlayerProfile.NONE_PROFILE || !profile.isLoaded() || profile.isBot()) {
+            return AnswerResult.UNMATCHED;
+        }
+        if (!alreadyAnswered.add(player.getUniqueId())) {
+            return AnswerResult.ALREADY_ANSWERED;
+        }
+        top++;
+        long elapsed = receivedAt - startTime;
+        if (elapsed <= 2.5 * 1000) {
+            new QuickMathsMedal().addProgress(profile, 1);
+        }
+        CC.boardCast("&5&l速算! &e#" + top + " " + profile.getFormattedName() + " &7在 &e" + TimeUtil.millisToRoundedTime(elapsed) + " &7内回答正确!");
+        RewardService.Receipt reward = RewardService.grant(profile, RewardSource.EVENT, 200, 100);
+        player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT,
+                "&5&l速算! &7奖励到账 &6+%.2f 硬币 &b+%.2f 经验值", reward.getCoins(), reward.getExperience())));
+        if (top >= 5) {
+            endIfStillRunning();
+        }
+        return AnswerResult.CORRECT;
+    }
+
+    private enum AnswerResult { UNMATCHED, ALREADY_ANSWERED, CORRECT }
+
+    private void endIfStillRunning() {
+        if (ended) {
+            return;
+        }
+        ThePit.getInstance()
+                .getEventFactory()
+                .inactiveEvent(this);
     }
 
     @Override
     public void onInactive() {
         ended = true;
+        if (endTask != null) {
+            endTask.cancel();
+            endTask = null;
+        }
         HandlerList.unregisterAll(this);
         CC.boardCast("&5&l速算! &7活动结束! 正确答案: &e" + TheEquation);
     }

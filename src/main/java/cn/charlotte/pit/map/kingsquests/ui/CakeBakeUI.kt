@@ -90,7 +90,7 @@ object CakeBakeUI: Menu() {
                         ItemUtil.getInternalName(it) == "packaged_bale"
                     }
 
-                    inventory.addItem(MiniCake.toItemStack())
+                    inventory.addItem(MiniCake.toItemStack()).values.forEach { player.world.dropItemNaturally(player.location, it) }
                 }
             }
         )

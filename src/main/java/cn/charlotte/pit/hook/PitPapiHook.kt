@@ -3,6 +3,8 @@ package cn.charlotte.pit.hook
 import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.events.genesis.team.GenesisTeam
 import cn.charlotte.pit.getPitProfile
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.config.NewConfiguration
 import cn.charlotte.pit.util.chat.CC
 import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import org.bukkit.entity.Player
@@ -32,6 +34,14 @@ object PitPapiHook: PlaceholderExpansion() {
         }
 
         when(params) {
+            "noob" -> return RewardService.isNoob(profile).toString()
+            "noob_tag" -> return if (RewardService.isNoob(profile)) "§a[新手]" else ""
+            "reward_multiplier" -> return if (RewardService.isNoob(profile))
+                NewConfiguration.noobRewardMultiplier.toString() else "1.0"
+            "xp_reward_multiplier" -> return if (RewardService.isNoob(profile))
+                NewConfiguration.noobRewardMultiplier.toString() else "1.0"
+            "coin_reward_multiplier" -> return if (RewardService.isNoob(profile))
+                NewConfiguration.noobCoinRewardMultiplier.toString() else "1.0"
             "level_tag_roman" -> {
                 return CC.translate(profile?.formattedLevelTagWithRoman ?: "&7[0]")
             }

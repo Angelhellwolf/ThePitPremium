@@ -49,7 +49,18 @@ public class BountyHunterEnchant extends AbstractEnchantment implements IAttackE
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7攻击被悬赏的玩家造成的伤害 &c+" + (enchantLevel < 4 ? (5 + 5 * enchantLevel) : 30) + "%";
+        return "&7攻击被悬赏的玩家造成的伤害 &c+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 7;
+            case 2:
+                return 15;
+            default:
+                return 25;
+        }
     }
 
     @Override
@@ -57,7 +68,7 @@ public class BountyHunterEnchant extends AbstractEnchantment implements IAttackE
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         int bounty = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId()).getBounty();
         if (bounty > 0) {
-            boostDamage.set(boostDamage.get() + (enchantLevel < 4 ? (0.05 + 0.05 * enchantLevel) : 0.3));
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
     }
 
@@ -66,7 +77,7 @@ public class BountyHunterEnchant extends AbstractEnchantment implements IAttackE
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         int bounty = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId()).getBounty();
         if (bounty > 0) {
-            boostDamage.set(boostDamage.get() + (enchantLevel < 4 ? (0.05 + 0.05 * enchantLevel) : 0.3));
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
     }
 }

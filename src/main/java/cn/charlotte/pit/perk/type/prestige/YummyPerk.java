@@ -55,7 +55,9 @@ public class YummyPerk extends AbstractPerk {
 
     @Override
     public List<String> getDescription(Player player) {
-        return Collections.singletonList("&7食用金头或金苹果额外获得 &63 硬币&7.");
+        java.util.List<String> details = new java.util.ArrayList<>(Collections.singletonList("&7食用金头或金苹果额外获得 &63 硬币&7."));
+        details.add("&7来自 Bot 的金头、金苹果不提供额外硬币");
+        return details;
     }
 
     @Override

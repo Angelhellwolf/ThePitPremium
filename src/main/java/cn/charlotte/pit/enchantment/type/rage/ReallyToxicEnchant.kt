@@ -44,8 +44,8 @@ class ReallyToxicEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShootEnt
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return ("&7攻击为目标玩家施加 &e2 &7层 &a不愈之毒 &f(00:30) &7,最高叠加" + (enchantLevel * 10 + 10) + "层."
-                + "/s&7效果 &a不愈之毒&7: 降低恢复生命值时的生命恢复量,每层降低 &a1%")
+        return ("&7每次命中施加2层 &a不愈之毒 &f(00:30) &7,最高叠加" + (getMaxStacks(enchantLevel) * 2) + "层."
+                + "/s&7每层降低恢复量 &a1% &7，各层独立到期")
     }
 
     @PlayerOnly
@@ -58,8 +58,7 @@ class ReallyToxicEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShootEnt
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean
     ) {
-        val targetPlayer = target as Player
-        buff.stackBuff(targetPlayer, 30 * 1000L, 2)
+        applyToxic(enchantLevel, target as Player)
     }
 
     @PlayerOnly
@@ -72,8 +71,24 @@ class ReallyToxicEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShootEnt
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean
     ) {
-        val targetPlayer = target as Player
-        buff.stackBuff(targetPlayer, 30 * 1000L, 2)
+        applyToxic(enchantLevel, target as Player)
+    }
+
+    private fun applyToxic(enchantLevel: Int, targetPlayer: Player) {
+        val maxStacks = getMaxStacks(enchantLevel) * 2
+        val current = buff.getPlayerBuffData(targetPlayer).tier
+        if (current >= maxStacks) {
+            return
+        }
+        buff.stackBuff(targetPlayer, 30 * 1000L, minOf(2, maxStacks - current))
+    }
+
+    private fun getMaxStacks(enchantLevel: Int): Int {
+        return when (enchantLevel) {
+            1 -> 10
+            2 -> 15
+            else -> 20
+        }
     }
 
     companion object {

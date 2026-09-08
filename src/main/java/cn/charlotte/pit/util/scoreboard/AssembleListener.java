@@ -24,15 +24,19 @@ public class AssembleListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-
-        AssembleBoardCreateEvent createEvent = new AssembleBoardCreateEvent(event.getPlayer());
-
-        Bukkit.getPluginManager().callEvent(createEvent);
-        if (createEvent.isCancelled()) {
-            return;
-        }
-        getAssemble().getBoards().put(event.getPlayer().getUniqueId(), new AssembleBoard(event.getPlayer(), getAssemble()));
-
+        // Delay one tick so ServerManager can own the player scoreboard first.
+        // Assemble then hooks that same board for the sidebar.
+        Bukkit.getScheduler().runTaskLater(getAssemble().getPlugin(), () -> {
+            if (!event.getPlayer().isOnline()) {
+                return;
+            }
+            AssembleBoardCreateEvent createEvent = new AssembleBoardCreateEvent(event.getPlayer());
+            Bukkit.getPluginManager().callEvent(createEvent);
+            if (createEvent.isCancelled()) {
+                return;
+            }
+            getAssemble().getBoards().put(event.getPlayer().getUniqueId(), new AssembleBoard(event.getPlayer(), getAssemble()));
+        }, 1L);
     }
 
     @EventHandler

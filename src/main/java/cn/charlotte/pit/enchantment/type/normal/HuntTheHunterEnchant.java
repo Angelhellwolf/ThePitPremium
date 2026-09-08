@@ -47,12 +47,16 @@ public class HuntTheHunterEnchant extends AbstractEnchantment implements IPlayer
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         return "&7受到天赋 &6赏金猎人 &7的效果降低 &a" + (enchantLevel > 1 ? "100%" : "50%") + " " + (enchantLevel > 2 ?
-                "/s&7且受到来自装备此天赋的玩家的伤害 &9-20%" : "");
+                "/s&7且受到来自装备此天赋的玩家的伤害 &9-20%" : "")
+                + "/s&7装备超级连杀 &6尊贵血统 &7时此附魔失效";
     }
 
     @Override
     @PlayerOnly
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (PlayerUtil.isPlayerChosePerk(myself, "high_lander")) {
+            return;
+        }
         Player player = (Player) attacker;
         if (enchantLevel > 2 && PlayerUtil.isPlayerChosePerk(player, "BountyHunter")) {
             boostDamage.getAndAdd(-0.2);
