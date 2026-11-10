@@ -85,7 +85,8 @@ public class HiddenJewelEnchant extends AbstractEnchantment implements IPlayerKi
         if (pool.isEmpty()) {
             return;
         }
-        AbstractEnchantment chosen = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(pool.toArray());
+        AbstractEnchantment chosen = cn.charlotte.pit.reward.RareSupply.chooseEnchantmentFromKill(pool, myself, target);
+        if (chosen == null) return;
         MythicSwordItem sword = new MythicSwordItem();
         sword.loadFromItemStack(hand);
         sword.setHiddenJewelKills(0);

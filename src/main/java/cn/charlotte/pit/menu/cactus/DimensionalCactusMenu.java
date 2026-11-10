@@ -58,6 +58,7 @@ public class DimensionalCactusMenu extends Menu {
                     player.sendMessage(CC.translate("&c请手持次元仙人掌后重试！"));
                     return;
                 }
+                if (!cn.charlotte.pit.reward.RareSupply.freshClaim(player)) return;
                 PlayerUtil.takeOneItemInHand(player);
                 player.getInventory().addItem(currentItem);
                 player.closeInventory();

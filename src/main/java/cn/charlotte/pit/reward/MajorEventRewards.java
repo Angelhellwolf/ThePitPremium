@@ -95,19 +95,35 @@ public final class MajorEventRewards implements Listener {
         double newCoins = award[0] * scale * factor;
         double newXp = award[1] * scale * factor;
         renown += (int) Math.floor((factor - 1) * renown);
-        if (eligible && count >= 5 && PlayerUtil.isPlayerUnlockedPerk(player, "self_confidence"))
-            newCoins += (ahead < 5 ? 800 : ahead < 10 ? 400 : ahead < 15 ? 200 : 0) * scale;
+        int confidenceBonus = eligible && PlayerUtil.isPlayerUnlockedPerk(player, "self_confidence")
+                ? selfConfidenceBonus(rank) : 0;
         if (EconomyV2.active()) {
             if (round == null || !round.paid.add(player.getUniqueId())) return new Result(0, 0, 0);
             if (eligible && paparazzi > 0) consumePaparazzi(player);
         }
         RewardService.Receipt receipt = EconomyV2.grant(profile, RewardDetail.MAJOR_EVENT,
                 oldCoins, 0, newCoins, newXp);
+        double confidenceCoins = 0;
+        if ((EconomyV2.active() || EconomyV2.observing()) && confidenceBonus > 0) {
+            RewardService.Receipt confidenceReceipt = EconomyV2.grant(profile, RewardDetail.SELF_CONFIDENCE,
+                    0, 0, confidenceBonus, 0);
+            confidenceCoins = confidenceReceipt.getCoins();
+            if (confidenceCoins > 0) player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT,
+                    "&6自信! &7大型事件排名奖励: &6+%,.0f 硬币", confidenceCoins)));
+        }
         if (eligible && EconomyV2.active()) GrowthProgress.event(profile, name + ':' + round.id);
         if (receipt.getExperience() > 0 || receipt.getReservedExperience() > 0)
             player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT,
                     "&6事件奖励 &b+%.2f 经验 &7（储备 +%.2f）", receipt.getExperience(), receipt.getReservedExperience())));
-        return new Result(receipt.getCoins(), receipt.getExperience(), EconomyV2.active() ? renown : oldRenown);
+        return new Result(receipt.getCoins() + confidenceCoins, receipt.getExperience(), EconomyV2.active() ? renown : oldRenown);
+    }
+
+    static int selfConfidenceBonus(int rank) {
+        if (rank < 1) return 0;
+        if (rank <= 5) return 5000;
+        if (rank <= 10) return 2500;
+        if (rank <= 15) return 1000;
+        return 0;
     }
 
     public static double[] baseAward(boolean eligible, int rank, int count, boolean objective) {

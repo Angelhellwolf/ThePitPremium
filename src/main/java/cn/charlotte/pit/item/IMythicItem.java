@@ -36,6 +36,8 @@ public abstract class IMythicItem extends AbstractPitItem {
 
     protected boolean boostedByGem = false;
     protected String customName = null;
+    /** Comma/semicolon separated enchantment NBT names hidden from external profile viewers. */
+    private String viewHiddenEnchants;
     private int hiddenJewelKills;
     private int heartripperShards;
 
@@ -258,6 +260,10 @@ public abstract class IMythicItem extends AbstractPitItem {
             builder.prefix(prefix);
         }
 
+        if (viewHiddenEnchants != null && !viewHiddenEnchants.trim().isEmpty()) {
+            builder.changeNbt("view_hidden_enchants", viewHiddenEnchants);
+        }
+
         return builder
                 .buildWithUnbreakable();
     }
@@ -297,6 +303,12 @@ public abstract class IMythicItem extends AbstractPitItem {
         }
         if (extra.hasKey("customName")) {
             this.customName = extra.getString("customName");
+        }
+
+        if (extra.hasKey("view_hidden_enchants")) {
+            this.viewHiddenEnchants = extra.getString("view_hidden_enchants");
+        } else {
+            this.viewHiddenEnchants = null;
         }
 
         if (extra.hasKey("boostedByBook")) {
@@ -515,5 +527,13 @@ public abstract class IMythicItem extends AbstractPitItem {
 
     public void setCustomName(String customName) {
         this.customName = customName;
+    }
+
+    public String getViewHiddenEnchants() {
+        return viewHiddenEnchants;
+    }
+
+    public void setViewHiddenEnchants(String viewHiddenEnchants) {
+        this.viewHiddenEnchants = viewHiddenEnchants;
     }
 }

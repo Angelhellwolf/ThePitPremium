@@ -65,7 +65,7 @@ public class SelfCheckoutEnchant extends AbstractEnchantment implements ITickTas
     @Override
     public void handle(int enchantLevel, Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-        if (profile.isLoaded() && !profile.isBot() && profile.getBounty() >= 5000) {
+        if (profile.isLoaded() && profile.getBounty() >= 5000) {
             //consume life start
             ItemStack leggings = player.getInventory().getLeggings();
             if ("mythic_leggings".equals(ItemUtil.getInternalName(leggings))) {

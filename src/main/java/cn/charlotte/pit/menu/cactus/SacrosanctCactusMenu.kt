@@ -39,8 +39,7 @@ class SacrosanctCactusMenu : Menu() {
     }
 
     override fun getButtons(player: Player): Map<Int, Button> {
-        PlayerUtil.takeOneItemInHand(player)
-        player.sendMessage(CC.translate("&a成功使用，请不要关闭领取界面，请选择您的奖励！"))
+        player.sendMessage(CC.translate("&a请选择奖励。"))
         val button: MutableMap<Int, Button> = HashMap()
         for (i in 0 until 9) {
             button[i] = pantsButton
@@ -166,6 +165,7 @@ class SacrosanctCactusMenu : Menu() {
                     player.sendMessage(CC.translate("&c你的背包已满！"))
                     return
                 }
+                if (!cn.charlotte.pit.reward.RareSupply.cactus(player, currentItem)) return
                 if (Utils.getMythicItem(currentItem).enchantments.any { it.key.rarity == EnchantmentRarity.DARK_RARE || it.key.rarity == EnchantmentRarity.RAGE_RARE || it.key.rarity == EnchantmentRarity.RARE }) {
                     val profile = PlayerProfile.getPlayerProfileByUuid(player.uniqueId)
 

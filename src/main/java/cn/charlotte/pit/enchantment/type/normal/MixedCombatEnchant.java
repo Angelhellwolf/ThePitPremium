@@ -10,6 +10,7 @@ import cn.charlotte.pit.parm.listener.IAttackEntity;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.util.PlayerUtil;
+import cn.charlotte.pit.util.BotEnchantPolicy;
 import cn.charlotte.pit.util.combat.CombatDamage;
 import cn.charlotte.pit.util.combat.SecondaryDamage;
 import cn.charlotte.pit.util.chat.CC;
@@ -78,7 +79,8 @@ public class MixedCombatEnchant extends AbstractEnchantment implements IAttackEn
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Mark mark = currentMark(attacker.getUniqueId());
-        if (!cancel.get() && mark != null && target instanceof Player && mark.target.equals(target.getUniqueId())) {
+        if (!cancel.get() && mark != null && target instanceof Player && mark.target.equals(target.getUniqueId())
+                && BotEnchantPolicy.effectAllowed(attacker, (Player) target)) {
             boostDamage.getAndAdd(0.1 * mark.level);
         }
     }
@@ -101,13 +103,17 @@ public class MixedCombatEnchant extends AbstractEnchantment implements IAttackEn
         Player target = (Player) event.getEntity();
         if (event.getDamager() instanceof Arrow && ((Arrow) event.getDamager()).getShooter() instanceof Player) {
             Player shooter = (Player) ((Arrow) event.getDamager()).getShooter();
-            if (shooter.getUniqueId().equals(target.getUniqueId()) || PlayerUtil.shouldIgnoreEnchant(shooter, target)) return;
+            if (shooter.getUniqueId().equals(target.getUniqueId())
+                    || !BotEnchantPolicy.effectAllowed(shooter, target)
+                    || PlayerUtil.shouldIgnoreEnchant(shooter, target)) return;
             int level = projectileLevel((Arrow) event.getDamager());
             if (level > 0) aim.put(shooter.getUniqueId(), new Mark(target.getUniqueId(), Math.min(level, 3), System.currentTimeMillis()));
         } else if (event.getDamager() instanceof Player) {
             Player attacker = (Player) event.getDamager();
             Mark mark = currentMark(attacker.getUniqueId());
-            if (mark != null && mark.target.equals(target.getUniqueId()) && !PlayerUtil.shouldIgnoreEnchant(attacker, target)) {
+            if (mark != null && mark.target.equals(target.getUniqueId())
+                    && BotEnchantPolicy.effectAllowed(attacker, target)
+                    && !PlayerUtil.shouldIgnoreEnchant(attacker, target)) {
                 aim.remove(attacker.getUniqueId(), mark);
             }
         }

@@ -98,6 +98,6 @@ public class StrikeGoldEnchant extends AbstractEnchantment implements IAttackEnt
     private boolean eligibleTarget(Entity target, double damage, AtomicBoolean cancel) {
         if (!(target instanceof Player) || !Double.isFinite(damage) || damage <= 0 || cancel.get()) return false;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
-        return profile.isLoaded() && !profile.isBot();
+        return profile.isLoaded();
     }
 }

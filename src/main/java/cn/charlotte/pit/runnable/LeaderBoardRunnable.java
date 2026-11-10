@@ -70,6 +70,7 @@ public class LeaderBoardRunnable implements Runnable {
                 Double experience = getExperience(document);
                 int prestige = document.getInteger("prestige");
                 UUID playerUuid = UUID.fromString(uuid);
+                if (cn.charlotte.pit.util.PublicProfileDisplay.masked(playerUuid)) continue;
                 String coloredName = rank <= 10 ? resolveColoredName(playerUuid, name) : "§7" + name;
                 entries.add(new LeaderBoardEntry(name, playerUuid, rank, experience, prestige, coloredName));
                 rank++;

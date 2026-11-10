@@ -252,6 +252,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
             rewardCoins = payout.coins
             rewardRenown = payout.renown
             profile.renown = profile.renown + rewardRenown
+            profile.kingsQuestsData.recordEventRenown(rewardRenown)
             player.sendMessage(CC.translate("&6你的奖励: &6+" + rewardCoins + "硬币 &e+" + rewardRenown + "声望"))
             if (rank > 0) {
                 player.sendMessage(CC.translate("&6&l你的队伍: &7获得了 &b" + team.score + " &7分数 (排名#" + rank + ")"))

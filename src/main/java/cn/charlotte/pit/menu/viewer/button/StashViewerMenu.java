@@ -50,7 +50,7 @@ public class StashViewerMenu extends Menu {
             buttons.put(slot, new Button() {
                 @Override
                 public ItemStack getButtonItem(Player player) {
-                    return display.clone();
+                    return InventoryViewerMenu.forViewer(player, profile, display);
                 }
 
                 @Override

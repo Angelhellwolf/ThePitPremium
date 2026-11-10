@@ -59,6 +59,7 @@ public class ExplosiveEnchant extends AbstractEnchantment implements IPlayerShoo
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (cancel.get() || !isEffectActive(attacker, target instanceof Player ? (Player) target : null)) return;
         if (!cooldown.getOrDefault(attacker.getUniqueId(), new Cooldown(0)).hasExpired()) {
             return;
         }
@@ -67,7 +68,7 @@ public class ExplosiveEnchant extends AbstractEnchantment implements IPlayerShoo
         target.getWorld().createExplosion(target.getLocation().getX(), target.getLocation().getY(), target.getLocation().getZ(), power, false, false);
         double radius = 2 + enchantLevel;
         for (Player nearby : PlayerUtil.getNearbyPlayers(target.getLocation(), radius)) {
-            if (nearby.equals(attacker)) {
+            if (nearby.equals(attacker) || !isEffectActive(attacker, nearby)) {
                 continue;
             }
             PlayerUtil.damage(attacker, nearby, PlayerUtil.DamageType.TRUE, enchantLevel * 1.0, true);

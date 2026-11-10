@@ -4,6 +4,7 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.bot.PitBotManager;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.item.MythicColor;
 import cn.charlotte.pit.menu.supporter.SupporterMenu;
 import cn.charlotte.pit.menu.supporter.button.SupporterProductButton;
 import cn.charlotte.pit.supporter.SupporterPricing;
@@ -53,6 +54,7 @@ public final class SupporterCommand {
                     + " rare=" + SupporterProductButton.percent(config.getSupporterRareChance(tier)));
         }
         sender.sendMessage("luckyGem=" + SupporterProductButton.percent(config.getLuckGem()) + " legacyRatePermissions=false");
+        sender.sendMessage(cn.charlotte.pit.reward.RareSupply.diagnostics());
     }
 
     @Command(names = "pitadmin supporterinfo", permissionNode = "pit.admin")
@@ -62,6 +64,6 @@ public final class SupporterCommand {
                 + profile.getActiveSupporterTier().name() + " expiresAt=" + profile.getSupporterContractExpiresAt()
                 + " accountLoaded=" + (profile.getSupporterAccount() != null));
         sender.sendMessage("drop=" + SupporterProductButton.percent(NewConfiguration.INSTANCE.getMythicDropChance(player))
-                + " rare=" + SupporterProductButton.percent(NewConfiguration.INSTANCE.getSupporterRareChance(profile.getActiveSupporterTier())));
+                + " rare=" + SupporterProductButton.percent(NewConfiguration.INSTANCE.getChance(player, MythicColor.ORANGE)));
     }
 }

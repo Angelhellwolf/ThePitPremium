@@ -5,7 +5,7 @@ import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
 import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.ITickTask;
-import cn.charlotte.pit.util.PlayerUtil;
+import cn.charlotte.pit.util.combat.CombatPotions;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import cn.charlotte.pit.util.thread.ThreadHelper;
 import org.bukkit.entity.Player;
@@ -67,9 +67,9 @@ public class LastStandEnchant extends AbstractEnchantment implements IActionDisp
         int time = enchantLevel == 1 ? 3 : 4;
         if (cooldown.getOrDefault(player.getUniqueId(), new Cooldown(0)).hasExpired()) {
             if (player.getHealth() <= 3 * 2) {
-                player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
                 int finalTime = time;
-                sync(() -> PlayerUtil.addPotionEffect(player, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * finalTime, enchantLevel - 1,true), true));
+                sync(() -> CombatPotions.refresh(player, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,
+                        20 * finalTime, enchantLevel - 1, true)));
                 cooldown.put(player.getUniqueId(), new Cooldown(10, TimeUnit.SECONDS));
             }
         }

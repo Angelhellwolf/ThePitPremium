@@ -325,6 +325,9 @@ public class PitConfig extends Configuration {
     )
     @ConfigSerializer(serializer = LocationSerializer.class)
     private Location bakeMasterNpcLocation;
+    @ConfigData(path = "npc.kingNpcLoc")
+    @ConfigSerializer(serializer = LocationSerializer.class)
+    private Location kingNpcLocation;
     @ConfigData(
             path = "booster"
     )

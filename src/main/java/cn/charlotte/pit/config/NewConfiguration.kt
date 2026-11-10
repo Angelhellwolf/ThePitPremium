@@ -4,9 +4,11 @@ import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.supporter.SupporterPricing
 import cn.charlotte.pit.supporter.SupporterTier
+import cn.charlotte.pit.supporter.NationalDaySupporterRates
 import cn.charlotte.pit.enchantment.type.rare.ThePunchEnchant
 import cn.charlotte.pit.item.MythicColor
 import cn.charlotte.pit.listener.CombatListener
+import cn.charlotte.pit.map.kingsquests.CherryLuck
 import cn.charlotte.pit.menu.prestige.button.PrestigeStatusButton
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
@@ -14,6 +16,8 @@ import java.io.File
 import java.util.*
 
 object NewConfiguration {
+
+    var uberHelmetChance = 0.5
 
     var vipPrice = 5000
     var vipCashPrice = 50
@@ -46,6 +50,9 @@ object NewConfiguration {
     var noobKilledRewardMultiplier = 1.0
 
     var luckGem = 0.30;
+    var cherryDropChance = 0.015
+    var cherryLuckDurationSeconds = 600
+    var cherryRareChanceMultiplier = 1.10
     var customChatFormatEnable = false
     var customChatFormat = "%pit_level_tag_roman% %s&f: %s"
 
@@ -96,6 +103,8 @@ object NewConfiguration {
 
     fun load() {
         refreshAndSave()
+        uberHelmetChance = config.getDouble("uber.helmet-chance", 0.5)
+            .let { if (it.isFinite()) it.coerceIn(0.0, 1.0) else 0.5 }
 
         // One yuan is always 100 points. Old monthly keys no longer price the permanent product.
         vipCashPrice = config.getInt("supporter.permanent-cash-price-yuan", 50).coerceIn(1, 1_000_000)
@@ -110,6 +119,7 @@ object NewConfiguration {
         supporterBaseRareChance = config.getDouble("supporter.rare-chance.base", 0.006).coerceIn(0.0, 1.0)
         supporterMythicRareChance = config.getDouble("supporter.rare-chance.mythic", 0.0075).coerceIn(supporterBaseRareChance, 1.0)
         supporterSacredRareChance = config.getDouble("supporter.rare-chance.sacred", 0.0125).coerceIn(supporterMythicRareChance, 1.0)
+        ThePit.getInstance().logger.info(NationalDaySupporterRates.reload(config))
         priceName = config.getString("supporter.currency-name", "点券")
         vipCurrencyProvider = config.getString("supporter.currency-provider", "remiaftvalue")
         renameDailyFreeLimit = config.getInt("supporter.rename.daily-free", 3).coerceAtLeast(0)
@@ -143,6 +153,11 @@ object NewConfiguration {
         )
 
         luckGem = config.getDouble("luck-gem", 0.30)
+        cherryDropChance = config.getDouble("cherry.drop-chance", 0.015)
+            .let { if (it.isFinite()) it.coerceIn(0.0, 1.0) else 0.015 }
+        cherryLuckDurationSeconds = config.getInt("cherry.luck-duration-seconds", 600).coerceIn(1, 86400)
+        cherryRareChanceMultiplier = config.getDouble("cherry.rare-chance-multiplier", 1.10)
+            .let { if (it.isFinite()) it.coerceIn(1.0, 2.0) else 1.10 }
         waterMark = config.getString("water-mark")
         botName = config.getString("bot-name")
         customChatFormatEnable = config.getBoolean("custom-chat-format.enable", false)
@@ -259,23 +274,20 @@ object NewConfiguration {
     }
 
     fun getChance(player: Player, color: MythicColor): Double {
-        if (player.hasMetadata("lucky")) {
-            return luckGem
-        }
-        return getSupporterRareChance(PlayerProfile.getPlayerProfileByUuid(player.uniqueId).activeSupporterTier)
+        return cn.charlotte.pit.reward.RareSupply.baseEnchantChance(this, player, color)
     }
 
-    fun getSupporterDropChance(tier: SupporterTier): Double = when (tier) {
+    fun getSupporterDropChance(tier: SupporterTier): Double = NationalDaySupporterRates.dropChance(tier, when (tier) {
         SupporterTier.MYTHIC -> supporterMythicDropChance
         SupporterTier.SACRED -> supporterSacredDropChance
         else -> supporterBaseDropChance
-    }
+    }, System.currentTimeMillis())
 
-    fun getSupporterRareChance(tier: SupporterTier): Double = when (tier) {
+    fun getSupporterRareChance(tier: SupporterTier): Double = NationalDaySupporterRates.rareChance(tier, when (tier) {
         SupporterTier.MYTHIC -> supporterMythicRareChance
         SupporterTier.SACRED -> supporterSacredRareChance
         else -> supporterBaseRareChance
-    }
+    }, System.currentTimeMillis())
 
     fun supporterPricing(): SupporterPricing = SupporterPricing(vipCashPrice, mythicContractCashPrice,
         sacredContractCashPrice, vipDurationDays)
@@ -304,6 +316,7 @@ object NewConfiguration {
     )
 
     private val defaults = mapOf(
+        "uber.helmet-chance" to 0.5,
         "water-mark" to "&eThePitPremium &7| &b2025-Future",
         "bot-name" to "&cBot",
         "vip-price" to 2500,
@@ -328,6 +341,9 @@ object NewConfiguration {
 
         "coins-boost" to 2.0,
         "luck-gem" to 0.30,
+        "cherry.drop-chance" to 0.015,
+        "cherry.luck-duration-seconds" to 600,
+        "cherry.rare-chance-multiplier" to 1.10,
 
         "dateFormat" to "MM/dd HH:mm",
 

@@ -14,7 +14,7 @@ object KingsQuestChickenSpawner : BukkitRunnable() {
 
     const val METADATA_KEY = "kings_quest_chicken"
 
-    private const val TARGET_COUNT = 10
+    private const val TARGET_COUNT = 2
     private const val SCAN_RADIUS = 20
     private const val MAX_Y_ABOVE_CENTER = 6
     private const val MAX_Y_BELOW_CENTER = 8

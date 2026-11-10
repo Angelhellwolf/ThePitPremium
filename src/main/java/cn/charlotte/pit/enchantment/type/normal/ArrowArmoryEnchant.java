@@ -5,7 +5,6 @@ import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.AutoRegister;
-import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import cn.charlotte.pit.util.inventory.InventoryUtil;
 import cn.charlotte.pit.util.item.ItemBuilder;
@@ -91,8 +90,7 @@ public class ArrowArmoryEnchant extends AbstractEnchantment implements Listener 
         if (event.isCancelled()) return;
         if (!(event.getEntity() instanceof Player)) return;
         final Player player = (Player) event.getEntity();
-        if (PlayerUtil.isVenom(player)) return;
-        if (PlayerUtil.isEquippingSomber(player)) return;
+        if (!isEffectActive(player, null)) return;
         final org.bukkit.inventory.ItemStack itemInHand = player.getItemInHand();
         if (itemInHand == null) return;
         final int level = this.getItemEnchantLevel(itemInHand);
@@ -110,12 +108,12 @@ public class ArrowArmoryEnchant extends AbstractEnchantment implements Listener 
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerDamagePlayer(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Projectile && ((Projectile) event.getDamager()).getShooter() instanceof Player) {
             if (event.getDamager().hasMetadata("arrow_armory")) {
                 Player shooter = (Player) ((Projectile) event.getDamager()).getShooter();
-                if (PlayerUtil.isVenom(shooter)) return;
+                if (!isEffectActive(shooter, event.getEntity() instanceof Player ? (Player) event.getEntity() : null)) return;
                 event.setDamage((1 + 0.01 * event.getDamager().getMetadata("arrow_armory").get(0).asInt()) * event.getDamage());
             }
         }

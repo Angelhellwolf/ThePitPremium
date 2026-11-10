@@ -751,8 +751,21 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
             if (event.getClickedBlock().getType() == Material.SKULL) {
                 final Skull skull = (Skull) event.getClickedBlock().getState();
                 if (skull.getSkullType() == SkullType.PLAYER) {
-                    if (location.distance(event.getClickedBlock().getLocation()) <= 3) {
+                    if (location != null && location.getWorld().equals(event.getClickedBlock().getWorld())
+                            && location.distance(event.getClickedBlock().getLocation()) <= 3) {
                         final Player player = event.getPlayer();
+                        event.setCancelled(true);
+                        final PizzaData playerData = participant(player);
+                        if (playerData == null) return;
+                        int available = 0;
+                        for (ItemStack item : player.getInventory().getContents()) {
+                            if (item == null || item.getType() == Material.AIR
+                                    || "ham".equals(ItemUtil.getInternalName(item))) available++;
+                        }
+                        if (available < 6) {
+                            CC.send(MessageType.EVENT, player, "&c请先为汉堡留出 6 个背包空位。");
+                            return;
+                        }
                         InventoryUtil.removeItemWithInternalName(player, "ham");
 
                         for (int i = 0; i < 6; i++) {
@@ -761,7 +774,6 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                                     .build());
                         }
 
-                        final PizzaData playerData = pizzaDataMap.get(player.getUniqueId());
                         playerData.hamburger = 6;
 
                         player.sendMessage(CC.translate("&6&l汉堡! &7你已领取汉堡,请将其送至周围的村民手上以获取现金."));
@@ -1240,9 +1252,23 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
         }
     }
 
+    /** Resolve before touching items or villagers, including players returning from private rooms. */
+    private PizzaData participant(Player player) {
+        if (player == null || !player.isOnline() || end || location == null
+                || !location.getWorld().equals(player.getWorld())
+                || cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(player)
+                || ThePit.getInstance().getEventFactory().getActiveEpicEvent() != this) return null;
+        PlayerProfile profile = PlayerProfile.getCacheProfile().get(player.getUniqueId());
+        if (profile == null || !profile.isLoaded() || profile.isBot()) return null;
+        return pizzaDataMap.computeIfAbsent(player.getUniqueId(),
+                uuid -> new PizzaData(uuid, player.getDisplayName()));
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PitProfileLoadedEvent event) {
         final Player player = Bukkit.getPlayer(event.getPlayerProfile().getPlayerUuid());
+        if (player == null || cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(player)
+                || event.getPlayerProfile().isBot()) return;
         if (this.pizzaDataMap.containsKey(player.getUniqueId())) {
             this.pizzaDataMap.get(player.getUniqueId()).hamburger = 0;
             return;
@@ -1280,13 +1306,14 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                 }
 
                 if ("ham".equals(ItemUtil.getInternalName(player.getItemInHand()))) {
+                    final PizzaData playerData = participant(player);
+                    if (playerData == null) return;
                     PlayerUtil.takeOneItemInHand(player);
                     deliveryVillager.changeState(this, player);
 
-                    final PizzaData playerData = pizzaDataMap.get(player.getUniqueId());
                     playerData.money += deliveryVillager.coins;
                     cn.charlotte.pit.reward.MajorEventRewards.mark("ham", player);
-                    playerData.hamburger--;
+                    playerData.hamburger = Math.max(0, playerData.hamburger - 1);
                     playerData.hamOrdered++;
 
                     for (Player target : cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
@@ -1299,7 +1326,8 @@ public class HamburgerEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                 event.setCancelled(true);
 
                 final Player player = event.getPlayer();
-                final PizzaData data = pizzaDataMap.get(player.getUniqueId());
+                final PizzaData data = participant(player);
+                if (data == null) return;
 
                 if (data.money == 0) {
                     return;

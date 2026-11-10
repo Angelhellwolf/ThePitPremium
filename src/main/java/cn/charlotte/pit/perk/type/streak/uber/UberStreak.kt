@@ -1,7 +1,7 @@
 package cn.charlotte.pit.perk.type.streak.uber
 
 
-//import org.bukkit.event.entity.PotionEffectAddEvent
+import cn.charlotte.pit.config.NewConfiguration
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.event.*
 import cn.charlotte.pit.getPitProfile
@@ -11,14 +11,15 @@ import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.perk.AbstractPerk
 import cn.charlotte.pit.perk.MegaStreak
 import cn.charlotte.pit.perk.PerkType
+import cn.charlotte.pit.reward.CombatEconomy
 import cn.charlotte.pit.util.PlayerUtil
 import cn.charlotte.pit.util.chat.CC
 import cn.charlotte.pit.util.chat.MessageType
-import cn.charlotte.pit.util.inventory.InventoryUtil
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.entity.Player
+import org.bukkit.entity.Projectile
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
@@ -27,6 +28,7 @@ import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.inventory.ItemStack
 import java.util.*
+import kotlin.random.Random
 
 
 /*
@@ -75,17 +77,20 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
         list.add("&7激活要求连杀数: &c100 连杀")
         list.add(" ")
         list.add("&7激活后:")
+        list.add("  &a▶ &7有 &e${NewConfiguration.uberHelmetChance * 100}% &7几率获得钻石头盔")
+        list.add("  &a▶ &7宝石与完成奖励受有效战斗积累限制")
         list.add("  &a▶ &7获得神话物品的几率提升至原来的 &d150%")
-        list.add("  &c▶ &7每击杀100名玩家,受到的伤害 &c+10%")
+        list.add("  &c▶ &7承伤随连杀持续增加，每100连杀累计 &c+10%")
         list.add("  &c▶ &7100连杀后,攻击未精通玩家造成的伤害 &c-40%")
         list.add("  &c▶ &7200连杀后,生命上限 &c-2❤")
         list.add("  &c▶ &7300连杀后,所有药水效果持续时间 &c-50%")
         list.add("  &c▶ &7400连杀后,&c无法恢复生命值")
         list.add(" ")
         list.add("&7激活后死亡时:")
-        list.add("  &a▶ &7若连杀数大于400,获得一件 &d登峰造极掉落物")
+        list.add("  &a▶ &7若连杀数达到400,获得一件 &d登峰造极掉落物")
+        list.add("  &7每日最多4次，依次消耗 &e0/5/10/15 &7声望")
         list.add(" ")
-        list.add("&c注意:若在400连杀前死亡,受连杀助理保护的神话物品仍然会掉落生命!")
+        list.add("&c注意:400连杀前，连杀助理与晋升不能提供神话生命保护!")
         return list
     }
 
@@ -140,10 +145,14 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
     /**
      * 100 连杀负面效果 和 激活后每击杀100名玩家的负面效果
      */
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     fun onDamage(event: EntityDamageByEntityEvent) {
         val victim = event.entity
-        val damager = event.damager
+        val damager = when (val source = event.damager) {
+            is Player -> source
+            is Projectile -> source.shooter as? Player
+            else -> null
+        }
 
         if (damager is Player && victim is Player) {
             val hasUber = this.hasUber(damager)
@@ -160,7 +169,9 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
             val victimHasUber = this.hasUber(victim)
             if (victimHasUber) {
                 val victimProfile = victim.getPitProfile()
-                event.damage = event.damage * (1 + victimProfile.streakKills / 1000)
+                if (victimProfile.streakKills >= 100) {
+                    event.damage *= 1 + victimProfile.streakKills / 1000
+                }
             }
         }
     }
@@ -187,16 +198,23 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
                 )
             }
 
-            // Give diamond helmet (head) and Global Attention Gem on Uber activation
-            player.inventory.helmet = ItemStack(Material.DIAMOND_HELMET)
-            if (cn.charlotte.pit.reward.CombatEconomy.claimRecent(event.playerProfile, "uber_activation_gem", 100.0)) {
-                player.inventory.addItem(GlobalAttentionGem().toItemStack())
-                player.sendMessage(CC.translate("&d登峰造极! &7你获得了钻石头盔和 &b举世瞩目的宝石&7!"))
-            } else player.sendMessage(CC.translate("&d登峰造极! &7钻石头盔已装备，宝石奖励计入训练积累。"))
+            if (Random.nextDouble() < NewConfiguration.uberHelmetChance) {
+                val helmet = ItemStack(Material.DIAMOND_HELMET)
+                if (player.inventory.helmet == null || player.inventory.helmet.type == Material.AIR) {
+                    player.inventory.helmet = helmet
+                } else {
+                    giveOrDrop(player, helmet)
+                }
+                player.sendMessage(CC.translate("&d登峰造极! &7你抽中了钻石头盔!"))
+            }
+            if (CombatEconomy.claimRecent(event.playerProfile, "uber_activation_gem", 100.0)) {
+                giveOrDrop(player, GlobalAttentionGem().toItemStack())
+                player.sendMessage(CC.translate("&d登峰造极! &7你获得了 &b举世瞩目的宝石&7!"))
+            } else player.sendMessage(CC.translate("&d登峰造极! &7宝石奖励计入训练积累。"))
         }
 
         if (event.from < 200 && event.to >= 200) {
-            player.maxHealth = player.maxHealth - 4
+            player.maxHealth = (player.maxHealth - 4).coerceAtLeast(1.0)
         }
     }
 
@@ -215,68 +233,44 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
         if (!hasUber(victim)) return
 
         val profile = victim.getPitProfile()
-        if (profile.streakKills >= 400) {
-            if (!cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "uber_completion", 400.0)) {
-                victim.sendMessage(CC.translate("&d登峰造极! &7本次掉落计入训练积累，本次不扣取额外声望。"))
-                return
-            }
+        // Restore the 200-kill penalty even when settlement cannot award an item.
+        if (profile.streakKills >= 200) victim.maxHealth = profile.maxHealth
+        if (profile.streakKills < 400) return
 
-            val refreshedTime = profile.todayCompletedUberLastRefreshed
-            val todayCalendar = Calendar.getInstance()
-            todayCalendar.timeInMillis = System.currentTimeMillis()
+        val today = Calendar.getInstance()
+        val last = Calendar.getInstance().apply { timeInMillis = profile.todayCompletedUberLastRefreshed }
+        if (today.get(Calendar.YEAR) != last.get(Calendar.YEAR) ||
+            today.get(Calendar.DAY_OF_YEAR) != last.get(Calendar.DAY_OF_YEAR)) {
+            profile.todayCompletedUberLastRefreshed = today.timeInMillis
+            profile.todayCompletedUber = 0
+        }
 
-            val lastRefreshedCalendar = Calendar.getInstance()
-            lastRefreshedCalendar.timeInMillis = refreshedTime
+        val completed = profile.todayCompletedUber.coerceAtLeast(0)
+        if (completed >= 4) {
+            victim.sendMessage(CC.translate("&c登峰造极! &c你今日完成次数已达上限!"))
+            return
+        }
+        val cost = completed * 5
+        if (profile.renown < cost) {
+            victim.sendMessage(CC.translate("&c登峰造极! &c声望不足，需要 ${cost} 声望；未消耗今日奖励次数。"))
+            return
+        }
+        // Do not consume accumulated reward credit before checking the daily cap and price.
+        if (!CombatEconomy.claimRecent(profile, "uber_completion", 400.0)) {
+            victim.sendMessage(CC.translate("&d登峰造极! &7本次掉落计入训练积累，不扣声望与今日奖励次数。"))
+            return
+        }
 
-            if (todayCalendar.get(Calendar.YEAR) != lastRefreshedCalendar.get(Calendar.YEAR) ||
-                todayCalendar.get(Calendar.DAY_OF_YEAR) != lastRefreshedCalendar.get(Calendar.DAY_OF_YEAR)) {
-                profile.todayCompletedUberLastRefreshed = System.currentTimeMillis()
-                profile.todayCompletedUber = 0
-            }
+        giveOrDrop(victim, UberDrop().toItemStack())
+        profile.renown -= cost
+        profile.todayCompletedUber = completed + 1
+    }
 
-            profile.todayCompletedUber++
-
-            when(profile.todayCompletedUber) {
-                2 -> {
-                    if (profile.renown < 5) {
-                        victim.sendMessage(CC.translate("&c登峰造极! &c你的声望不足以支付你今日的第二次&d登峰造极&c奖励门槛"))
-                        return
-                    }
-                    profile.renown -= 5
-                }
-                3 -> {
-                    if (profile.renown < 10) {
-                        victim.sendMessage(CC.translate("&c登峰造极! &c你的声望不足以支付你今日的第三次&d登峰造极&c奖励门槛"))
-                        return
-                    }
-                    profile.renown -= 10
-                }
-                4 -> {
-                    if (profile.renown < 15) {
-                        victim.sendMessage(CC.translate("&c登峰造极! &c你的声望不足以支付你今日的第四次&d登峰造极&c奖励门槛"))
-                        return
-                    }
-                    profile.renown -= 15
-                }
-                1 -> {
-
-                }
-                else -> {
-                    victim.sendMessage(CC.translate("&c登峰造极! &c你今日完成次数已达上限!"))
-                    return
-                }
-            }
-
-            val itemStack = UberDrop()
-
-            if (InventoryUtil.isInvFull(victim.inventory)) {
-                victim.sendMessage(CC.translate("&c由于你的背包已满, 物品已&4掉落至地面&c."))
-                victim.world.dropItemNaturally(victim.location, itemStack.toItemStack())
-            } else {
-                victim.inventory.addItem(itemStack.toItemStack())
-            }
-
-            victim.maxHealth = profile.maxHealth
+    private fun giveOrDrop(player: Player, item: ItemStack) {
+        val leftovers = player.inventory.addItem(item)
+        if (leftovers.isNotEmpty()) {
+            leftovers.values.forEach { player.world.dropItemNaturally(player.location, it) }
+            player.sendMessage(CC.translate("&c背包空间不足，奖励已掉落在脚下。"))
         }
     }
 
@@ -288,27 +282,13 @@ class UberStreak : AbstractPerk(), Listener, MegaStreak {
     fun onPotionAdd(event: PotionAddEvent) {
         val player = event.player
 
-        if (player !is Player) return
         if (!hasUber(player)) return
         val profile = player.getPitProfile()
         if (profile.streakKills < 300) return
 
         val effect = event.effect
-        val ambient = effect.isAmbient
-
-        if (!ambient) {
-            return
-        }
-
-        event.isCancelled = true
-
-
-        val type = effect.type
-        val duration = effect.duration / 2
-        val amplifier = effect.amplifier
-
-
-        player.addPotionEffect(PotionEffect(type, duration, amplifier, false))
+        event.effect = PotionEffect(effect.type, (effect.duration / 2).coerceAtLeast(1),
+            effect.amplifier, effect.isAmbient, effect.hasParticles())
     }
 
 

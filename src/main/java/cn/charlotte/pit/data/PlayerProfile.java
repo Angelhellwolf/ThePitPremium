@@ -243,6 +243,16 @@ public class PlayerProfile {
 
     public KingsQuestsData kingsQuestsData = new KingsQuestsData();
 
+    private long cherryLuckExpiresAt;
+
+    public long getCherryLuckExpiresAt() {
+        return cherryLuckExpiresAt;
+    }
+
+    public void setCherryLuckExpiresAt(long cherryLuckExpiresAt) {
+        this.cherryLuckExpiresAt = Math.max(0L, cherryLuckExpiresAt);
+    }
+
     public PlayerProfile(UUID uuid, String playerName) {
         //调用默认构造函数，初始化赋值
         this();
@@ -756,17 +766,13 @@ public class PlayerProfile {
     }
 
     public String getFormattedLevelTag() {
-        if (nicked) {
-            return LevelUtil.getLevelTag(this.nickPrestige, this.nickLevel);
-        }
-        return LevelUtil.getLevelTag(this.getPrestige(), this.getLevel());
+        return LevelUtil.getLevelTag(cn.charlotte.pit.util.PublicProfileDisplay.prestige(this),
+                cn.charlotte.pit.util.PublicProfileDisplay.level(this));
     }
 
     public String getFormattedLevelTagWithRoman() {
-        if (nicked) {
-            return LevelUtil.getLevelTagWithRoman(this.nickPrestige, this.nickLevel);
-        }
-        return LevelUtil.getLevelTagWithRoman(this.getPrestige(), this.getLevel());
+        return LevelUtil.getLevelTagWithRoman(cn.charlotte.pit.util.PublicProfileDisplay.prestige(this),
+                cn.charlotte.pit.util.PublicProfileDisplay.level(this));
     }
 
     public void addLiteStreakKill(double value) {

@@ -7,6 +7,7 @@ import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerDamaged;
 import cn.charlotte.pit.util.chat.RomanUtil;
 import cn.charlotte.pit.util.cooldown.Cooldown;
+import cn.charlotte.pit.util.combat.CombatPotions;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -62,8 +63,7 @@ public class FightOrDieEnchant extends AbstractEnchantment implements IPlayerDam
         cooldown.putIfAbsent(myself.getUniqueId(), new Cooldown(0));
         if (myself.getHealth() <= 6 && cooldown.get(myself.getUniqueId()).hasExpired()) {
             cooldown.put(myself.getUniqueId(), getCooldown());
-            myself.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-            myself.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 3, enchantLevel - 1), true);
+            CombatPotions.refresh(myself, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 3, enchantLevel - 1));
         }
     }
 

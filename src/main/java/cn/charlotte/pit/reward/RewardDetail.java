@@ -3,7 +3,8 @@ package cn.charlotte.pit.reward;
 /** Origin is retained across delayed, stored and mailed rewards. */
 public enum RewardDetail {
     KILL(RewardSource.KILL), ASSIST(RewardSource.ASSIST),
-    ENCHANT(RewardSource.ENCHANT), PERK(RewardSource.PERK), STREAK(RewardSource.STREAK),
+    ENCHANT(RewardSource.ENCHANT), PERK(RewardSource.PERK),
+    SELF_CONFIDENCE(RewardSource.PERK, false), STREAK(RewardSource.STREAK),
     OVERDRIVE(RewardSource.STREAK_PAYOUT, false), MOON(RewardSource.STREAK_PAYOUT, false),
     DICE(RewardSource.STREAK_PAYOUT), STREAK_DERIVED(RewardSource.STREAK_PAYOUT), NANO(RewardSource.STREAK_PAYOUT),
     DAY_QUEST(RewardSource.QUEST), NIGHT_QUEST(RewardSource.QUEST),

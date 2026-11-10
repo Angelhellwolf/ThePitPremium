@@ -7,8 +7,13 @@ public final class TrainingBudget {
     private TrainingBudget() { }
 
     public static double consume(EconomyData data, double units, long now) {
+        return allocate(data, units, now).rewardUnits;
+    }
+
+    /** Consume shared quotas once, retaining private currency separately from drop/contribution rules. */
+    public static Allocation allocate(EconomyData data, double units, long now) {
         units = RewardMath.positive(units);
-        if (units == 0) return 0;
+        if (units == 0) return new Allocation(0, 0);
         if (data.trainingUpdatedAt == 0) data.trainingUpdatedAt = now;
         double elapsed = Math.max(0, Math.min(180000, now - data.trainingUpdatedAt)) / 60000.0;
         data.trainingFull = Math.min(EconomyV2.fullCapacity, Math.max(0, data.trainingFull) + elapsed * EconomyV2.fullRate);
@@ -19,7 +24,18 @@ public final class TrainingBudget {
         data.trainingFull -= full;
         double buffered = Math.min(data.trainingBuffer, units - full);
         data.trainingBuffer -= buffered;
-        return full + buffered * EconomyV2.bufferMultiplier + (units - full - buffered) * EconomyV2.overflowMultiplier;
+        return new Allocation(
+                full + buffered * EconomyV2.bufferMultiplier + (units - full - buffered) * EconomyV2.overflowMultiplier,
+                full + (units - full) * EconomyV2.privateReducedMultiplier);
+    }
+
+    public static final class Allocation {
+        public final double rewardUnits;
+        public final double privateCurrencyUnits;
+        private Allocation(double rewardUnits, double privateCurrencyUnits) {
+            this.rewardUnits = rewardUnits;
+            this.privateCurrencyUnits = privateCurrencyUnits;
+        }
     }
 
     public static double normalized(double health, double damage, int armorPoints) {

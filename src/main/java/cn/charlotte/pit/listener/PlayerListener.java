@@ -381,8 +381,8 @@ public class PlayerListener implements Listener {
                 goldenAppleCooldown.put(player.getUniqueId(), System.currentTimeMillis());
                 PlayerUtil.takeOneItemInHand(player);
                 PlayerUtil.heal(player, 8);
-                player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-                player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 60, 1), true);
+                cn.charlotte.pit.util.combat.CombatPotions.refresh(player,
+                        new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 60, 1));
                 (((CraftPlayer) player).getHandle()).setAbsorptionHearts(Math.max(((CraftPlayer) player).getHandle().getAbsorptionHearts(), 6.0F));
             }
         } else if (item.getType() == Material.MONSTER_EGG) {
@@ -511,8 +511,8 @@ public class PlayerListener implements Listener {
             player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 10 * 20, 2), true);
             player.removePotionEffect(PotionEffectType.SPEED);
             player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 24 * 20, 0), true);
-            player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 4 * 20, 1), true);
+            cn.charlotte.pit.util.combat.CombatPotions.refresh(player,
+                    new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 4 * 20, 1));
             if (!cn.charlotte.pit.reward.BotRewards.isTrainingItem(event.getItem())) RewardService.grant(profile, RewardSource.PERK, 0, 27);
 
             event.setCancelled(true);

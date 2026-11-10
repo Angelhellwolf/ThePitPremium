@@ -14,10 +14,8 @@ public final class GameplayRuntimeCheck {
     public static List<String> report(ThePit plugin) {
         List<String> errors = new ArrayList<>();
         Set<String> ids = new HashSet<>();
-        int js = 0;
         for (AbstractEnchantment enchant : plugin.getEnchantmentFactor().getEnchantments()) {
             if (!ids.add(enchant.getNbtName())) errors.add("duplicate enchant " + enchant.getNbtName());
-            if (enchant.getClass().getSimpleName().equals("JSEnchantment")) js++;
             for (int level = 1; level <= enchant.getMaxEnchantLevel(); level++) {
                 try {
                     String lore = enchant.getEconomyLore(level);
@@ -39,7 +37,7 @@ public final class GameplayRuntimeCheck {
 
         List<String> result = new ArrayList<>();
         result.add("GAMEPLAY_CHECK version=consistency-20260908 status=" + (errors.isEmpty() ? "PASS" : "FAIL")
-                + " enchants=" + plugin.getEnchantmentFactor().getEnchantments().size() + " js=" + js
+                + " enchants=" + plugin.getEnchantmentFactor().getEnchantments().size()
                 + " perks=" + plugin.getPerkFactory().getPerks().size()
                 + " quests=" + plugin.getQuestFactory().getQuests().size()
                 + " medals=" + plugin.getMedalFactory().getMedals().size()

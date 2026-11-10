@@ -6,7 +6,7 @@ import org.bukkit.potion.PotionEffect;
 
 public class PotionAddEvent extends PitEvent implements Cancellable {
     private final Player player;
-    private final PotionEffect effect;
+    private PotionEffect effect;
     private boolean cancel;
 
     public PotionAddEvent(Player player, PotionEffect effect) {
@@ -30,5 +30,9 @@ public class PotionAddEvent extends PitEvent implements Cancellable {
 
     public PotionEffect getEffect() {
         return effect;
+    }
+
+    public void setEffect(PotionEffect effect) {
+        this.effect = java.util.Objects.requireNonNull(effect, "effect");
     }
 }

@@ -59,7 +59,7 @@ public class HeartripperEnchant extends AbstractEnchantment implements org.bukki
         Player myself = event.getKiller();
         if (myself == null || event.getLostLives() <= 0 || myself.getUniqueId().equals(event.getVictim().getUniqueId())) return;
         cn.charlotte.pit.data.PlayerProfile victim = cn.charlotte.pit.data.PlayerProfile.getPlayerProfileByUuid(event.getVictim().getUniqueId());
-        if (!victim.isLoaded() || victim.isBot() || !isEffectActive(myself, event.getVictim())) return;
+        if (!victim.isLoaded() || !isEffectActive(myself, event.getVictim())) return;
         ItemStack leggings = myself.getInventory().getLeggings();
         if (getItemEnchantLevel(leggings) <= 0) return;
         IMythicItem own = MythicUtil.getMythicItem(leggings);
@@ -67,6 +67,7 @@ public class HeartripperEnchant extends AbstractEnchantment implements org.bukki
         int current = (int) Math.min(Integer.MAX_VALUE, (long) own.getHeartripperShards() + event.getLostLives());
         int created = 0;
         while (current >= 27 && own.getLive() >= 2) {
+            if (!cn.charlotte.pit.reward.RareSupply.guaranteed(cn.charlotte.pit.reward.RareSupplyLedger.Pool.FRESH, myself)) break;
             current -= 27;
             own.setLive(own.getLive() - 2);
             MythicLeggingsItem fresh = new MythicLeggingsItem();

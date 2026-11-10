@@ -50,13 +50,14 @@ public final class SupporterRuntimeCheck {
                     }
                 }
                 if (materials.size() != 7) throw new IllegalStateException("Missing sponsor menu entries");
-                double expected = tier == SupporterTier.SACRED ? 0.0125 : tier == SupporterTier.MYTHIC ? 0.0075 : 0.006;
-                if (Math.abs(NewConfiguration.INSTANCE.getMythicDropChance(player) - expected) > 0.00000001
-                        || Math.abs(NewConfiguration.INSTANCE.getChance(player, MythicColor.ORANGE) - expected) > 0.00000001) {
+                double expectedDrop = NewConfiguration.INSTANCE.getSupporterDropChance(tier);
+                double expectedRare = NewConfiguration.INSTANCE.getSupporterRareChance(tier);
+                if (Math.abs(NewConfiguration.INSTANCE.getMythicDropChance(player) - expectedDrop) > 0.00000001
+                        || Math.abs(NewConfiguration.INSTANCE.getChance(player, MythicColor.ORANGE) - expectedRare) > 0.00000001) {
                     throw new IllegalStateException("Unexpected live probability for " + tier);
                 }
                 results.add("SUPPORTER_SMOKE " + tier.name() + " menuEntries=" + materials.size()
-                        + " drop=" + expected + " rare=" + expected + " PASS");
+                        + " drop=" + expectedDrop + " rare=" + expectedRare + " PASS");
             } finally {
                 PlayerProfile.getCacheProfile().remove(id, profile);
             }

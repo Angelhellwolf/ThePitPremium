@@ -147,6 +147,7 @@ public abstract class AbstractEnchantment {
     public boolean isEffectActive(Player holder, Player opponent) {
         if (PlayerUtil.isVenom(holder) || PlayerUtil.isSinkingMoonlight(holder)
                 || opponent != null && PlayerUtil.isVenom(opponent)) return false;
+        if (!cn.charlotte.pit.util.BotEnchantPolicy.effectAllowed(holder, opponent)) return false;
         if (getRarity() == EnchantmentRarity.DARK_NORMAL || getRarity() == EnchantmentRarity.DARK_RARE) return true;
         return !(opponent == null ? PlayerUtil.shouldIgnoreEnchant(holder) : PlayerUtil.shouldIgnoreEnchant(holder, opponent));
     }

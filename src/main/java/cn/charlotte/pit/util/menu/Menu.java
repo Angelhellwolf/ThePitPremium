@@ -31,7 +31,7 @@ public abstract class Menu {
             return new ItemStack(Material.AIR);
         }
 
-        return item;
+        return MenuStyle.item(item, button);
     }
 
     public void openMenu(final Player player) {
@@ -50,7 +50,7 @@ public abstract class Menu {
             Inventory inventory = null;
             int size = this.getSize() == -1 ? this.size(this.buttons) : this.getSize();
             boolean update = false;
-            String title = CC.translate(this.getTitle(player));
+            String title = MenuStyle.title(CC.translate(this.getTitle(player)));
 
             if (title.length() > 32) {
                 title = title.substring(0, 32);
@@ -123,7 +123,7 @@ public abstract class Menu {
 
             Map<Integer, Button> updatedButtons = new HashMap<>(this.getButtons(player));
             int size = this.getSize() == -1 ? this.size(updatedButtons) : this.getSize();
-            String title = CC.translate(this.getTitle(player));
+            String title = MenuStyle.title(CC.translate(this.getTitle(player)));
             if (title.length() > 32) {
                 title = title.substring(0, 32);
             }

@@ -60,7 +60,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility()) {
-                    return profile.getInventory().getHelmet() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getHelmet();
+                    return profile.getInventory().getHelmet() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getHelmet());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -74,7 +74,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                    return profile.getInventory().getChestPiece() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getChestPiece();
+                    return profile.getInventory().getChestPiece() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getChestPiece());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -88,7 +88,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                    return profile.getInventory().getLeggings() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getLeggings();
+                    return profile.getInventory().getLeggings() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getLeggings());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -102,7 +102,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                    return profile.getInventory().getBoots() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getBoots();
+                    return profile.getInventory().getBoots() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getBoots());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -120,7 +120,7 @@ public class StatusViewerMenu extends Menu {
                 @Override
                 public ItemStack getButtonItem(Player player) {
                     if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                        return inventory.getContents()[finalI] == null ? new ItemBuilder(Material.AIR).build() : inventory.getContents()[finalI];
+                        return inventory.getContents()[finalI] == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, inventory.getContents()[finalI]);
                     }
                     return new ItemBuilder(Material.AIR).build();
                 }

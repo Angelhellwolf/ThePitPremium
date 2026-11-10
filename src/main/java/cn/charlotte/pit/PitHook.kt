@@ -9,16 +9,19 @@ import cn.charlotte.pit.command.SupporterCommand
 import cn.charlotte.pit.config.NewConfiguration
 import cn.charlotte.pit.data.CDKData
 import cn.charlotte.pit.enchantment.AbstractEnchantment
+import cn.charlotte.pit.enchantment.type.HsrEnchantments
 import cn.charlotte.pit.enchantment.type.aqua.ClubRodEnchant
 import cn.charlotte.pit.enchantment.type.aqua.GrandmasterEnchant
 import cn.charlotte.pit.enchantment.type.aqua.HeadOnBlow
 import cn.charlotte.pit.enchantment.type.aqua.LuckOfPondEnchant
+import cn.charlotte.pit.enchantment.type.aqua.PortablePondEnchant
 import cn.charlotte.pit.enchantment.type.aqua.RogueEnchant
 import cn.charlotte.pit.enchantment.type.aqua.StereoEnchant
 import cn.charlotte.pit.enchantment.type.aqua.ToughCrewEnchant
 import cn.charlotte.pit.enchantment.type.aqua.TrophyEnchant
 import cn.charlotte.pit.enchantment.type.aqua.UniteEnchant
 import cn.charlotte.pit.enchantment.type.dark_normal.*
+import cn.charlotte.pit.enchantment.type.dark_rare.CatastrophicEnchant
 import cn.charlotte.pit.enchantment.type.dark_rare.ComboDazzlingGoldEnchant
 import cn.charlotte.pit.enchantment.type.dark_rare.ComboUnpredictablyEnchant
 import cn.charlotte.pit.enchantment.type.dark_rare.ComboVenomEnchant
@@ -44,7 +47,6 @@ import cn.charlotte.pit.impl.PlayerPointsAPIImpl
 import cn.charlotte.pit.impl.RemiaftValuePointsAPIImpl
 import cn.charlotte.pit.item.AbstractPitItem
 import cn.charlotte.pit.item.type.*
-import cn.charlotte.pit.js.JSHandler
 import cn.charlotte.pit.listener.*
 import cn.charlotte.pit.map.kingsquests.KingsQuests
 import cn.charlotte.pit.menu.shop.button.type.BowBundleShopButton
@@ -166,7 +168,6 @@ object PitHook {
             }
         }
         SupporterService.start(ThePit.getInstance())
-        JSHandler.load()
     }
 
     private fun loadCommands() {
@@ -242,9 +243,8 @@ object PitHook {
         }
     }
 
-    private fun loadEnchants() {
-        val enchantmentFactor = ThePit.getInstance().enchantmentFactor
-        val classes = mutableListOf(
+    @JvmStatic
+    fun builtInEnchantments(): List<Class<out AbstractEnchantment>> = listOf(
             JudgmentShot::class.java,
             LastStandEnchant::class.java,
             BreakTheMirror::class.java,
@@ -256,10 +256,32 @@ object PitHook {
             SoulEarterEnchant::class.java,
             PhantomShieldEnchant::class.java,
             KingKillersEnchant::class.java,
+            HsrEnchantments.AbundanceRegenEnchant::class.java,
+            HsrEnchantments.AbundanceSalvageEnchant::class.java,
+            HsrEnchantments.AimingProtocolEnchant::class.java,
+            HsrEnchantments.DestructionResonanceEnchant::class.java,
+            HsrEnchantments.DestructionRiposteEnchant::class.java,
+            HsrEnchantments.EruditionSpreadEnchant::class.java,
+            HsrEnchantments.EruditionStanceEnchant::class.java,
+            HsrEnchantments.FollowupArrowEnchant::class.java,
+            HsrEnchantments.HarmonyRepriseEnchant::class.java,
+            HsrEnchantments.HarmonyTrackEnchant::class.java,
+            HsrEnchantments.HuntAfterimageEnchant::class.java,
+            HsrEnchantments.HuntChainEnchant::class.java,
+            HsrEnchantments.MultimillionaireEnchant::class.java,
+            HsrEnchantments.NihilityLagEnchant::class.java,
+            HsrEnchantments.PreservationCounterEnchant::class.java,
+            HsrEnchantments.QuantumEntangleEnchant::class.java,
+            HsrEnchantments.RiftExecutionEnchant::class.java,
+            HsrEnchantments.ShieldPulseEnchant::class.java,
+            HsrEnchantments.StarrailSniperEnchant::class.java,
+            HsrEnchantments.StellarBrandEnchant::class.java,
+            HsrEnchantments.ToughnessSlashEnchant::class.java,
             //end
             ClubRodEnchant::class.java,
             GrandmasterEnchant::class.java,
             LuckOfPondEnchant::class.java,
+            PortablePondEnchant::class.java,
             RogueEnchant::class.java,
             Regularity::class.java,
             ThinkOfThePeopleEnchant::class.java,
@@ -273,6 +295,7 @@ object PitHook {
             SanguisugeEnchant::class.java,
             SomberEnchant::class.java,
             SpiteEnchant::class.java,
+            CatastrophicEnchant::class.java,
             ComboVenomEnchant::class.java,
             GoldenHandcuffsEnchant::class.java,
             EvilWithinEnchant::class.java,
@@ -370,6 +393,7 @@ object PitHook {
             ArchangelEnchant::class.java,
             AssassinEnchant::class.java,
             BillionaireEnchant::class.java,
+            ComboPowerfulEnchant::class.java,
             ComboStrikeEnchant::class.java,
             ComboStunEnchant::class.java,
             DivineMiracleEnchant::class.java,
@@ -390,6 +414,7 @@ object PitHook {
             SolitudeEnchant::class.java,
             SpeedyHitEnchant::class.java,
             ThePunchEnchant::class.java,
+            Unrestrained::class.java,
             VolleyEnchant::class.java,
             AegisEnchant::class.java,
             SoulRipperEnchant::class.java,
@@ -454,6 +479,9 @@ object PitHook {
             TrashPandaEnchant::class.java
         )
 
+    private fun loadEnchants() {
+        val enchantmentFactor = ThePit.getInstance().enchantmentFactor
+        val classes = builtInEnchantments().toMutableList()
 
         fun addEnchantments() {
             val enchantmentClasses: List<Class<*>> = EnchantedConstructor.getEnchantments()
@@ -676,7 +704,8 @@ object PitHook {
                 ShopNPC::class.java,
                 StatusNPC::class.java,
                 LeaderNPC::class.java,
-                BakeMasterNpc::class.java
+                BakeMasterNpc::class.java,
+                KingNpc::class.java
             )
         )
     }

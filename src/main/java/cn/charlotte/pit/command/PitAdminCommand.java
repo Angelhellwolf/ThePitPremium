@@ -13,7 +13,6 @@ import cn.charlotte.pit.data.sub.EnchantmentRecord;
 import cn.charlotte.pit.events.EventsHandler;
 import cn.charlotte.pit.events.impl.AuctionEvent;
 import cn.charlotte.pit.item.IMythicItem;
-import cn.charlotte.pit.js.JSHandler;
 import cn.charlotte.pit.medal.impl.challenge.hidden.KaboomMedal;
 import cn.charlotte.pit.menu.cdk.generate.CDKMenu;
 import cn.charlotte.pit.menu.cdk.view.CDKViewMenu;
@@ -877,10 +876,18 @@ public class PitAdminCommand {
         sender.sendMessage("ok");
     }
 
+    @Command(names = {"pitadmin king", "pitadmin kingNpc"}, permissionNode = "pit.admin")
+    public void setKingLocation(Player player) {
+        PitConfig config = ThePit.getInstance().getPitConfig();
+        config.setKingNpcLocation(player.getLocation().clone());
+        config.save();
+        ThePit.getInstance().getNpcFactory().spawnOrMove(new cn.charlotte.pit.npc.type.KingNpc());
+        player.sendMessage(CC.translate("&a国王 NPC 已在当前位置生成或移动！"));
+    }
+
     @Command(
             names = "pitadmin bakeMaster",
-            permissionNode = "pit.admin",
-            async = true
+            permissionNode = "pit.admin"
     )
     public void setBakeMasterLocation(Player player) {
         ThePit.getInstance()
@@ -889,6 +896,7 @@ public class PitAdminCommand {
         ThePit.getInstance()
                 .getPitConfig()
                 .save();
+        ThePit.getInstance().getNpcFactory().spawnOrMove(new cn.charlotte.pit.npc.type.BakeMasterNpc());
         player.sendMessage(CC.translate("&a烘焙大师NPC位置已设置!"));
     }
 
@@ -1828,9 +1836,6 @@ public class PitAdminCommand {
         NewConfiguration.INSTANCE.loadFile();
         NewConfiguration.INSTANCE.load();
         sender.sendMessage(CC.translate("&7 重载完成!"));
-        sender.sendMessage(CC.translate("&c 重载JS附魔..."));
-        JSHandler.INSTANCE.load();
-        sender.sendMessage(CC.translate("&a JS附魔加载完成"));
     }
 
     @Command(

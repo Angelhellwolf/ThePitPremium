@@ -10,6 +10,7 @@ import cn.charlotte.pit.item.type.ArmageddonBoots;
 import cn.charlotte.pit.item.type.GoldenHelmet;
 import cn.charlotte.pit.item.type.LuckyChestplate;
 import cn.charlotte.pit.item.type.mythic.MythicBowItem;
+import cn.charlotte.pit.item.type.mythic.MagicFishingRod;
 import cn.charlotte.pit.item.type.mythic.MythicLeggingsItem;
 import cn.charlotte.pit.item.type.mythic.MythicSwordItem;
 import cn.charlotte.pit.util.item.ItemUtil;
@@ -134,6 +135,8 @@ public class Utils {
             mythicItem = new MythicBowItem();
         } else if ("mythic_leggings".equals(internalName)) {
             mythicItem = new MythicLeggingsItem();
+        } else if ("magic_fishing_rod".equals(internalName)) {
+            mythicItem = new MagicFishingRod();
         } else if ("angel_chestplate".equals(internalName)) {
             mythicItem = new AngelChestplate();
         } else if ("armageddon_boots".equals(internalName)) {

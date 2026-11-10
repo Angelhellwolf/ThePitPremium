@@ -137,6 +137,14 @@ public class BowComboEnchant extends AbstractEnchantment implements IPlayerShoot
         if (event.getDamager() instanceof Projectile && ((Projectile) event.getDamager()).getShooter() instanceof Player) {
             if (event.getDamager().hasMetadata(UUID_META)) {
                 Player player = (Player) ((Projectile) event.getDamager()).getShooter();
+                if (event.getEntity() instanceof Player) {
+                    Player target = (Player) event.getEntity();
+                    boolean allowed = event.getDamager().hasMetadata("pit_volley_extra")
+                            ? cn.charlotte.pit.util.BotEnchantPolicy.projectileEffectAllowed(
+                            (Projectile) event.getDamager(), player, target)
+                            : cn.charlotte.pit.util.BotEnchantPolicy.effectAllowed(player, target);
+                    if (!allowed) return;
+                }
                 combo.put(player.getUniqueId(), combo.getOrDefault(player.getUniqueId(), 0) + 1);
                 event.getDamager().setMetadata(HIT_META, new FixedMetadataValue(ThePit.getInstance(), true));
             }

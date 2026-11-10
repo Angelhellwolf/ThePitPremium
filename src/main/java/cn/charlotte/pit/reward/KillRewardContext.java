@@ -4,6 +4,7 @@ import java.util.UUID;
 
 /** Carries a kill's reduction to immediate extra coin/XP grants, never to unrelated players. */
 public final class KillRewardContext implements AutoCloseable {
+    private static final double BOT_EFFECT_MULTIPLIER = BotRewards.BOT_ENCHANT_MULTIPLIER;
     private static final ThreadLocal<KillRewardContext> CURRENT = new ThreadLocal<>();
     private final KillRewardContext previous;
     private final UUID recipient;
@@ -29,6 +30,8 @@ public final class KillRewardContext implements AutoCloseable {
 
     public static double candidateBonus(UUID recipient, RewardSource source) {
         KillRewardContext c = CURRENT.get();
+        if (c != null && c.recipient.equals(recipient) && c.bot && isEffectSource(source))
+            return BOT_EFFECT_MULTIPLIER;
         if (c != null && c.recipient.equals(recipient) && !c.v2Extras
                 && (source == RewardSource.PERK || source == RewardSource.ENCHANT || source == RewardSource.STREAK || source == RewardSource.LOOT)) return 0;
         return bonusMultiplier(recipient, source);
@@ -114,12 +117,18 @@ public final class KillRewardContext implements AutoCloseable {
     public static double bonusMultiplier(UUID recipient, RewardSource source) {
         KillRewardContext context = CURRENT.get();
         if (context == null || !context.recipient.equals(recipient)) return 1;
+        if (context.bot && isEffectSource(source)) return BOT_EFFECT_MULTIPLIER;
         if (EconomyV2.active() && !context.v2Extras && (source == RewardSource.PERK || source == RewardSource.ENCHANT
                 || source == RewardSource.STREAK || source == RewardSource.LOOT)) return 0;
         // KILL/ASSIST already include this policy in the aggregate receipt.
         // Mail, stored payouts, contracts, and unrelated event rewards keep their own provenance.
         return source == RewardSource.PERK || source == RewardSource.ENCHANT
                 || source == RewardSource.STREAK || source == RewardSource.LOOT ? context.multiplier : 1;
+    }
+
+    private static boolean isEffectSource(RewardSource source) {
+        return source == RewardSource.PERK || source == RewardSource.ENCHANT
+                || source == RewardSource.STREAK || source == RewardSource.LOOT;
     }
 
     @Override

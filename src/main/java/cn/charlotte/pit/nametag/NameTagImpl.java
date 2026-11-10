@@ -79,8 +79,8 @@ public class NameTagImpl implements NametagAdapter {
 
         String activeEpicEventName = ThePit.getInstance().getEventFactory().getActiveEpicEventName();
         profiles.sort((profile1, profile2) -> {
-            int priority1 = profile1.isNicked() ? profile1.getNickPrestige() + 1000 * profile1.getNickLevel() : profile1.getPrestige() + 1000 * profile1.getLevel();
-            int priority2 = profile2.isNicked() ? profile2.getNickPrestige() + 1000 * profile2.getNickLevel() : profile2.getPrestige() + 1000 * profile2.getLevel();
+            int priority1 = cn.charlotte.pit.util.PublicProfileDisplay.prestige(profile1) + 1000 * cn.charlotte.pit.util.PublicProfileDisplay.level(profile1);
+            int priority2 = cn.charlotte.pit.util.PublicProfileDisplay.prestige(profile2) + 1000 * cn.charlotte.pit.util.PublicProfileDisplay.level(profile2);
 
             if ("red_vs_blue".equals(activeEpicEventName)) {
                 RedVSBlueEvent activeEpicEvent = (RedVSBlueEvent) ThePit.getInstance().getEventFactory().getActiveEpicEvent();

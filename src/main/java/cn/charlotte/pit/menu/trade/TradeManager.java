@@ -118,6 +118,7 @@ public class TradeManager {
         for (ItemStack item : bItems) {
             playerA.getInventory().addItem(item);
         }
+        cn.charlotte.pit.reward.RareSupply.tradeCompleted(this);
         PlayerProfile profileA = PlayerProfile.getPlayerProfileByUuid(playerA.getUniqueId());
         cn.charlotte.pit.reward.CoinLedger.set(profileA, profileA.getCoins() + bCoins, cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "trade_complete");
 

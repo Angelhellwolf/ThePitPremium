@@ -7,6 +7,7 @@ public final class ProgressionV2 {
     private static final int[] WEIGHTS = {1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 20, 24};
     private static final double LATE_FIRST_HOURS = 28;
     private static final double LATE_HOUR_STEP = lateStep();
+    private static final double[][] LEVEL_THRESHOLDS = buildLevelThresholds();
 
     private ProgressionV2() { }
 
@@ -30,15 +31,37 @@ public final class ProgressionV2 {
 
     /** Integer cumulative thresholds keep every round's exact total, without rounding drift. */
     public static double experienceAtLevel(int prestige, int level) {
-        int end = Math.max(0, Math.min(120, level));
-        int weight = 0;
-        for (int i = 0; i < end; i++) weight += WEIGHTS[i / 10];
-        return Math.floor(totalExperience(prestige) * weight / 1200.0);
+        return LEVEL_THRESHOLDS[Math.max(0, Math.min(MAX_PRESTIGE, prestige))][Math.max(0, Math.min(120, level))];
     }
 
     public static double experienceForLevel(int prestige, int level) {
         int current = Math.max(0, Math.min(119, level));
         return experienceAtLevel(prestige, current + 1) - experienceAtLevel(prestige, current);
+    }
+
+    /** Same integer thresholds as the original subtractive lookup, in at most seven comparisons. */
+    public static int levelByExperience(int prestige, double experience) {
+        if (!(experience >= 0)) return 0; // Preserve negative/NaN handling.
+        double[] thresholds = LEVEL_THRESHOLDS[Math.max(0, Math.min(MAX_PRESTIGE, prestige))];
+        int low = 0, high = 120;
+        while (low < high) {
+            int middle = (low + high + 1) >>> 1;
+            if (experience >= thresholds[middle]) low = middle;
+            else high = middle - 1;
+        }
+        return low;
+    }
+
+    private static double[][] buildLevelThresholds() {
+        double[][] thresholds = new double[MAX_PRESTIGE + 1][121];
+        for (int prestige = 0; prestige <= MAX_PRESTIGE; prestige++) {
+            int weight = 0;
+            for (int level = 1; level <= 120; level++) {
+                weight += WEIGHTS[(level - 1) / 10];
+                thresholds[prestige][level] = Math.floor(totalExperience(prestige) * weight / 1200.0);
+            }
+        }
+        return thresholds;
     }
 
     public static double referenceGoldPerHour(int prestige) {

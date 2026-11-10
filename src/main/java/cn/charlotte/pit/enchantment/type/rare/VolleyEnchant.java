@@ -125,6 +125,7 @@ public class VolleyEnchant extends AbstractEnchantment implements Listener {
                     extraArrow.setCritical(source instanceof Arrow && ((Arrow) source).isCritical());
                     extraArrow.setBounce(false);
                     extraArrow.setFireTicks(source.getFireTicks());
+                    extraArrow.setMetadata("pit_volley_extra", new org.bukkit.metadata.FixedMetadataValue(ThePit.getInstance(), true));
                     if (enchantMeta != null && !enchantMeta.isEmpty()) {
                         extraArrow.setMetadata("enchant", enchantMeta.get(0));
                     }

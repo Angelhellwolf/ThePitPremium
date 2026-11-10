@@ -165,7 +165,8 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
             } else if ((dice == 13 || dice == 66) && cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "rng_vile", 25)) {
                 myself.getInventory().addItem(ChunkOfVileItem.toItemStack());
                 myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &51 暗聚块 &7."));
-            } else if ((dice == 77 || dice == 88) && cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "rng_mythic", 25)) {
+            } else if ((dice == 77 || dice == 88) && cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "rng_mythic", 25)
+                    && cn.charlotte.pit.reward.RareSupply.guaranteed(cn.charlotte.pit.reward.RareSupplyLedger.Pool.FRESH, myself)) {
                 myself.getInventory().addItem((ItemStack) RandomUtil.helpMeToChooseOne(
                         new MythicSwordItem().toItemStack(),
                         new MythicBowItem().toItemStack(),

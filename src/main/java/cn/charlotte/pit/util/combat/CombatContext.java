@@ -8,9 +8,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 /** The current hit is visible to effects before the accepted-hit statistics are committed. */
 public final class CombatContext implements AutoCloseable {
@@ -23,6 +26,7 @@ public final class CombatContext implements AutoCloseable {
     private double armorRetention = 1;
     private List<Runnable> acceptedEffects;
     private List<Finisher> finishers;
+    private Map<String, Boolean> botEnchantDecisions;
 
     private CombatContext(EntityDamageByEntityEvent event) {
         this.previous = CURRENT.get();
@@ -37,6 +41,28 @@ public final class CombatContext implements AutoCloseable {
     public static Entity currentSource() {
         CombatContext context = CURRENT.get();
         return context == null ? null : context.event.getDamager();
+    }
+
+    public static CombatContext current() { return CURRENT.get(); }
+
+    public boolean botEnchantAllowed(UUID holder, UUID target) {
+        if (botEnchantDecisions == null) botEnchantDecisions = new HashMap<>();
+        String key = holder + ":" + target;
+        Boolean decision = botEnchantDecisions.get(key);
+        if (decision != null) return decision;
+        decision = cn.charlotte.pit.util.BotEnchantPolicy.isSeventySeven(
+                org.bukkit.Bukkit.getPlayer(holder))
+                && ThreadLocalRandom.current().nextDouble() < 0.60;
+        botEnchantDecisions.put(key, decision);
+        return decision;
+    }
+
+    public static boolean targetIsBot() {
+        CombatContext context = CURRENT.get();
+        if (context == null || !(context.event.getEntity() instanceof Player)) return false;
+        cn.charlotte.pit.data.PlayerProfile profile = cn.charlotte.pit.data.PlayerProfile
+                .getPlayerProfileByUuid(context.event.getEntity().getUniqueId());
+        return profile != null && profile.isLoaded() && profile.isBot();
     }
 
     public static boolean shotSneaking(Player player) {

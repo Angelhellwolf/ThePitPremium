@@ -201,13 +201,7 @@ public class CombatListener implements Listener {
                     }
                 }
 
-                if (player.getItemInHand() != null && !PlayerUtil.isVenom(player) && !PlayerUtil.isEquippingSomber(player)) {
-                    int enchantLevel = Utils.getEnchantLevel(player.getItemInHand(), "bruiser_enchant");
-                    if (enchantLevel > 0 && player.isBlocking()) {
-                        double reduce = enchantLevel >= 3 ? 4.0 : enchantLevel;
-                        event.setDamage(Math.max(0, event.getDamage() - reduce));
-                    }
-                }
+                cn.charlotte.pit.enchantment.type.normal.BruiserEnchant.reduceDamage(event, player, damager);
 
                 this.handleDamage(event, player, damager, playerProfile, damagerProfile, effectiveDamage(event, player), false);
                 playerProfile.setLastDamageAt(System.currentTimeMillis());
@@ -575,11 +569,13 @@ public class CombatListener implements Listener {
             if (!killerProfile.isLoaded() || !playerProfile.isLoaded()) return;
             EconomyV2.migrate(killerProfile);
             EconomyV2.migrate(playerProfile);
-            if (killerProfile.isBot() && (playerProfile.isBot() || ThePit.getInstance().getPitBotManager() == null
+            if (cn.charlotte.pit.reward.RareSupply.syntheticTarget(killer) && (playerProfile.isBot() || ThePit.getInstance().getPitBotManager() == null
                     || !ThePit.getInstance().getPitBotManager().ownsProfile(killerProfile))) return;
             boolean botTarget = playerProfile.isBot();
-            double botVariableFactor = BotRewards.variableFactor(playerProfile);
-            double botReward = botTarget ? BotRewards.amount(killerProfile.getPrestige(), BotRewards.multiplier(eventBoost)) : 0;
+            boolean normalBotReward = botTarget && BotRewards.usesNormalReward(killerProfile);
+            double botVariableFactor = BotRewards.variableFactor(playerProfile, normalBotReward);
+            double botReward = botTarget ? BotRewards.amount(killerProfile.getPrestige(),
+                    BotRewards.multiplier(eventBoost, normalBotReward)) : 0;
             boolean isNight = isNight();
             boolean playerOperatedTarget = player instanceof Player && !playerProfile.isBot();
             RepeatKillResult repeatKill = playerOperatedTarget
@@ -590,17 +586,36 @@ public class CombatListener implements Listener {
             boolean extraRewards = !economyRunning || CombatEconomy.allowExtras(killerProfile, playerProfile,
                     System.currentTimeMillis(), true);
             boolean trainingTarget = botTarget || economyRunning && !extraRewards;
+            boolean privateTraining = CombatEconomy.isPrivateTraining(playerProfile, player);
+            double trainingBaseMultiplier = BotRewards.trainingBaseMultiplier(killerProfile.getPrestige(),
+                    privateTraining, normalBotReward);
             double rewardUnits = 1;
+            double currencyUnits = 1;
             if (economyRunning) {
-                rewardUnits = trainingTarget ? CombatEconomy.trainingUnits(playerProfile, player)
-                        * (botTarget ? 1 : CombatEconomy.deathMultiplier(playerProfile)) : CombatEconomy.deathMultiplier(playerProfile);
-                if (trainingTarget) rewardUnits = TrainingBudget.consume(CombatEconomy.state(killerProfile), rewardUnits, System.currentTimeMillis());
+                if (normalBotReward) {
+                    // SC_shengcheng's Bots are paid exactly like a human kill: no
+                    // damage share, training bucket, overflow, or random factor.
+                    rewardUnits = 1;
+                    currencyUnits = 1;
+                } else {
+                    rewardUnits = trainingTarget ? CombatEconomy.trainingUnits(playerProfile, player)
+                            * (botTarget ? 1 : CombatEconomy.deathMultiplier(playerProfile)) : CombatEconomy.deathMultiplier(playerProfile);
+                    if (trainingTarget) {
+                        TrainingBudget.Allocation allocation = TrainingBudget.allocate(CombatEconomy.state(killerProfile), rewardUnits, System.currentTimeMillis());
+                        rewardUnits = allocation.rewardUnits;
+                        currencyUnits = privateTraining ? allocation.privateCurrencyUnits : rewardUnits;
+                    } else currencyUnits = rewardUnits;
+                }
             }
             long rewardLife = CombatEconomy.state(killerProfile).lifeSerial;
             // This is a reward policy for low-interaction deaths, not a bot identity.
             boolean inactiveTarget = repeatKill.multiplier < 1;
             double rareDropMultiplier = repeatKill.multiplier;
             if (EconomyV2.active()) rareDropMultiplier = extraRewards || trainingTarget ? rewardUnits : 0;
+            // A real player's inactive alt must not reduce the Mythicism chance.
+            // Its low-interaction coin/XP policy remains independent.
+            boolean inactiveRealPlayer = !botTarget && CombatEconomy.deathMultiplier(playerProfile) < 1;
+            double mythicDropMultiplier = inactiveRealPlayer ? 1 : rareDropMultiplier;
             boolean competitiveKill = playerOperatedTarget && !killerProfile.isBot()
                     && (!EconomyV2.active() || extraRewards)
                     && repeatKill.multiplier >= 1
@@ -666,6 +681,17 @@ public class CombatListener implements Listener {
             totalCoins = coinsAtomic.get();
             totalXp = expAtomic.get();
 
+            double botEffectCoinDelta = 0;
+            double botEffectXpDelta = 0;
+            if (botTarget) {
+                double baseEffect = EconomyV2.active() ? ProgressionV2.base(killerProfile.getPrestige())
+                        : 10.0d + killerProfile.getPrestige() * 0.5;
+                double coinDelta = totalCoins - baseEffect;
+                double xpDelta = totalXp - baseEffect;
+                botEffectCoinDelta = coinDelta >= 0 ? coinDelta * BotRewards.BOT_ENCHANT_MULTIPLIER : coinDelta;
+                botEffectXpDelta = xpDelta >= 0 ? xpDelta * BotRewards.BOT_ENCHANT_MULTIPLIER : xpDelta;
+            }
+
             final KillRecap killRecap = this.initializationKillRecap(playerProfile, killerProfile, killer, totalCoins, totalXp);
 
             //calculation kill reward - start
@@ -705,27 +731,35 @@ public class CombatListener implements Listener {
             totalCoins *= repeatKill.multiplier;
             totalXp *= repeatKill.multiplier;
 
-            if (botTarget) {
-                // Events may observe the kill, but their PvP/global boosters do not multiply training targets.
-                totalCoins = botReward;
-                totalXp = botReward;
-            } else if (isNight) {
+            if (!botTarget && isNight) {
                 totalCoins *= 0.01;
                 totalXp *= 0.01;
             }
             if (EconomyV2.active()) {
                 if (trainingTarget) {
-                    totalCoins = ProgressionV2.base(killerProfile.getPrestige()) * .5 * eventBoost * rewardUnits * botVariableFactor * (!botTarget && isNight ? .01 : 1);
+                    totalCoins = ProgressionV2.base(killerProfile.getPrestige()) * trainingBaseMultiplier * eventBoost * currencyUnits * botVariableFactor * (!botTarget && isNight ? .01 : 1);
                     totalXp = totalCoins;
                 } else if (!extraRewards) {
                     totalCoins = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * repeatKill.multiplier;
                     totalXp = totalCoins;
                 }
             }
+            double botRewardWithEffects = botReward;
+            if (botTarget) {
+                // Economy v2 may replace the legacy Bot base above; retain that human-style base
+                // and add only half of positive enchantment/perk income.
+                double botBaseReward = EconomyV2.active() ? totalCoins : botReward;
+                botRewardWithEffects = RewardMath.positive(botBaseReward + botEffectCoinDelta);
+                double botExperienceReward = RewardMath.positive(botBaseReward + botEffectXpDelta);
+                botRewardWithEffects = Math.max(botRewardWithEffects, botExperienceReward);
+                // Events may observe the kill, but their PvP/global boosters do not multiply training targets.
+                totalCoins = botRewardWithEffects;
+                totalXp = botRewardWithEffects;
+            }
             if (EconomyV2.observing()) {
                 double base = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost;
                 if (trainingTarget) {
-                    double candidate = base * .5 * rewardUnits * botVariableFactor * (!botTarget && isNight ? .01 : 1);
+                    double candidate = base * trainingBaseMultiplier * currencyUnits * botVariableFactor * (!botTarget && isNight ? .01 : 1);
                     KillRewardContext.candidate(candidate, candidate * 4);
                 }
                 else if (!extraRewards) KillRewardContext.candidate(base * rewardUnits, base * 4 * rewardUnits);
@@ -746,14 +780,14 @@ public class CombatListener implements Listener {
             totalCoins = receipt.getCoins();
             totalXp = receipt.getExperience();
             if (EconomyV2.active() && rewardLife == killerProfile.getEconomyData().lifeSerial) {
-                double basePaid = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * rewardUnits
-                        * (trainingTarget ? .5 : ProgressionV2.newcomer(killerProfile.getPrestige())) * botVariableFactor;
+                double basePaid = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * currencyUnits
+                        * (trainingTarget ? trainingBaseMultiplier : ProgressionV2.newcomer(killerProfile.getPrestige())) * botVariableFactor;
                 killerProfile.getEconomyData().lifeBaseCoins += Math.min(basePaid, receipt.getCoins());
                 killerProfile.getEconomyData().lifeBaseExperience += Math.min(basePaid * 4, receipt.getExperience());
             }
             if (EconomyV2.observing() && rewardLife == CombatEconomy.state(killerProfile).lifeSerial) {
-                double basePaid = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * rewardUnits
-                        * (trainingTarget ? .5 : ProgressionV2.newcomer(killerProfile.getPrestige())) * botVariableFactor * (!botTarget && isNight ? .01 : 1);
+                double basePaid = ProgressionV2.base(killerProfile.getPrestige()) * eventBoost * currencyUnits
+                        * (trainingTarget ? trainingBaseMultiplier : ProgressionV2.newcomer(killerProfile.getPrestige())) * botVariableFactor * (!botTarget && isNight ? .01 : 1);
                 CombatEconomy.state(killerProfile).lifeBaseCoins += basePaid;
                 CombatEconomy.state(killerProfile).lifeBaseExperience += basePaid * 4;
             }
@@ -786,10 +820,10 @@ public class CombatListener implements Listener {
 
             if (!isNight && progressionEligible) {
                 //enchant - start
-                this.handleMythicItemDrop(killerProfile, killer, player, rareDropMultiplier);
+                this.handleMythicItemDrop(killerProfile, killer, player, mythicDropMultiplier);
                 //enchant - end
 
-                this.handleCherryDrop(killer, rareDropMultiplier);
+                this.handleCherryDrop(killer, rareDropMultiplier, player);
             }
 
             //refresh killer highest streak kills
@@ -927,11 +961,13 @@ public class CombatListener implements Listener {
 
         boolean noProtect = !itemLiveDropEvent.isCancelled() && RandomUtil.hasSuccessfullyByChance(1 - mythicProtectChance);
         int lostMythicLives = 0;
+        int protectedMythicLives = 0;
         for (int i = 0; i < 36; i++) {
             cn.charlotte.pit.item.MythicLifeLoss.Result result = cn.charlotte.pit.item.MythicLifeLoss.onDeath(
                     player.getInventory().getItem(i), noProtect, itemLiveDropEvent.isCancelled());
             player.getInventory().setItem(i, result.item);
             lostMythicLives += result.lostLives;
+            protectedMythicLives += result.protectedLives;
         }
         ItemStack[] armor = player.getInventory().getArmorContents();
         for (int i = 0; i < armor.length; i++) {
@@ -939,12 +975,14 @@ public class CombatListener implements Listener {
                     armor[i], noProtect, itemLiveDropEvent.isCancelled());
             armor[i] = result.item;
             lostMythicLives += result.lostLives;
+            protectedMythicLives += result.protectedLives;
         }
         player.getInventory().setArmorContents(armor);
         if (lostMythicLives > 0) new PitItemLivesLostEvent(player, finalKiller, lostMythicLives).callEvent();
 
-        if (lostMythicLives == 0) {
-            player.sendMessage(CC.translate("&d&l物品保护! &7由于一个天赋/附魔/物品提供的概率保护,本次死亡没有损失背包内神话物品生命."));
+        if (protectedMythicLives > 0) {
+            player.sendMessage(CC.translate("&d&l物品保护! &7本次死亡有 &d" + protectedMythicLives
+                    + " &7件神话物品受到保护，免于损失生命。"));
         }
         for (ItemStack itemStack : player.getInventory()) {
             if (ItemUtil.isDeathDrop(itemStack)) {
@@ -1131,12 +1169,27 @@ public class CombatListener implements Listener {
                         : KillRewardContext.open(assistPlayer.getUniqueId(), repeatKill.multiplier)) {
 
                 if (playerProfile.isBot()) {
-                    double amount = BotRewards.amount(assistProfile.getPrestige(), BotRewards.multiplier(eventBoost)) * percentage;
+                    boolean normalBotReward = BotRewards.usesNormalReward(assistProfile);
+                    double amount = BotRewards.amount(assistProfile.getPrestige(),
+                            BotRewards.multiplier(eventBoost, normalBotReward)) * percentage;
                     if (EconomyV2.active() || EconomyV2.observing()) {
-                        double units = TrainingBudget.consume(CombatEconomy.state(assistProfile),
-                                CombatEconomy.trainingUnits(playerProfile, player) * percentage, System.currentTimeMillis());
-                        context.setEconomy(units, true, false);
-                        double candidateGold = ProgressionV2.base(assistProfile.getPrestige()) * .5 * eventBoost * units * BotRewards.variableFactor(playerProfile);
+                        double candidateGold;
+                        if (normalBotReward) {
+                            // Keep the contribution share, while removing every Bot-only reduction.
+                            context.setEconomy(percentage, true, false);
+                            candidateGold = ProgressionV2.base(assistProfile.getPrestige())
+                                    * BotRewards.trainingBaseMultiplier(assistProfile.getPrestige(), false, true)
+                                    * eventBoost * percentage;
+                        } else {
+                            boolean privateTraining = CombatEconomy.isPrivateTraining(playerProfile, player);
+                            TrainingBudget.Allocation allocation = TrainingBudget.allocate(CombatEconomy.state(assistProfile),
+                                    CombatEconomy.trainingUnits(playerProfile, player) * percentage, System.currentTimeMillis());
+                            context.setEconomy(allocation.rewardUnits, true, false);
+                            double currencyUnits = privateTraining ? allocation.privateCurrencyUnits : allocation.rewardUnits;
+                            candidateGold = ProgressionV2.base(assistProfile.getPrestige())
+                                    * BotRewards.trainingBaseMultiplier(assistProfile.getPrestige(), privateTraining, false)
+                                    * eventBoost * currencyUnits * BotRewards.variableFactor(playerProfile);
+                        }
                         if (EconomyV2.active()) amount = candidateGold;
                         else KillRewardContext.candidate(candidateGold, candidateGold * 4);
                     }
@@ -1379,8 +1432,14 @@ public class CombatListener implements Listener {
     }
 
     private void handleCherryDrop(Player player, double dropMultiplier) {
-        double normalizedMultiplier = Math.max(0, Math.min(1, dropMultiplier));
-        boolean success = RandomUtil.hasSuccessfullyByChance(0.0001 * normalizedMultiplier);
+        boolean success = RandomUtil.hasSuccessfullyByChance(cn.charlotte.pit.map.kingsquests.CherryLuck.dropChance(dropMultiplier));
+        if (success) {
+            player.getInventory().addItem(Cherry.INSTANCE.toItemStack());
+        }
+    }
+
+    private void handleCherryDrop(Player player, double dropMultiplier, Entity target) {
+        boolean success = RandomUtil.hasSuccessfullyByChance(cn.charlotte.pit.reward.RareSupply.cherryChance(dropMultiplier, target));
         if (success) {
             player.getInventory().addItem(Cherry.INSTANCE.toItemStack());
         }
@@ -1393,10 +1452,13 @@ public class CombatListener implements Listener {
             enchantPerkLevel = data.getLevel();
         }
         if (enchantPerkLevel > -1) {
-            double normalizedMultiplier = Math.max(0, Math.min(1, dropMultiplier));
+            double normalizedMultiplier = cn.charlotte.pit.reward.RareSupply.combatMultiplier(beKilledPlayer, dropMultiplier);
             double chance = NewConfiguration.INSTANCE.getMythicDropChance(killer)
                     * (1 + (enchantPerkLevel - 1) * 0.02)
                     * normalizedMultiplier;
+            if (killerProfile.getStreakKills() >= 100 && PlayerUtil.isPlayerChosePerk(killer, "uber_streak")) {
+                chance *= 1.5;
+            }
             int level = Utils.getEnchantLevel(killer.getInventory().getLeggings(), "pants_radar");
             if (level > 0) {
                 chance = (1 + level * 0.3) * chance;
@@ -1405,7 +1467,7 @@ public class CombatListener implements Listener {
             if (level > 0) {
                 chance = (1 + level * 0.3) * chance;
             }
-            boolean b = RandomUtil.hasSuccessfullyByChance(chance);
+            boolean b = cn.charlotte.pit.reward.RareSupply.drop(chance, killer);
             if (b) {
                 AbstractPitItem item;
                 if (enchantPerkLevel >= 4) {
@@ -1688,7 +1750,7 @@ public class CombatListener implements Listener {
                         "Death perk failed: " + perk.getInternalPerkName(), exception);
             }
         }
-        // Enchant/JS death callbacks may require a real killer. Never pass a fake or null target.
+        // Enchantment death callbacks may require a real killer. Never pass a fake or null target.
         if (killer == null) return;
         for (IPlayerBeKilledByEntity ins : ThePit.getInstance().getEnchantmentFactor().getPlayerBeKilledByEntities()) {
             AbstractEnchantment enchant = (AbstractEnchantment) ins;
@@ -1927,8 +1989,13 @@ public class CombatListener implements Listener {
             return false;
         }
 
-        final Calendar instance = Calendar.getInstance();
+        // Curfew follows the server's weekday schedule in China Standard Time.
+        final Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"));
         instance.setTimeInMillis(System.currentTimeMillis());
+        final int day = instance.get(Calendar.DAY_OF_WEEK);
+        if (day == Calendar.SATURDAY || day == Calendar.SUNDAY) {
+            return false;
+        }
         final int hour = instance.get(Calendar.HOUR_OF_DAY);
 
         int start = ThePit.getInstance().getPitConfig().getCurfewStart();

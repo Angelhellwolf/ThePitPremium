@@ -5,6 +5,7 @@ import cn.charlotte.pit.enchantment.param.item.ArmorOnly
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.util.cooldown.Cooldown
+import cn.charlotte.pit.util.BotEnchantPolicy
 import cn.charlotte.pit.util.PlayerUtil
 import org.bukkit.entity.FishHook
 import org.bukkit.entity.Player
@@ -22,7 +23,8 @@ class GrandmasterEnchant: AbstractEnchantment(), Listener{
         if (event.isCancelled || damager !is FishHook || event.entity !is Player) return
         val shooter = damager.shooter as? Player ?: return
         val target = event.entity as Player
-        if (shooter.uniqueId == target.uniqueId || PlayerUtil.shouldIgnoreEnchant(shooter, target)) return
+        if (shooter.uniqueId == target.uniqueId || !BotEnchantPolicy.effectAllowed(shooter, target)
+            || PlayerUtil.shouldIgnoreEnchant(shooter, target)) return
         if (getItemEnchantLevel(shooter.inventory.leggings) <= 0) return
         event.damage = event.damage.coerceAtLeast(0.0) + 1.0
     }

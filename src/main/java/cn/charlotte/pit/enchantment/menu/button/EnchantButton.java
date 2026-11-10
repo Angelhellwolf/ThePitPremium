@@ -170,6 +170,7 @@ public class EnchantButton extends Button {
 
     @Override
     public void clicked(Player player, int slot, ClickType clickType, int hotbarButton, ItemStack currentItem) {
+        if (!cn.charlotte.pit.reward.RareSupply.preflight(player, item)) return;
         if (item == null || item.getType() == Material.AIR) {
             return;
         }
@@ -206,17 +207,20 @@ public class EnchantButton extends Button {
                     + (getPrice(player, level + 1, color) - profile.getCoins()) + " &c硬币!"));
             return;
         }
-        if (level == (color == MythicColor.DARK ? 1 : 2) && color != MythicColor.DARK_GREEN) {
+        boolean consumeMaterial = level == (color == MythicColor.DARK ? 1 : 2) && color != MythicColor.DARK_GREEN;
+        if (consumeMaterial) {
             if (PlayerUtil.getPlayerUnlockedPerkLevel(player, "Mythicism") < 4) {
                 player.sendMessage(CC.translate("&c天赋 &6神话附魔师 &c等级 &eIV &c后才能升级至 III 阶!"));
                 return;
             }
-            if (!removeMythicLegWithColor(player, color)) {
+            if (!hasMythicLegWithColor(player, color)) {
                 player.playSound(player.getLocation(), Sound.ENDERMAN_TELEPORT, 1, 1);
                 player.sendMessage(CC.translate("&c请放入一条额外的 " + color.getChatColor() + color.getDisplayName() + "色神话之甲 &c才能附魔!"));
                 return;
             }
         }
+        if (!cn.charlotte.pit.reward.RareSupply.book(player, item, mythicItem)) return;
+        if (consumeMaterial) profile.setEnchantingScience(null);
         cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - getPrice(player, level + 1, color),
                 cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "mythic_well");
         //handle enchant
@@ -247,7 +251,7 @@ public class EnchantButton extends Button {
                     break;
                 case 1:
                     mythicItem.setMaxLive((Integer) RandomUtil.helpMeToChooseOne(40, 45, 50, 55, 60));
-                    if (RandomUtil.hasSuccessfullyByChance(0.01)) {
+                    if (cn.charlotte.pit.reward.RareSupply.rare(0.01, player)) {
                         mythicItem.setMaxLive(135);
                     }
                     break;
@@ -267,7 +271,7 @@ public class EnchantButton extends Button {
                         mythicItem.setMaxLive(random.nextInt(6) + 10); //10-15
                         break;
                     case 2:
-                        if (RandomUtil.hasSuccessfullyByChance(0.01)) { //Artifact Prefix -> 100 Lives
+                        if (cn.charlotte.pit.reward.RareSupply.rare(0.01, player)) { //Artifact Prefix -> 100 Lives
                             mythicItem.setMaxLive(100);
                         } else {
                             mythicItem.setMaxLive(random.nextInt(8) + 16); //16-23
@@ -338,7 +342,7 @@ public class EnchantButton extends Button {
             }
             case DARK_GREEN: {
                 if (level == 1) {
-                    if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color)) && !rareResults.isEmpty()) {
+                    if (!rareResults.isEmpty() && cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                         AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
                         mythicItem.getEnchantments().put(enchantment, 1);
                         announcement = true;
@@ -359,7 +363,7 @@ public class EnchantButton extends Button {
                     break;
                 }
                 if (level == 2) {
-                    if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                    if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                         AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
                         mythicItem.getEnchantments().put(enchantment, 1);
                         announcement = true;
@@ -373,7 +377,7 @@ public class EnchantButton extends Button {
             }
             case RAGE: {
                 if (level == 1) {
-                    if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                    if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                         AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
                         mythicItem.getEnchantments().put(enchantment, RandomUtil.random.nextInt(enchantment.getMaxEnchantLevel() - 1) + 1);
                         announcement = true;
@@ -516,7 +520,7 @@ public class EnchantButton extends Button {
                             case 1: { // 11->111
                                 results.removeAll(enchantments);
                                 AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(results.toArray());
-                                if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                                if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                                     announcement = true;
                                     rareResults.removeAll(enchantments);
                                     enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -542,7 +546,7 @@ public class EnchantButton extends Button {
                         } else {
                             for (int i = 0; i < 2; i++) {
                                 results.removeAll(enchantments);
-                                if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                                if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                                     announcement = true;
                                     rareResults.removeAll(enchantments);
                                     enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -576,7 +580,7 @@ public class EnchantButton extends Button {
                         } else {
                             results.removeAll(enchantments);
                             AbstractEnchantment enchantment;
-                            if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                            if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                                 announcement = true;
                                 rareResults.removeAll(enchantments);
                                 enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -676,7 +680,7 @@ public class EnchantButton extends Button {
     private boolean shouldAnnouncement(Player player, MythicColor color, AbstractPitItem mythicItem, List<AbstractEnchantment> enchantments, boolean announcement, List<AbstractEnchantment> results, List<AbstractEnchantment> rareResults) {
         AbstractEnchantment enchantment;
         results.removeAll(enchantments);
-        if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+        if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
             announcement = true;
             rareResults.removeAll(enchantments);
             enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -714,13 +718,13 @@ public class EnchantButton extends Button {
     }
 
     /**
-     * 移除玩家指定颜色的裤子
+     * 检查玩家指定颜色的附魔材料，不提前消耗
      *
      * @param player 玩家
      * @param color  需要移除的颜色
-     * @return 是否移除，返回false为移除失败
+     * @return 材料是否齐备
      */
-    private boolean removeMythicLegWithColor(Player player, MythicColor color) {
+    private boolean hasMythicLegWithColor(Player player, MythicColor color) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (profile.getEnchantingScience() == null) return false;
         ItemStack itemStack = InventoryUtil.deserializeItemStack(profile.getEnchantingScience());
@@ -731,7 +735,6 @@ public class EnchantButton extends Button {
         MythicColor materialColor = MythicColor.valueOfInternalName(
                 ItemUtil.getItemStringData(itemStack, "mythic_color"));
         if (materialColor == color) {
-            profile.setEnchantingScience(null);
             return true;
         }
 
@@ -769,9 +772,10 @@ public class EnchantButton extends Button {
         }
 
         boolean chooseRare = !availableRare.isEmpty()
-                && (availableNormal.isEmpty()
-                || RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, MythicColor.AQUA)));
+                && (availableNormal.isEmpty() ? cn.charlotte.pit.reward.RareSupply.guaranteed(cn.charlotte.pit.reward.RareSupplyLedger.Pool.RARE, player)
+                : cn.charlotte.pit.reward.RareSupply.enchant(player, MythicColor.AQUA));
         List<AbstractEnchantment> candidates = chooseRare ? availableRare : availableNormal;
+        if (candidates.isEmpty()) return announcement;
         AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(candidates.toArray());
         mythicItem.getEnchantments().put(enchantment, 1);
         return announcement || chooseRare;

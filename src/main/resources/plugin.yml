@@ -21,3 +21,9 @@ permissions:
   junxu.admin:
     description: 创建军需官、设置安全返回点、查看模板与诊断
     default: op
+  pit.rare.sc_shengcheng:
+    description: SC_shengcheng 的稀有附魔概率权限（15%）
+    default: false
+  pit.rare.bypass:
+    description: 稀有产出压力系数豁免权限
+    default: false

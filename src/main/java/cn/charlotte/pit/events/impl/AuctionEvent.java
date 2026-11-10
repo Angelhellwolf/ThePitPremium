@@ -326,7 +326,8 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
             return;
         }
         this.saveAuctionLogs();
-        if (!getTimer().hasExpired()) {
+        if (!getTimer().hasExpired() || !cn.charlotte.pit.reward.RareSupply.auction(
+                getHighestBidHistory().getUuid(), lots.getContents())) {
             CC.boardCast(prefix + "拍卖被取消,竞拍硬币已全部退还.");
             getParticipants().forEach(uuid -> {
                         if (getHighestBidHistory(uuid) != null) {
@@ -369,6 +370,7 @@ public class AuctionEvent implements IEvent, INormalEvent, Listener {
                             contents.setContents(lots.getContents());
                             mail.setItem(contents);
                             mail.setRenown(lots.getRenown());
+                            mail.setRewardOrigin("event");
                             mail.setTitle("&e【拍卖行】 竞拍物品发放");
                             mail.setContent("&f你在 " + dateFormat.format(System.currentTimeMillis()) + " 参与的拍卖中竞拍成功.\\n&f请注意及时收取竞拍物品.");
                             sendMail(uuid, mail);

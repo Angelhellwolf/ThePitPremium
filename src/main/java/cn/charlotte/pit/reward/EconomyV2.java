@@ -15,6 +15,7 @@ public final class EconomyV2 {
     private static Logger logger;
     private static long shadowStarted;
     static double fullRate = 10, fullCapacity = 30, bufferRate = 5, bufferCapacity = 15, bufferMultiplier = .25, overflowMultiplier = .02;
+    static double privateReducedMultiplier = .25;
     private static double reserveFraction = .1;
     private static double honorStep = 100000;
     private static double botRewardVariation = .10;
@@ -35,6 +36,7 @@ public final class EconomyV2 {
         bufferCapacity = positive(config, "training.buffer-capacity", 15, 360);
         bufferMultiplier = positive(config, "training.buffer-multiplier", .25, 1);
         overflowMultiplier = positive(config, "training.overflow-multiplier", .02, bufferMultiplier);
+        privateReducedMultiplier = positive(config, "training.private-reduced-multiplier", .25, 1);
         reserveFraction = positive(config, "experience-reserve-fraction", .1, .1);
         honorStep = positive(config, "growth.honor-experience-per-level", 100000, 1e9);
         botRewardVariation = positive(config, "training.reward-variation", .10, .50);

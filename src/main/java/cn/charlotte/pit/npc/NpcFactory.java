@@ -11,6 +11,7 @@ import net.jitse.npclib.api.NPC;
 import net.jitse.npclib.api.events.NPCInteractEvent;
 import net.jitse.npclib.api.state.NPCSlot;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -26,6 +27,13 @@ import java.util.List;
  */
 public class NpcFactory implements Listener {
     private static final List<AbstractPitNPC> pitNpc = new ArrayList<>();
+    private NPCLib npcLib;
+
+    public NpcFactory() { }
+
+    NpcFactory(NPCLib npcLib) {
+        this.npcLib = npcLib;
+    }
 
     public static List<AbstractPitNPC> getPitNpc() {
         return NpcFactory.pitNpc;
@@ -33,7 +41,7 @@ public class NpcFactory implements Listener {
 
     @SneakyThrows
     public void init(Collection<Class<? extends AbstractPitNPC>> classes) {
-        NPCLib npcLib = new NPCLib(ThePit.getInstance());
+        npcLib = new NPCLib(ThePit.getInstance());
 
         for (Class<?> clazz : classes) {
             if (!ThePit.isDEBUG_SERVER()) {
@@ -45,22 +53,48 @@ public class NpcFactory implements Listener {
             if (AbstractPitNPC.class.isAssignableFrom(clazz)) {
                 AbstractPitNPC abstractPitNPC = (AbstractPitNPC) clazz.newInstance();
 
-                NPC npc = npcLib.createNPC();
-                npc.setLocation(abstractPitNPC.getNpcSpawnLocation());
-
-                if (abstractPitNPC.getNpcHeldItem() != null) {
-                    npc.setItem(NPCSlot.MAINHAND, abstractPitNPC.getNpcHeldItem());
-                }
-
-                abstractPitNPC.setNpc(npc);
-                abstractPitNPC.initSkin(npc);
-
-                pitNpc.add(abstractPitNPC);
+                registerNpc(abstractPitNPC);
             }
         }
 
         long period = Math.max(10L, NewConfiguration.INSTANCE.getPerfNpcTextUpdateTicks());
         new NpcRunnable().runTaskTimer(ThePit.getInstance(), period, period);
+    }
+
+    private AbstractPitNPC registerNpc(AbstractPitNPC definition) {
+        Location location = definition.getNpcSpawnLocation();
+        // Optional NPCs are configured in-game. Do not register a null location with NPCLib.
+        if (location == null || location.getWorld() == null) return null;
+        NPC npc = npcLib.createNPC();
+        npc.setLocation(location.clone());
+        if (definition.getNpcHeldItem() != null) {
+            npc.setItem(NPCSlot.MAINHAND, definition.getNpcHeldItem());
+        }
+        definition.setNpc(npc);
+        definition.initSkin(npc);
+        pitNpc.add(definition);
+        return definition;
+    }
+
+    /** Called on the server thread after saving an NPC's configured location. */
+    public void spawnOrMove(AbstractPitNPC definition) {
+        Location location = definition.getNpcSpawnLocation();
+        if (location == null || location.getWorld() == null) return;
+        AbstractPitNPC current = pitNpc.stream()
+                .filter(existing -> existing.getNpcInternalName().equals(definition.getNpcInternalName()))
+                .findFirst().orElse(null);
+        if (current == null) current = registerNpc(definition);
+        NPC npc = current.getNpc();
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            if (npc.isShown(viewer)) npc.hide(viewer);
+            npc.removeText(viewer);
+        }
+        npc.setLocation(location.clone());
+        npc.create();
+        for (Player viewer : Bukkit.getOnlinePlayers()) {
+            npc.setText(viewer, current.getNpcTextLine(viewer));
+            if (!npc.isShown(viewer)) npc.show(viewer);
+        }
     }
 
     @EventHandler

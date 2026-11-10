@@ -47,6 +47,7 @@ public final class SpiterCompatibility implements Listener {
 
     @SuppressWarnings("unchecked")
     public static void initialize(ThePit plugin) {
+        BotCombatExemptions.initialize(plugin);
         if (initialized || !Bukkit.getPluginManager().isPluginEnabled("SpiterLoader")) {
             return;
         }
@@ -99,6 +100,9 @@ public final class SpiterCompatibility implements Listener {
     private boolean isAuthorizedFlag(Player player, String component) {
         if (player == null || component.isEmpty()) {
             return false;
+        }
+        if (BotCombatExemptions.isExempt(player.getUniqueId(), component, System.currentTimeMillis())) {
+            return true;
         }
         if ("move.walk".equals(component) && SwiftSprintEnchant.isSwiftSprintSpeed(player.getWalkSpeed())) {
             return true;

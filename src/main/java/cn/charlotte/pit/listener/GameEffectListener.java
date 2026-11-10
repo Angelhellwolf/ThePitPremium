@@ -167,6 +167,16 @@ public class GameEffectListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerDamagePlayer(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Projectile && event.getEntity() instanceof Player
+                && event.getDamager().hasMetadata("pit_volley_extra")
+                && ((Projectile) event.getDamager()).getShooter() instanceof Player) {
+            Player shooter = (Player) ((Projectile) event.getDamager()).getShooter();
+            if (!cn.charlotte.pit.util.BotEnchantPolicy.projectileEffectAllowed(
+                    (Projectile) event.getDamager(), shooter, (Player) event.getEntity())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
         if (SecondaryDamage.applyTrueDamage(event)) return;
         try (CombatContext context = CombatContext.open(event)) {
         boolean secondary = SecondaryDamage.isHit(event);

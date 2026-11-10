@@ -97,8 +97,8 @@ public class RAndRKillStreak extends AbstractPerk implements Listener {
         //trigger check (every X streak)
         int streak = 3;
         if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
-            myself.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-            myself.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 3, 0), false);
+            cn.charlotte.pit.util.combat.CombatPotions.refresh(myself,
+                    new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 3, 0));
             myself.removePotionEffect(PotionEffectType.REGENERATION);
             myself.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 20 * 3, 1), false);
         }

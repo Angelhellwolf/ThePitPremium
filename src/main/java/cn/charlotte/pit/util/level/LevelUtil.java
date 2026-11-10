@@ -142,6 +142,8 @@ public class LevelUtil {
      * @return 通过已有经验值推算等级
      */
     public static int getLevelByExp(int prestige, double exp) {
+        if (cn.charlotte.pit.reward.EconomyV2.active())
+            return cn.charlotte.pit.reward.ProgressionV2.levelByExperience(prestige, exp);
         double experience = exp;
         int level = 0;
         for (int i = 0; i <= 120; i++) {

@@ -197,11 +197,15 @@ public class MailClaimButton extends Button {
             profile.setRenown(profile.getRenown() + mail.getRenown());
             if (cn.charlotte.pit.reward.EconomyV2.active()) {
                 cn.charlotte.pit.reward.RewardDetail detail = "gameplay".equals(mail.getRewardOrigin())
+                        || "event".equals(mail.getRewardOrigin())
                         ? cn.charlotte.pit.reward.RewardDetail.MAIL_REWARD
                         : "refund".equals(mail.getRewardOrigin()) ? cn.charlotte.pit.reward.RewardDetail.REFUND
                         : cn.charlotte.pit.reward.RewardDetail.MAIL_LEGACY;
                 cn.charlotte.pit.reward.EconomyV2.grant(profile, detail, mail.getCoins(), mail.getExp(), mail.getCoins(), mail.getExp());
             } else RewardService.grant(profile, RewardSource.MAIL, mail.getCoins(), mail.getExp());
+            if ("event".equals(mail.getRewardOrigin())) {
+                profile.kingsQuestsData.recordEventRenown(mail.getRenown());
+            }
         } catch (RuntimeException exception) {
             player.getInventory().setContents(inventoryBefore.getContents());
             player.getInventory().setArmorContents(inventoryBefore.getArmorContents());

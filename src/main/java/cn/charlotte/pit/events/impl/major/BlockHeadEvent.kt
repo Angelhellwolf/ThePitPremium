@@ -575,6 +575,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             val creditedCoins = payout.coins
             rewardRenown = payout.renown
             profile.renown = profile.renown + rewardRenown
+            profile.kingsQuestsData.recordEventRenown(rewardRenown)
 
 
             player.sendMessage(CC.GOLD + CC.CHAT_BAR)

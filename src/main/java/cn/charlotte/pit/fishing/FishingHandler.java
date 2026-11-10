@@ -63,7 +63,7 @@ public class FishingHandler implements Listener {
             ItemStack item = event.getPlayer().getItemInHand();
             if (!cn.charlotte.pit.util.PlayerUtil.shouldIgnoreEnchant(event.getPlayer())) {
                 int lure = cn.charlotte.pit.util.Utils.getEnchantLevel(item, "lure");
-                if (lure > 0) event.getHook().setBiteChance(Math.min(1, event.getHook().getBiteChance() * (1 + Math.min(3, lure) * 0.5)));
+                if (lure > 0) event.getHook().setBiteChance(Math.min(1, event.getHook().getBiteChance() * (1 + lure * 0.5D)));
             }
         }
     }

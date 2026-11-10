@@ -2,6 +2,7 @@ package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
+import cn.charlotte.pit.reward.KillRewardContext;
 import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
@@ -48,18 +49,18 @@ public class GoldExplorerEnchant extends AbstractEnchantment implements IPlayerK
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return ("&7击杀与助攻获得的硬币 &6+" + (enchantLevel * 15) + "%") + "/s" + "&7以上金币或经验加成排除 Bot";
+        return ("&7击杀与助攻获得的硬币 &6+" + (enchantLevel * 15) + "%") + "/s" + "&7对 Bot 的探金收益略微提高";
     }
 
     @Override
     @PlayerOnly
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
-        coins.getAndAdd(0.15 * enchantLevel * coins.get());
+        coins.getAndAdd((KillRewardContext.isBotReward() ? 0.18 : 0.15) * enchantLevel * coins.get());
     }
 
     @Override
     @PlayerOnly
     public void handlePlayerAssist(int enchantLevel, Player myself, Entity target, double damage, double finalDamage, AtomicDouble coins, AtomicDouble experience) {
-        coins.getAndAdd(0.15 * enchantLevel * coins.get());
+        coins.getAndAdd((KillRewardContext.isBotReward() ? 0.18 : 0.15) * enchantLevel * coins.get());
     }
 }

@@ -77,17 +77,21 @@ public final class CombatEconomy {
     public static double trainingUnits(PlayerProfile victim, LivingEntity entity) {
         double damage = victim.getDamageMap().values().stream()
                 .filter(hit -> !hit.getTimer().hasExpired()).mapToDouble(hit -> RewardMath.positive(hit.getDamage())).sum();
-        cn.charlotte.pit.ThePit plugin = cn.charlotte.pit.ThePit.getInstance();
-        cn.charlotte.pit.junxu.JunxuManager training = plugin == null ? null : plugin.getJunxuManager();
         // Private difficulty settings do not reduce the earned training share.
-        if (victim.isBot() && entity instanceof Player && training != null
-                && training.isTraining((Player) entity, entity.getLocation())) return damage > 0 ? 1 : 0;
+        if (isPrivateTraining(victim, entity)) return damage > 0 ? 1 : 0;
         int armor = 14;
         if (entity instanceof Player) {
             armor = 0;
             for (ItemStack item : ((Player) entity).getInventory().getArmorContents()) armor += armor(item);
         }
         return TrainingBudget.normalized(entity.getMaxHealth(), damage, armor);
+    }
+
+    public static boolean isPrivateTraining(PlayerProfile victim, LivingEntity entity) {
+        if (!victim.isBot() || !(entity instanceof Player)) return false;
+        cn.charlotte.pit.ThePit plugin = cn.charlotte.pit.ThePit.getInstance();
+        cn.charlotte.pit.junxu.JunxuManager training = plugin == null ? null : plugin.getJunxuManager();
+        return training != null && training.isTraining((Player) entity, entity.getLocation());
     }
 
     private static int armor(ItemStack stack) {

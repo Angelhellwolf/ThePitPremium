@@ -6,6 +6,7 @@ import cn.charlotte.pit.enchantment.param.item.ArmorOnly
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.util.PlayerUtil
+import cn.charlotte.pit.util.BotEnchantPolicy
 import cn.charlotte.pit.util.cooldown.Cooldown
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -81,7 +82,7 @@ class Regularity : AbstractEnchantment(), Listener {
         if (victim !is Player) return
         if (cn.charlotte.pit.util.combat.SecondaryDamage.isHit(event) || event.finalDamage <= 0) return
 
-        if (PlayerUtil.shouldIgnoreEnchant(attacker, victim)) {
+        if (!BotEnchantPolicy.effectAllowed(attacker, victim) || PlayerUtil.shouldIgnoreEnchant(attacker, victim)) {
             return
         }
 
@@ -106,7 +107,8 @@ class Regularity : AbstractEnchantment(), Listener {
 
                 Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), {
                     if (event.isCancelled || !cn.charlotte.pit.util.combat.PlayerLife.isCurrent(victim, life)
-                        || attacker.world != victim.world || PlayerUtil.shouldIgnoreEnchant(attacker, victim)) return@runTaskLater
+                        || attacker.world != victim.world || !BotEnchantPolicy.effectAllowed(attacker, victim)
+                        || PlayerUtil.shouldIgnoreEnchant(attacker, victim)) return@runTaskLater
                     victim.noDamageTicks = 0
                     cn.charlotte.pit.util.combat.SecondaryDamage.reflection(attacker, victim, followupDamage)
                 }, 5L)

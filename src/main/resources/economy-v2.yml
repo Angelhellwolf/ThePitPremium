@@ -17,6 +17,8 @@ training:
   buffer-capacity: 15
   buffer-multiplier: 0.25
   overflow-multiplier: 0.02
+  # Private training coins/XP: human base (including newcomer), 100% full and 25% after full quota.
+  private-reduced-multiplier: 0.25
 growth:
   honor-experience-per-level: 100000
   weekly-carry-weeks: 2

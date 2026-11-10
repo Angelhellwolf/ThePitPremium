@@ -67,6 +67,7 @@ public class DarkPantsCraftButton extends Button {
         if (InventoryUtil.getAmountOfItem(player, ChunkOfVileItem.getInternalName()) < (5 - level)) {
             return;
         }
+        if (!cn.charlotte.pit.reward.RareSupply.freshClaim(player)) return;
         if (InventoryUtil.removeItem(player, ChunkOfVileItem.getInternalName(), 5 - level)) {
             profile.setRenown(profile.getRenown() - 2);
             ItemStack itemStack = new MythicLeggingsItem().toItemStack();

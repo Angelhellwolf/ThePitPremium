@@ -7,9 +7,6 @@ plugins {
 
 val pluginName = "ThePitPremium"
 val version = "3.93"
-// Old plugin jars embed an older Validate class. NMS tests need the overloads
-// present on the production server, without changing production dependencies.
-val legacyNmsTestLibraries by configurations.creating
 repositories {
     maven("https://maven.aliyun.com/repository/public/")
     mavenCentral()
@@ -32,10 +29,6 @@ repositories {
 }
 
 dependencies {
-    add(legacyNmsTestLibraries.name, "org.apache.commons:commons-lang3:3.12.0")
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("com.h2database:h2:2.1.214")
     // FAWE overrides part of the WorldEdit API this source targets. Put it first
     // so duplicate classes resolve to FAWE, while retaining WorldEdit-only classes.
     compileOnly(files("libs/fawe-1.0.jar"))
@@ -55,8 +48,8 @@ dependencies {
     api(libs.slf4j)
     api(libs.reflectionhelper)
     compileOnly(libs.luckperms)
-    // Java 15+ removed Nashorn from the JDK; bundle nashorn-core so JSHandler works on Java 17+ runtimes.
-    implementation(libs.narshorn)
+    // Runtime diagnostics generate tiny compatibility classes and therefore need ASM in the shaded plugin.
+    implementation(libs.asm)
     compileOnly(libs.httpclient)
     compileOnly(libs.httpcore)
     compileOnly(libs.decentholograms)
@@ -90,16 +83,29 @@ tasks.shadowJar {
     mergeServiceFiles()
     exclude("META-INF/**")
     // Isolate ASM to avoid Bukkit cross-plugin class collisions (same package loaded by different PluginClassLoader).
-    // Keep Nashorn package unchanged: Nashorn contains internal hardcoded class names loaded reflectively.
     relocate("org.objectweb.asm", "cn.charlotte.pit.shadow.asm")
 
 }
-// Prevent accidentally uploading the thin (non-shaded) jar: it misses bundled runtime deps like Nashorn for Java 17.
+// Prevent accidentally uploading the thin (non-shaded) jar: it misses bundled runtime dependencies.
 tasks.jar {
     enabled = false
 }
 tasks.build {
     dependsOn(tasks.shadowJar)
+}
+
+// JS enchantments are retired for now. Keep their source files only as a rollback/migration
+// reference; neither the engine bridge nor bundled scripts are compiled or packaged.
+tasks.processResources {
+    exclude("js/**")
+}
+sourceSets.named("main") {
+    java.exclude("**/cn/charlotte/pit/js/**")
+    java.exclude("**/cn/charlotte/pit/enchantment/type/JSEnchantment.kt")
+}
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    exclude("**/cn/charlotte/pit/js/**")
+    exclude("**/cn/charlotte/pit/enchantment/type/JSEnchantment.kt")
 }
 
 tasks.withType<JavaCompile> {
@@ -111,16 +117,8 @@ tasks.withType<Javadoc> {
 }
 kotlin {
     jvmToolchain(11)
-}
-
-// Tests exercise Bukkit interfaces against mocks using the same local API jars.
-configurations.testRuntimeClasspath {
-    extendsFrom(configurations.compileOnly.get())
-}
-configurations.testCompileClasspath {
-    extendsFrom(configurations.compileOnly.get())
-}
-
-tasks.test {
-    classpath = files(legacyNmsTestLibraries) + classpath
+    sourceSets.named("main") {
+        kotlin.exclude("**/cn/charlotte/pit/js/**")
+        kotlin.exclude("**/cn/charlotte/pit/enchantment/type/JSEnchantment.kt")
+    }
 }

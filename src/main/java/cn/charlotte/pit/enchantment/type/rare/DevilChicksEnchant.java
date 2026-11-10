@@ -8,9 +8,12 @@ import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.SpiterCompatibility;
+import cn.charlotte.pit.util.combat.CombatContext;
+import cn.charlotte.pit.util.combat.PlayerLife;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
@@ -57,9 +60,13 @@ public class DevilChicksEnchant extends AbstractEnchantment implements IPlayerSh
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+        if (cancel.get() || !isEffectActive(attacker, target instanceof Player ? (Player) target : null)) return;
+        Object life = PlayerLife.capture(attacker);
+        Location origin = target.getLocation().clone();
+        CombatContext.afterAccepted(() -> Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+            if (!PlayerLife.isCurrent(attacker, life) || !isEffectActive(attacker, null)) return;
             for (int i = 0; i < enchantLevel; i++) {
-                Chicken chicken = (Chicken) target.getWorld().spawnEntity(target.getLocation(), EntityType.CHICKEN);
+                Chicken chicken = (Chicken) origin.getWorld().spawnEntity(origin, EntityType.CHICKEN);
                 chicken.setBaby();
                 new BukkitRunnable() {
                     @Override
@@ -67,9 +74,13 @@ public class DevilChicksEnchant extends AbstractEnchantment implements IPlayerSh
                         if (!chicken.isValid()) {
                             return;
                         }
+                        if (!PlayerLife.isCurrent(attacker, life) || !isEffectActive(attacker, null)) {
+                            chicken.remove();
+                            return;
+                        }
                         chicken.getWorld().createExplosion(chicken.getLocation().getX(), chicken.getLocation().getY(), chicken.getLocation().getZ(), 0F, false, false);
                         for (Player nearby : PlayerUtil.getNearbyPlayers(chicken.getLocation(), 3)) {
-                            if (nearby.equals(attacker)) {
+                            if (nearby.equals(attacker) || !isEffectActive(attacker, nearby)) {
                                 continue;
                             }
                             PlayerUtil.damage(attacker, nearby, PlayerUtil.DamageType.TRUE, 1.2, true);
@@ -83,6 +94,6 @@ public class DevilChicksEnchant extends AbstractEnchantment implements IPlayerSh
                     }
                 }.runTaskLater(ThePit.getInstance(), 15L);
             }
-        });
+        }));
     }
 }

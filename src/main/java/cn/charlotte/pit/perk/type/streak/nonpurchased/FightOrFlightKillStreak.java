@@ -122,7 +122,8 @@ public class FightOrFlightKillStreak extends AbstractPerk implements Listener, I
         if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             if (myself.getHealth() / myself.getMaxHealth() < 0.5) {
                 myself.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 7, 0), true);
-                myself.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 7, 0), true);
+                cn.charlotte.pit.util.combat.CombatPotions.refresh(myself,
+                        new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 7, 0));
             } else {
                 strength.put(myself.getUniqueId(), new Cooldown(7, TimeUnit.SECONDS));
             }

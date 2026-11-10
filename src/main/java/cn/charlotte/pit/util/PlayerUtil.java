@@ -4,6 +4,7 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.UtilKt;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.data.sub.PerkData;
+import cn.charlotte.pit.event.PitDirectDamageEvent;
 import cn.charlotte.pit.event.PitPotionEffectEvent;
 import cn.charlotte.pit.event.PitRegainHealthEvent;
 import cn.charlotte.pit.events.IEvent;
@@ -226,6 +227,9 @@ public class PlayerUtil {
         if (victim.getHealth() > damage) {
             if (CombatListener.INSTANCE != null) CombatListener.INSTANCE.recordDirectDamage(attacker, victim, damage);
             victim.setHealth(victim.getHealth() - damage);
+            if (!attacker.getUniqueId().equals(victim.getUniqueId())) {
+                Bukkit.getPluginManager().callEvent(new PitDirectDamageEvent(attacker, victim, damage));
+            }
         } else {
             cn.charlotte.pit.util.combat.SecondaryDamage.lethalTrueDamage(attacker, victim, damage);
         }

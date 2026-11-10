@@ -5,6 +5,7 @@ import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerKilledEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
+import cn.charlotte.pit.util.combat.CombatPotions;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -49,7 +50,7 @@ public class CounterJanitorEnchant extends AbstractEnchantment implements IPlaye
 
     @Override
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
-        myself.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-        myself.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * (enchantLevel + (enchantLevel >= 3 ? 2 : 1)), 0), true);
+        CombatPotions.refresh(myself, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,
+                20 * (enchantLevel + (enchantLevel >= 3 ? 2 : 1)), 0));
     }
 }

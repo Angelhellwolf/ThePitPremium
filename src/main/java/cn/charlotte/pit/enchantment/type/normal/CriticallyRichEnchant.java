@@ -74,7 +74,7 @@ public class CriticallyRichEnchant extends AbstractEnchantment implements IAttac
     private void grantGold(int enchantLevel, Player attacker, Entity target) {
         if (!(target instanceof Player)) return;
         PlayerProfile victim = PlayerProfile.getPlayerProfileByUuid(target.getUniqueId());
-        if (!victim.isLoaded() || victim.isBot()) return;
+        if (!victim.isLoaded()) return;
         if (PlayerUtil.isCritical(attacker)) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
             cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> RewardService.grant(profile, RewardSource.ENCHANT, enchantLevel * 2, 0));

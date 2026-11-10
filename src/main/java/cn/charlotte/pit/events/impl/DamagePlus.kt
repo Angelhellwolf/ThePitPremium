@@ -117,6 +117,7 @@ class DamagePlus : IEvent, INormalEvent, Listener, IScoreBoardInsert {
                 if (eventData.kill % KILL_COUNT_THRESHOLD == 0) {
                     eventData.prestige++
                     profile?.renown = profile?.renown?.plus(1) ?: 0
+                    profile?.kingsQuestsData?.recordEventRenown(1)
                     eventData.kill = 0
                     event.killer.sendMessage(CC.translate("&c&l猎杀! &6声望 +1"))
                     event.killer.playSound(event.killer.location, Sound.NOTE_PLING, 0.5f, 0.5f)

@@ -4,6 +4,7 @@ import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.util.level.LevelUtil;
+import cn.charlotte.pit.util.combat.CombatContext;
 import org.bukkit.Bukkit;
 
 /** All gameplay grants run on the server thread and report the amount actually credited. */
@@ -54,13 +55,14 @@ public final class RewardService {
         double bonusFactor = KillRewardContext.bonusMultiplier(profile.getPlayerUuid(), legacySource);
         coinFactor *= bonusFactor;
         experienceFactor *= bonusFactor;
-        double legacyRequestedCoins = RewardMath.positive(RewardMath.positive(legacyCoins) * coinFactor);
-        double legacyRequestedExperience = RewardMath.positive(RewardMath.positive(legacyExperience) * experienceFactor);
         double v2Factor = detail.newcomer && !botPrimary && (detail.humanDerived() || !KillRewardContext.training(profile.getPlayerUuid()))
                 ? ProgressionV2.newcomer(profile.getPrestige()) : 1;
         double candidateBonus = KillRewardContext.candidateBonus(profile.getPlayerUuid(), source);
-        double newCoins = RewardMath.positive(candidateCoins) * v2Factor * candidateBonus;
-        double newExperience = RewardMath.positive(candidateExperience) * v2Factor * candidateBonus;
+        double effectFactor = botEffectFactor(profile, source);
+        double legacyRequestedCoins = RewardMath.positive(RewardMath.positive(legacyCoins) * coinFactor * effectFactor);
+        double legacyRequestedExperience = RewardMath.positive(RewardMath.positive(legacyExperience) * experienceFactor * effectFactor);
+        double newCoins = RewardMath.positive(candidateCoins) * v2Factor * candidateBonus * effectFactor;
+        double newExperience = RewardMath.positive(candidateExperience) * v2Factor * candidateBonus * effectFactor;
         double requestedCoins = EconomyV2.active() ? newCoins : legacyRequestedCoins;
         double requestedExperience = EconomyV2.active() ? newExperience : legacyRequestedExperience;
         double oldCoins = profile.getCoins();
@@ -97,6 +99,17 @@ public final class RewardService {
         Receipt receipt = new Receipt(actualCoins, actualExperience, reserved, honor);
         GrowthProgress.onReward(profile, detail, receipt);
         return receipt;
+    }
+
+    private static double botEffectFactor(PlayerProfile profile, RewardSource source) {
+        boolean effect = source == RewardSource.PERK || source == RewardSource.ENCHANT
+                || source == RewardSource.STREAK || source == RewardSource.LOOT;
+        if (profile != null && profile.isBot() && source == RewardSource.BOUNTY) effect = true;
+        if (!effect) return 1;
+        boolean botTarget = CombatContext.targetIsBot();
+        // KillRewardContext already applies the reduced factor for a Bot-targeted kill.
+        if (KillRewardContext.isBotReward()) return 1;
+        return botTarget || profile != null && profile.isBot() ? BotRewards.BOT_ENCHANT_MULTIPLIER : 1;
     }
 
     public static final class Receipt {

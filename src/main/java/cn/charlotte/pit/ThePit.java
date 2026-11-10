@@ -151,6 +151,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
         Bukkit.getServer().getPluginManager().registerEvents(spigot, this);
 
         this.loadConfig();
+        cn.charlotte.pit.reward.RareSupply.start();
         cn.charlotte.pit.reward.EconomyV2.load(this);
         this.loadDatabase();
         this.loadListener();
@@ -209,6 +210,7 @@ public class ThePit extends JavaPlugin implements PluginMessageListener {
 
     @Override
     public void onDisable() {
+        cn.charlotte.pit.reward.RareSupply.shutdown();
         cn.charlotte.pit.reward.EconomyAudit.stop();
         if (junxuManager != null) junxuManager.shutdown();
         try {

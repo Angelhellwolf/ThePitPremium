@@ -14,7 +14,7 @@ jackson = "2.17.1"
 luckperms = "5.4"
 moshi = "1.15.1"
 papi = "2.11.6"
-narshorn = "15.3"
+asm = "9.4"
 httpclient = "4.4"
 jedis = "2.9.0"
 book = "1.2"
@@ -68,7 +68,7 @@ moshi = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
 
 ### thepit premiunm
 papi = { group = "me.clip", name = "placeholderapi", version.ref = "papi" }
-narshorn = { group = "org.openjdk.nashorn", name = "nashorn-core", version.ref = "narshorn" }
+asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
 httpclient = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpclient" }
 httpcore = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "httpclient" }
 jedis = { group = "redis.clients", name = "jedis", version.ref = "jedis" }

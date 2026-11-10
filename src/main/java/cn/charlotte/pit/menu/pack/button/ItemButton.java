@@ -40,6 +40,8 @@ public class ItemButton extends DisplayButton {
             player.playSound(player.getLocation(), Sound.ENDERMAN_TELEPORT, 1, 1);
             return;
         }
+        ItemStack candidate = PackageMenu.getItems().get(slot);
+        if (!cn.charlotte.pit.reward.RareSupply.claim(player, candidate)) return;
         ItemStack itemStack = PackageMenu.getItems().remove(slot);
         if (itemStack != null) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
@@ -55,6 +57,7 @@ public class ItemButton extends DisplayButton {
                 player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&6&l空投! &7你从空投箱中找到了 &6%.2f &7硬币", reward.getCoins())));
             } else if ("renown_reward".equals(ItemUtil.getInternalName(itemStack))) {
                 profile.setRenown(profile.getRenown() + 2);
+                profile.kingsQuestsData.recordEventRenown(2);
                 player.sendMessage(CC.translate("&6&l空投! &7你从空投箱中找到了 &e2 &7声望"));
             } else {
                 player.getInventory().addItem(itemStack);

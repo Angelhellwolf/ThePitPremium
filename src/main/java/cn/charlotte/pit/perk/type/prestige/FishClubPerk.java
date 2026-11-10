@@ -328,7 +328,7 @@ public class FishClubPerk extends AbstractPerk implements Listener {
             }
 
             if (level >= 5) {
-                if (RandomUtil.hasSuccessfullyByChance(0.06)) {
+                if (cn.charlotte.pit.reward.RareSupply.drop(0.06, player)) {
                     final MythicLeggingsItem item = new MythicLeggingsItem();
                     item.setColor(MythicColor.AQUA);
 

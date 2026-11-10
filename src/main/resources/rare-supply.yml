@@ -1,0 +1,17 @@
+enabled: true
+# Rolling windows, independent of midnight and the holiday coin/experience calendar.
+# Each new rare enchantment uses one RARE slot, even on an already rare item.
+fresh:
+  server-hour: 24
+  server-24h: 160
+  player-hour: 4
+  player-24h: 16
+  room-hour: 8
+  room-24h: 40
+rare:
+  server-hour: 8
+  server-24h: 48
+  player-hour: 2
+  player-24h: 6
+  room-hour: 4
+  room-24h: 12

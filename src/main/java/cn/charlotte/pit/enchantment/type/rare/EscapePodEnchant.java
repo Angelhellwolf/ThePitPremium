@@ -8,6 +8,7 @@ import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerDamaged;
 import cn.charlotte.pit.parm.listener.IPlayerRespawn;
 import cn.charlotte.pit.util.PlayerUtil;
+import cn.charlotte.pit.util.BotEnchantPolicy;
 import cn.charlotte.pit.util.SpiterCompatibility;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
@@ -95,7 +96,9 @@ public class EscapePodEnchant extends AbstractEnchantment implements IPlayerDama
 
         double trueDamage = enchantLevel * 2.0D;
         for (Player nearby : PlayerUtil.getNearbyPlayers(player.getLocation(), 4.0D)) {
-            if (nearby.getUniqueId().equals(player.getUniqueId())) {
+            if (nearby.getUniqueId().equals(player.getUniqueId())
+                    || !BotEnchantPolicy.effectAllowed(player, nearby)
+                    || PlayerUtil.shouldIgnoreEnchant(player, nearby)) {
                 continue;
             }
             PlayerUtil.damage(player, nearby, PlayerUtil.DamageType.TRUE, trueDamage, true);

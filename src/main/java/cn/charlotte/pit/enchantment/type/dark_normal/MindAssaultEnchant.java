@@ -66,6 +66,7 @@ public class MindAssaultEnchant extends AbstractEnchantment implements Listener 
             return;
         }
 
+        if (!isEffectActive(damager, event.getEntity() instanceof Player ? (Player) event.getEntity() : null)) return;
         final int level = Utils.getEnchantLevel(damager.getInventory().getLeggings(), "mind_assault_enchant");
         if (level < 1) return;
 

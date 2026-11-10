@@ -202,7 +202,7 @@ debug:
     pitch: 38.875862
     yaw: -273.7115
 #金币倍数
-booster: 1.0
+booster: 1.05
 reward-calendar:
   enabled: true
   # 周一至周五 1 倍，周六日 2 倍；下列官方放假区间优先。调休上班的周末仍按周末 2 倍。
@@ -221,13 +221,13 @@ reward-calendar:
 inactive-kill-reward:
   after-seconds: 30
   multiplier: 0.5
-#宵禁设置
+#宵禁设置：北京时间周一至周五生效，周六和周日关闭
 curfew:
   #启用
-  enable: false
+  enable: true
   #几点开始
   start: 0
-  #几点结束
+  #最后一个生效小时（7 表示 08:00 结束）
   end: 7
 server-name: "&e天坑乱斗"
 #阵营活动开始时间戳
