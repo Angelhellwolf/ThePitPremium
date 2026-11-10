@@ -20,10 +20,17 @@ public class NametagHandler {
     private NametagAdapter adapter;
     private NametagThread thread;
     private NametagListeners listeners;
+    private ServerManagerNametagBridge serverManagerBridge;
 
     private Map<UUID, NametagBoard> boards;
     public long ticks = 2;
     private boolean hook = false;
+
+    // Kept explicit because Kotlin compilation runs before Lombok generates
+    // accessors for this Java source in the mixed Java/Kotlin source set.
+    public void setHook(boolean hook) {
+        this.hook = hook;
+    }
 
     /**
      * Nametag Handler.
@@ -51,6 +58,9 @@ public class NametagHandler {
         this.listeners = new NametagListeners(this);
         this.plugin.getServer().getPluginManager().registerEvents(this.listeners, this.plugin);
 
+        this.serverManagerBridge = new ServerManagerNametagBridge(this);
+        this.serverManagerBridge.start();
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             getBoards().putIfAbsent(player.getUniqueId(), new NametagBoard(player, this));
         }
@@ -62,6 +72,10 @@ public class NametagHandler {
      * Cleanup Library.
      */
     public void cleanup() {
+        if (this.serverManagerBridge != null) {
+            this.serverManagerBridge.stop();
+            this.serverManagerBridge = null;
+        }
         // Unregister Thread.
         if (this.thread != null) {
             this.thread.stop();
@@ -87,6 +101,10 @@ public class NametagHandler {
                 player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
             }
         }
+    }
+
+    public boolean isServerManagerManaged() {
+        return serverManagerBridge != null && serverManagerBridge.isActive();
     }
 
 }

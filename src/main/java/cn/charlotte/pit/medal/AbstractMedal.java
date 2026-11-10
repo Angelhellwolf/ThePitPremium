@@ -28,9 +28,11 @@ public abstract class AbstractMedal {
     public abstract boolean isHidden();
 
     public void setProgress(PlayerProfile profile, int progress) {
+        progress = Math.max(0, progress);
         MedalData medalData = profile.getMedalData();
         for (int i = 1; i <= getMaxLevel(); i++) {
             medalData.getMedalStatus(getInternalName(), i).setProgress(Math.min(progress, getProgressRequirement(i)));
+            medalData.getMedalStatus(getInternalName(), i).setFractionalProgress(0);
             if (!medalData.getMedalStatus(getInternalName(), i).isUnlocked() && progress >= getProgressRequirement(i)) {
                 medalData.getMedalStatus(getInternalName(), i).setUnlocked(true);
                 medalData.getMedalStatus(getInternalName(), i).setFinishedTime(System.currentTimeMillis());
@@ -43,8 +45,20 @@ public abstract class AbstractMedal {
     }
 
     public void addProgress(PlayerProfile profile, int progress) {
-        int newProgress = profile.getMedalData().getMedalStatus(getInternalName(), profile.getMedalData().getMedalLevel(getInternalName())).getProgress() + progress;
-        setProgress(profile, newProgress);
+        addProgress(profile, (double) progress);
+    }
+
+    public void addProgress(PlayerProfile profile, double progress) {
+        if (!Double.isFinite(progress) || progress <= 0) return;
+        double current = 0;
+        for (int level = 1; level <= getMaxLevel(); level++)
+            current = Math.max(current, profile.getMedalData().getMedalStatus(getInternalName(), level).getProgress()
+                    + profile.getMedalData().getMedalStatus(getInternalName(), level).getFractionalProgress());
+        double total = Math.min(Integer.MAX_VALUE, current + progress);
+        int whole = (int) Math.floor(total + 1.0E-9);
+        setProgress(profile, whole);
+        for (int level = 1; level <= getMaxLevel(); level++)
+            if (whole < getProgressRequirement(level)) profile.getMedalData().getMedalStatus(getInternalName(), level).setFractionalProgress(Math.max(0, total - whole));
     }
 
     public abstract void handleProfileLoaded(PlayerProfile profile);

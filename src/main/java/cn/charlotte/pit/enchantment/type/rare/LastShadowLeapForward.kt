@@ -7,6 +7,7 @@ import cn.charlotte.pit.enchantment.param.item.WeaponOnly
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.util.PlayerUtil
+import cn.charlotte.pit.util.SpiterCompatibility
 import cn.charlotte.pit.util.cooldown.Cooldown
 import cn.charlotte.pit.util.time.TimeUtil
 import cn.charlotte.pit.util.toMythicItem
@@ -83,6 +84,7 @@ class LastShadowLeapForward: AbstractEnchantment(), Listener, IActionDisplayEnch
             }
 
             Bukkit.getScheduler().runTask(ThePit.getInstance()) {
+                SpiterCompatibility.exemptVelocity(player, 40L)
                 player.velocity = vector
             }
             player.addPotionEffect(

@@ -74,6 +74,10 @@ public class EnchantButton extends Button {
                     price = 99999;
                     break;
             }
+        } else if (color == MythicColor.AQUA) {
+            price = 5000;
+        } else if (color == MythicColor.DARK_GREEN) {
+            price = 250;
         } else {
             switch (level) {
                 case 1:
@@ -121,12 +125,13 @@ public class EnchantButton extends Button {
             int level = mythicItem.getTier();
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
             List<String> lines = new ArrayList<>();
-            if (level < (color == MythicColor.DARK ? 2 : 3)) {
+            int maxTier = getMaxEnchantTier(color);
+            if (level < maxTier) {
                 lines.add("&7升级至: &a" + RomanUtil.convert(level + 1) + " 阶");
-                lines.add("&7价格: &6" + getPrice(player, level + 1, color) + " 硬币" + (level == (color == MythicColor.DARK ? 1 : 2) ? " &7+ " + color.getChatColor() + color.getDisplayName() + "色神话之甲" : ""));
+                lines.add("&7价格: &6" + getPrice(player, level + 1, color) + " 硬币" + (level == (color == MythicColor.DARK ? 1 : 2) && color != MythicColor.DARK_GREEN ? " &7+ " + color.getChatColor() + color.getDisplayName() + "色神话之甲" : ""));
                 lines.add(" ");
                 if (profile.getCoins() >= getPrice(player, level + 1, color)) {
-                    if (PlayerUtil.getPlayerUnlockedPerkLevel(player, "Mythicism") < 4 && level == 2) {
+                    if (PlayerUtil.getPlayerUnlockedPerkLevel(player, "Mythicism") < 4 && level == 2 && color != MythicColor.DARK_GREEN) {
                         lines.add("&c天赋 &6神话附魔师 &c等级 &eIV &c后解锁此功能!");
                     } else {
                         String sinceItem = profile.getEnchantingScience();
@@ -143,7 +148,7 @@ public class EnchantButton extends Button {
             } else {
                 lines.add("&a此附魔物品已被提升至最大等级!");
             }
-            if ((color == MythicColor.DARK || color == MythicColor.RAGE) && !PlayerUtil.isPlayerUnlockedPerk(player, "heresy_perk")) {
+            if (color == MythicColor.DARK || color == MythicColor.RAGE) {
                 if (!PlayerUtil.isPlayerUnlockedPerk(player, "heresy_perk")) {
                     lines.clear();
                     lines.add("&c清先解锁精通天赋 &6邪术 &c后重试!");
@@ -165,6 +170,7 @@ public class EnchantButton extends Button {
 
     @Override
     public void clicked(Player player, int slot, ClickType clickType, int hotbarButton, ItemStack currentItem) {
+        if (!cn.charlotte.pit.reward.RareSupply.preflight(player, item)) return;
         if (item == null || item.getType() == Material.AIR) {
             return;
         }
@@ -181,32 +187,42 @@ public class EnchantButton extends Button {
         MythicColor color = MythicColor.valueOf(mythicColor.toUpperCase());
         int level = mythicItem.getTier();
 
-        if ((color == MythicColor.DARK || color == MythicColor.RAGE) && !PlayerUtil.isPlayerUnlockedPerk(player, "heresy_perk")) {
+        if (color == MythicColor.DARK || color == MythicColor.RAGE) {
             if (!PlayerUtil.isPlayerUnlockedPerk(player, "heresy_perk")) {
+                player.sendMessage(CC.translate("&c请先解锁精通天赋 &6邪术 &c后重试!"));
                 return;
             }
             if (PlayerUtil.getPlayerUnlockedPerkLevel(player, "heresy_perk") < 3 && level == 1) {
+                player.sendMessage(CC.translate("&c天赋 &6邪术 &c等级 &eIII &c后解锁此功能!"));
                 return;
             }
         }
-        if (level >= (color == MythicColor.DARK ? 2 : 3)) {
+        if (level >= getMaxEnchantTier(color)) {
+            player.sendMessage(CC.translate("&c此神话物品已经达到最大阶级!"));
             return;
         }
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (profile.getCoins() < getPrice(player, level + 1, color)) {
+            player.sendMessage(CC.translate("&c你的硬币不足，还需要 &6"
+                    + (getPrice(player, level + 1, color) - profile.getCoins()) + " &c硬币!"));
             return;
         }
-        if (level == (color == MythicColor.DARK ? 1 : 2)) {
+        boolean consumeMaterial = level == (color == MythicColor.DARK ? 1 : 2) && color != MythicColor.DARK_GREEN;
+        if (consumeMaterial) {
             if (PlayerUtil.getPlayerUnlockedPerkLevel(player, "Mythicism") < 4) {
+                player.sendMessage(CC.translate("&c天赋 &6神话附魔师 &c等级 &eIV &c后才能升级至 III 阶!"));
                 return;
             }
-            if (!removeMythicLegWithColor(player, color)) {
+            if (!hasMythicLegWithColor(player, color)) {
                 player.playSound(player.getLocation(), Sound.ENDERMAN_TELEPORT, 1, 1);
                 player.sendMessage(CC.translate("&c请放入一条额外的 " + color.getChatColor() + color.getDisplayName() + "色神话之甲 &c才能附魔!"));
                 return;
             }
         }
-        profile.setCoins(profile.getCoins() - getPrice(player, level + 1, color));
+        if (!cn.charlotte.pit.reward.RareSupply.book(player, item, mythicItem)) return;
+        if (consumeMaterial) profile.setEnchantingScience(null);
+        cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - getPrice(player, level + 1, color),
+                cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "mythic_well");
         //handle enchant
         doEnchant(item, player, mythicItem);
 
@@ -235,7 +251,7 @@ public class EnchantButton extends Button {
                     break;
                 case 1:
                     mythicItem.setMaxLive((Integer) RandomUtil.helpMeToChooseOne(40, 45, 50, 55, 60));
-                    if (RandomUtil.hasSuccessfullyByChance(0.01)) {
+                    if (cn.charlotte.pit.reward.RareSupply.rare(0.01, player)) {
                         mythicItem.setMaxLive(135);
                     }
                     break;
@@ -255,7 +271,7 @@ public class EnchantButton extends Button {
                         mythicItem.setMaxLive(random.nextInt(6) + 10); //10-15
                         break;
                     case 2:
-                        if (RandomUtil.hasSuccessfullyByChance(0.01)) { //Artifact Prefix -> 100 Lives
+                        if (cn.charlotte.pit.reward.RareSupply.rare(0.01, player)) { //Artifact Prefix -> 100 Lives
                             mythicItem.setMaxLive(100);
                         } else {
                             mythicItem.setMaxLive(random.nextInt(8) + 16); //16-23
@@ -287,8 +303,14 @@ public class EnchantButton extends Button {
         }
         boolean announcement = false;
 
-        List<AbstractEnchantment> results = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.NORMAL).collect(Collectors.toList());
-        List<AbstractEnchantment> rareResults = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.RARE).collect(Collectors.toList());
+        List<AbstractEnchantment> results = list.stream()
+                .filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.NORMAL)
+                .filter(abstractEnchantment -> !"hidden_jewel_sword".equals(abstractEnchantment.getNbtName()) && !"hidden_jewel_pants".equals(abstractEnchantment.getNbtName()))
+                .collect(Collectors.toList());
+        List<AbstractEnchantment> rareResults = list.stream()
+                .filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.RARE)
+                .filter(abstractEnchantment -> !"hidden_jewel_sword".equals(abstractEnchantment.getNbtName()) && !"hidden_jewel_pants".equals(abstractEnchantment.getNbtName()))
+                .collect(Collectors.toList());
 
         //different type of mythic item have different rarity enchantments
         if (color == MythicColor.DARK) {
@@ -297,9 +319,43 @@ public class EnchantButton extends Button {
         } else if (color == MythicColor.RAGE && level == 1) {
             results = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.RAGE).collect(Collectors.toList());
             rareResults = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.RAGE_RARE).collect(Collectors.toList());
+        } else if (color == MythicColor.AQUA) {
+            results = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.FISH_NORMAL && !"club_rod".equals(abstractEnchantment.getNbtName())).collect(Collectors.toList());
+            rareResults = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.FISH_RARE).collect(Collectors.toList());
+        } else if (color == MythicColor.DARK_GREEN) {
+            results = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.SEWER_NORMAL && !"hidden_jewel_pants".equals(abstractEnchantment.getNbtName())).collect(Collectors.toList());
+            rareResults = list.stream().filter(abstractEnchantment -> abstractEnchantment.getRarity() == EnchantmentRarity.SEWER_RARE).collect(Collectors.toList());
         }
         //Enchant Start
         switch (color) {
+            case AQUA: {
+                if (level == 1) {
+                    mythicItem.setMaxLive(5);
+                    mythicItem.setLive(5);
+                    AbstractEnchantment clubRod = ThePit.getInstance().getEnchantmentFactor().getEnchantmentMap().get("club_rod");
+                    if (clubRod != null) {
+                        mythicItem.getEnchantments().put(clubRod, 1);
+                    }
+                }
+                announcement = addAquaEnchantment(player, mythicItem, results, rareResults, announcement);
+                break;
+            }
+            case DARK_GREEN: {
+                if (level == 1) {
+                    if (!rareResults.isEmpty() && cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
+                        AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
+                        mythicItem.getEnchantments().put(enchantment, 1);
+                        announcement = true;
+                        mythicItem.setMaxLive((Integer) RandomUtil.helpMeToChooseOne(30, 40));
+                    } else if (!results.isEmpty()) {
+                        AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(results.toArray());
+                        mythicItem.getEnchantments().put(enchantment, 1);
+                        mythicItem.setMaxLive((Integer) RandomUtil.helpMeToChooseOne(10, 20));
+                    }
+                    mythicItem.setLive(mythicItem.getMaxLive());
+                }
+                break;
+            }
             case DARK: {
                 if (level == 1) {
                     //t1 dark pants have only somber1
@@ -307,7 +363,7 @@ public class EnchantButton extends Button {
                     break;
                 }
                 if (level == 2) {
-                    if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                    if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                         AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
                         mythicItem.getEnchantments().put(enchantment, 1);
                         announcement = true;
@@ -321,7 +377,7 @@ public class EnchantButton extends Button {
             }
             case RAGE: {
                 if (level == 1) {
-                    if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                    if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                         AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
                         mythicItem.getEnchantments().put(enchantment, RandomUtil.random.nextInt(enchantment.getMaxEnchantLevel() - 1) + 1);
                         announcement = true;
@@ -464,7 +520,7 @@ public class EnchantButton extends Button {
                             case 1: { // 11->111
                                 results.removeAll(enchantments);
                                 AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(results.toArray());
-                                if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                                if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                                     announcement = true;
                                     rareResults.removeAll(enchantments);
                                     enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -490,7 +546,7 @@ public class EnchantButton extends Button {
                         } else {
                             for (int i = 0; i < 2; i++) {
                                 results.removeAll(enchantments);
-                                if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                                if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                                     announcement = true;
                                     rareResults.removeAll(enchantments);
                                     enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -524,7 +580,7 @@ public class EnchantButton extends Button {
                         } else {
                             results.removeAll(enchantments);
                             AbstractEnchantment enchantment;
-                            if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+                            if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
                                 announcement = true;
                                 rareResults.removeAll(enchantments);
                                 enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -624,7 +680,7 @@ public class EnchantButton extends Button {
     private boolean shouldAnnouncement(Player player, MythicColor color, AbstractPitItem mythicItem, List<AbstractEnchantment> enchantments, boolean announcement, List<AbstractEnchantment> results, List<AbstractEnchantment> rareResults) {
         AbstractEnchantment enchantment;
         results.removeAll(enchantments);
-        if (RandomUtil.hasSuccessfullyByChance(NewConfiguration.INSTANCE.getChance(player, color))) {
+        if (cn.charlotte.pit.reward.RareSupply.enchant(player, color)) {
             announcement = true;
             rareResults.removeAll(enchantments);
             enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(rareResults.toArray());
@@ -662,13 +718,13 @@ public class EnchantButton extends Button {
     }
 
     /**
-     * 移除玩家指定颜色的裤子
+     * 检查玩家指定颜色的附魔材料，不提前消耗
      *
      * @param player 玩家
      * @param color  需要移除的颜色
-     * @return 是否移除，返回false为移除失败
+     * @return 材料是否齐备
      */
-    private boolean removeMythicLegWithColor(Player player, MythicColor color) {
+    private boolean hasMythicLegWithColor(Player player, MythicColor color) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (profile.getEnchantingScience() == null) return false;
         ItemStack itemStack = InventoryUtil.deserializeItemStack(profile.getEnchantingScience());
@@ -676,15 +732,53 @@ public class EnchantButton extends Button {
             return false;
         }
 
-        String mythic_color = ItemUtil.getItemStringData(itemStack, "mythic_color");
-        for (MythicColor mythicColor : MythicColor.values()) {
-            if (mythicColor.getInternalName().equals(mythic_color)) {
-                profile.setEnchantingScience(InventoryUtil.serializeItemStack(new ItemStack(Material.AIR)));
-                return true;
-            }
+        MythicColor materialColor = MythicColor.valueOfInternalName(
+                ItemUtil.getItemStringData(itemStack, "mythic_color"));
+        if (materialColor == color) {
+            return true;
         }
 
         return false;
+    }
+
+    private int getMaxEnchantTier(MythicColor color) {
+        if (color == MythicColor.DARK) {
+            return 2;
+        }
+        if (color == MythicColor.DARK_GREEN) {
+            return 1;
+        }
+        return 3;
+    }
+
+    /**
+     * Aqua leggings use one-level fishing enchantments. Each enchantment tier must
+     * therefore add a new, previously absent fishing enchantment instead of trying
+     * to raise the level of an existing one.
+     */
+    private boolean addAquaEnchantment(Player player, IMythicItem mythicItem,
+                                       List<AbstractEnchantment> normalCandidates,
+                                       List<AbstractEnchantment> rareCandidates,
+                                       boolean announcement) {
+        List<AbstractEnchantment> availableNormal = normalCandidates.stream()
+                .filter(enchantment -> !mythicItem.getEnchantments().containsKey(enchantment))
+                .collect(Collectors.toList());
+        List<AbstractEnchantment> availableRare = rareCandidates.stream()
+                .filter(enchantment -> !mythicItem.getEnchantments().containsKey(enchantment))
+                .collect(Collectors.toList());
+
+        if (availableNormal.isEmpty() && availableRare.isEmpty()) {
+            return announcement;
+        }
+
+        boolean chooseRare = !availableRare.isEmpty()
+                && (availableNormal.isEmpty() ? cn.charlotte.pit.reward.RareSupply.guaranteed(cn.charlotte.pit.reward.RareSupplyLedger.Pool.RARE, player)
+                : cn.charlotte.pit.reward.RareSupply.enchant(player, MythicColor.AQUA));
+        List<AbstractEnchantment> candidates = chooseRare ? availableRare : availableNormal;
+        if (candidates.isEmpty()) return announcement;
+        AbstractEnchantment enchantment = (AbstractEnchantment) RandomUtil.helpMeToChooseOne(candidates.toArray());
+        mythicItem.getEnchantments().put(enchantment, 1);
+        return announcement || chooseRare;
     }
 
     //获取玩家是否可在该物品上使用神话之书 可则返回书物品 否则返回null
@@ -694,7 +788,7 @@ public class EnchantButton extends Button {
 
         IMythicItem mythicItem = Utils.getMythicItem(item);
 
-        if (mythicItem.getColor() == MythicColor.RAGE) {
+        if (mythicItem.getColor() == MythicColor.RAGE || mythicItem.getColor() == MythicColor.AQUA || mythicItem.getColor() == MythicColor.DARK_GREEN) {
             return false;
         }
 

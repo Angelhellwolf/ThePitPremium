@@ -6,6 +6,7 @@ import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
+import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.entity.Entity;
@@ -20,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @WeaponOnly
 @BowOnly
-public class ReaperEnchant extends AbstractEnchantment implements IAttackEntity {
+public class ReaperEnchant extends AbstractEnchantment implements IAttackEntity, IPlayerShootEntity {
     @Override
     public String getEnchantName() {
         return "收割者";
@@ -48,18 +49,31 @@ public class ReaperEnchant extends AbstractEnchantment implements IAttackEntity 
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        int i = 5 + 5 * enchantLevel;
-        return "&7攻击生命值低于最大生命值 &c50% &7的敌人造成伤害 &c+" + i + "%";
+        return "&7攻击生命值低于最大生命值 &c50% &7的敌人造成伤害 &c+" + getBoostPercent(enchantLevel) + "%";
     }
 
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 6;
+            case 2:
+                return 12;
+            default:
+                return 18;
+        }
+    }
 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player targetPlayer = (Player) target;
-        if (targetPlayer.getHealth() <= (targetPlayer.getMaxHealth() / 2)) {
-            int damageBoost = 5 + 5 * enchantLevel;
-            boostDamage.set(boostDamage.get() + damageBoost * 0.01);
+        if (targetPlayer.getHealth() < (targetPlayer.getMaxHealth() / 2)) {
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
+    }
+    @Override
+    @cn.charlotte.pit.enchantment.param.event.PlayerOnly
+    public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        handleAttackEntity(enchantLevel, attacker, target, damage, finalDamage, boostDamage, cancel);
     }
 }

@@ -69,6 +69,7 @@ public class XPBoostPerk extends AbstractPerk implements IPlayerKilledEntity, IP
         lines.add("&7每次升级:");
         lines.add("  &7击杀/助攻 获得的经验值 &b+10% &7.");
         lines.add("  &7当前: &b+" + 10 * (profile.getChosePerk().get(-1) == null ? 0 : profile.getChosePerk().get(-1).getLevel()) + "% 经验值");
+        lines.add("&7以上击杀或助攻收益加成排除 Bot");
         return lines;
     }
 

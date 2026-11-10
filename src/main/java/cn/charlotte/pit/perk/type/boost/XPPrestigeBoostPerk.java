@@ -62,6 +62,7 @@ public class XPPrestigeBoostPerk extends AbstractPerk {
         List<String> lines = new ArrayList<>();
         lines.add("&7每次升级:");
         lines.add("  &7击杀获得 &b+1 基础经验值 &7.");
+        lines.add("&7以上击杀或助攻收益加成排除 Bot");
         return lines;
     }
 

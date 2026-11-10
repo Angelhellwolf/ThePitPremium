@@ -2,10 +2,6 @@ package cn.charlotte.pit.menu.admin.item.button;
 
 import cn.charlotte.pit.data.sub.EnchantmentRecord;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
-import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
-import cn.charlotte.pit.enchantment.param.item.BowOnly;
-import cn.charlotte.pit.enchantment.param.item.RodOnly;
-import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.item.type.mythic.MagicFishingRod;
 import cn.charlotte.pit.item.type.mythic.MythicBowItem;
@@ -35,10 +31,10 @@ public class EnchantButton extends Button {
 
     @Override
     public ItemStack getButtonItem(Player player) {
-        boolean sword = enchantment.getClass().isAnnotationPresent(WeaponOnly.class);
-        boolean bow = enchantment.getClass().isAnnotationPresent(BowOnly.class);
-        boolean armor = enchantment.getClass().isAnnotationPresent(ArmorOnly.class);
-        boolean rod = enchantment.getClass().isAnnotationPresent(RodOnly.class);
+        boolean sword = enchantment.isWeaponOnly();
+        boolean bow = enchantment.isBowOnly();
+        boolean armor = enchantment.isArmorOnly();
+        boolean rod = enchantment.isRodOnly();
         EnchantmentRarity rarity = enchantment.getRarity();
 
         String s = "&7可用于: " + (sword ? "剑," : "") + (bow ? "弓," : "") + (armor ? "盔甲," : "") + (rod ? "鱼竿," : "");
@@ -46,13 +42,10 @@ public class EnchantButton extends Button {
         if (player.getItemInHand() == null || player.getItemInHand().getType().equals(Material.AIR) || ItemUtil.getInternalName(player.getItemInHand()) == null) {
             return new ItemBuilder(Material.AIR).build();
         }
-        if ((ItemUtil.getInternalName(player.getItemInHand()).equalsIgnoreCase("mythic_sword") && !sword)
-                || (ItemUtil.getInternalName(player.getItemInHand()).equalsIgnoreCase("mythic_bow") && !bow)
-                || (ItemUtil.getInternalName(player.getItemInHand()).equalsIgnoreCase("mythic_leggings") && !armor)
-                || (ItemUtil.getInternalName(player.getItemInHand()).equals("magic_fishing_rod") && !rod)) {
+        if (!enchantment.canApply(player.getItemInHand())) {
             return new ItemBuilder(Material.BARRIER)
                     .name("&9" + enchantment.getEnchantName())
-                    .lore("", s.substring(0, s.length() - 1))
+                    .lore("", s.isEmpty() ? "&7可用于: 无" : s.substring(0, s.length() - 1))
                     .build();
         }
         ItemBuilder itemBuilder = new ItemBuilder(Material.WOOL)
@@ -68,9 +61,12 @@ public class EnchantButton extends Button {
     @Override
     public void clicked(Player player, int slot, ClickType clickType, int hotbarButton, ItemStack currentItem) {
         ItemStack item = player.getItemInHand();
-        boolean canApply = true;
+        if (item == null || !enchantment.canApply(item)) {
+            player.playSound(player.getLocation(), Sound.ANVIL_BREAK, 1, 99);
+            player.sendMessage(CC.translate("&c附魔失败!你使用了错误的附魔在这个物品上"));
+            return;
+        }
         if ("mythic_sword".equals(ItemUtil.getInternalName(item))) {
-            if (canApply) {
                 MythicSwordItem swordItem = new MythicSwordItem();
                 swordItem.loadFromItemStack(item);
                 swordItem.setMaxLive(RandomUtil.random.nextInt(8) + 16);
@@ -109,9 +105,7 @@ public class EnchantButton extends Button {
                 player.sendMessage(CC.translate("&a成功"));
                 player.setItemInHand(swordItem.toItemStack());
                 return;
-            }
         } else if ("mythic_bow".equals(ItemUtil.getInternalName(item))) {
-            if (canApply) {
                 MythicBowItem bowItem = new MythicBowItem();
                 bowItem.loadFromItemStack(item);
                 bowItem.setMaxLive(RandomUtil.random.nextInt(8) + 16);
@@ -145,9 +139,7 @@ public class EnchantButton extends Button {
                 player.sendMessage(CC.translate("&a成功"));
                 player.setItemInHand(bowItem.toItemStack());
                 return;
-            }
         } else if ("mythic_leggings".equals(ItemUtil.getInternalName(item))) {
-            if (canApply) {
                 MythicLeggingsItem leggingsItem = new MythicLeggingsItem();
                 leggingsItem.loadFromItemStack(item);
                 leggingsItem.setMaxLive(40);
@@ -181,9 +173,7 @@ public class EnchantButton extends Button {
                 player.sendMessage(CC.translate("&a成功"));
                 player.setItemInHand(leggingsItem.toItemStack());
                 return;
-            }
         } else if ("magic_fishing_rod".equals(ItemUtil.getInternalName(item))) {
-            if (canApply) {
                 MagicFishingRod fishingRod = new MagicFishingRod();
                 fishingRod.loadFromItemStack(item);
                 fishingRod.setMaxLive(40);
@@ -211,7 +201,6 @@ public class EnchantButton extends Button {
                 player.sendMessage(CC.translate("&a成功"));
                 player.setItemInHand(fishingRod.toItemStack());
                 return;
-            }
         }
         player.playSound(player.getLocation(), Sound.ANVIL_BREAK, 1, 99);
         player.sendMessage(CC.translate("&c附魔失败!你使用了错误的附魔在这个物品上"));

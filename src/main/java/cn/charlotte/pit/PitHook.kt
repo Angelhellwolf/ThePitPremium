@@ -5,18 +5,29 @@ import cn.charlotte.pit.addon.AddonHandler
 import cn.charlotte.pit.command.CleanupNoDupeItemCommand
 import cn.charlotte.pit.command.PitAdminCommand
 import cn.charlotte.pit.command.PitCommand
+import cn.charlotte.pit.command.SupporterCommand
 import cn.charlotte.pit.config.NewConfiguration
 import cn.charlotte.pit.data.CDKData
 import cn.charlotte.pit.enchantment.AbstractEnchantment
+import cn.charlotte.pit.enchantment.type.HsrEnchantments
 import cn.charlotte.pit.enchantment.type.aqua.ClubRodEnchant
 import cn.charlotte.pit.enchantment.type.aqua.GrandmasterEnchant
+import cn.charlotte.pit.enchantment.type.aqua.HeadOnBlow
 import cn.charlotte.pit.enchantment.type.aqua.LuckOfPondEnchant
+import cn.charlotte.pit.enchantment.type.aqua.PortablePondEnchant
 import cn.charlotte.pit.enchantment.type.aqua.RogueEnchant
+import cn.charlotte.pit.enchantment.type.aqua.StereoEnchant
+import cn.charlotte.pit.enchantment.type.aqua.ToughCrewEnchant
+import cn.charlotte.pit.enchantment.type.aqua.TrophyEnchant
+import cn.charlotte.pit.enchantment.type.aqua.UniteEnchant
 import cn.charlotte.pit.enchantment.type.dark_normal.*
+import cn.charlotte.pit.enchantment.type.dark_rare.CatastrophicEnchant
 import cn.charlotte.pit.enchantment.type.dark_rare.ComboDazzlingGoldEnchant
 import cn.charlotte.pit.enchantment.type.dark_rare.ComboUnpredictablyEnchant
 import cn.charlotte.pit.enchantment.type.dark_rare.ComboVenomEnchant
 import cn.charlotte.pit.enchantment.type.dark_rare.GoldenHandcuffsEnchant
+import cn.charlotte.pit.enchantment.type.dark_rare.HeartripperEnchant
+import cn.charlotte.pit.enchantment.type.dark_rare.NostalgiaEnchant
 import cn.charlotte.pit.enchantment.type.genesis.*
 import cn.charlotte.pit.enchantment.type.normal.*
 import cn.charlotte.pit.enchantment.type.op.*
@@ -25,14 +36,17 @@ import cn.charlotte.pit.enchantment.type.ragerare.Regularity
 import cn.charlotte.pit.enchantment.type.ragerare.ThinkOfThePeopleEnchant
 import cn.charlotte.pit.enchantment.type.rare.*
 import cn.charlotte.pit.enchantment.type.sewer_normal.AegisEnchant
+import cn.charlotte.pit.enchantment.type.sewer_normal.SewerHiddenJewelEnchant
+import cn.charlotte.pit.enchantment.type.sewer_normal.WormEnchant
+import cn.charlotte.pit.enchantment.type.sewer_rare.TrashPandaEnchant
 import cn.charlotte.pit.enchantment.type.special.SoulRipperEnchant
 import cn.charlotte.pit.events.impl.*
 import cn.charlotte.pit.events.impl.major.*
 import cn.charlotte.pit.hook.PitPapiHook
 import cn.charlotte.pit.impl.PlayerPointsAPIImpl
+import cn.charlotte.pit.impl.RemiaftValuePointsAPIImpl
 import cn.charlotte.pit.item.AbstractPitItem
 import cn.charlotte.pit.item.type.*
-import cn.charlotte.pit.js.JSHandler
 import cn.charlotte.pit.listener.*
 import cn.charlotte.pit.map.kingsquests.KingsQuests
 import cn.charlotte.pit.menu.shop.button.type.BowBundleShopButton
@@ -58,11 +72,14 @@ import cn.charlotte.pit.perk.type.streak.highlander.WitherCraftKillStreak
 import cn.charlotte.pit.perk.type.streak.nonpurchased.*
 import cn.charlotte.pit.perk.type.streak.tothemoon.SuperStreaker
 import cn.charlotte.pit.perk.type.streak.tothemoon.ToTheMoonMegaStreak
+import cn.charlotte.pit.perk.type.streak.tothemoon.GoldStack
+import cn.charlotte.pit.perk.type.streak.tothemoon.XPStack
 import cn.charlotte.pit.perk.type.streak.uber.UberStreak
 import cn.charlotte.pit.quest.type.*
 import cn.charlotte.pit.runnable.*
 import cn.charlotte.pit.scoreboard.Scoreboard
 import cn.charlotte.pit.sound.impl.*
+import cn.charlotte.pit.supporter.SupporterService
 import cn.charlotte.pit.util.command.CommandHandler
 import cn.charlotte.pit.util.nametag.NametagHandler
 import cn.charlotte.pit.util.scoreboard.Assemble
@@ -76,8 +93,6 @@ import real.nanoneko.ItemConstructor
 import real.nanoneko.PerkConstructor
 import sinc.Native
 import java.io.File
-import java.util.concurrent.ScheduledThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 
 @Native
 object PitHook {
@@ -138,20 +153,30 @@ object PitHook {
 
 
     private fun loadAPI() {
-        ThePit.getInstance().pointsAPI = PlayerPointsAPIImpl;
-        JSHandler.load()
+        when (NewConfiguration.vipCurrencyProvider.lowercase()) {
+            "playerpoints" -> ThePit.getInstance().pointsAPI = PlayerPointsAPIImpl
+            "remiaftvalue" -> {
+                ThePit.getInstance().pointsAPI = RemiaftValuePointsAPIImpl
+                Bukkit.getPluginManager().registerEvents(RemiaftValuePointsAPIImpl, ThePit.getInstance())
+            }
+            else -> {
+                ThePit.getInstance().logger.warning(
+                    "未知会员货币提供器 ${NewConfiguration.vipCurrencyProvider}，已使用 RemiaftValue"
+                )
+                ThePit.getInstance().pointsAPI = RemiaftValuePointsAPIImpl
+                Bukkit.getPluginManager().registerEvents(RemiaftValuePointsAPIImpl, ThePit.getInstance())
+            }
+        }
+        SupporterService.start(ThePit.getInstance())
     }
 
     private fun loadCommands() {
         CommandHandler.init(ThePit.getInstance())
         CommandHandler.registerClass(PitAdminCommand::class.java)
         CommandHandler.registerClass(PitCommand::class.java)
+        CommandHandler.registerClass(SupporterCommand::class.java)
         CommandHandler.registerClass(CleanupNoDupeItemCommand::class.java)
     }
-
-    @JvmStatic
-    var bountyExecutor: ScheduledThreadPoolExecutor? = null
-        private set
 
     private fun loadRunnable() {
         GameRunnable()
@@ -165,9 +190,10 @@ object PitHook {
         NightVisionRunnable().runTaskTimer(ThePit.getInstance(), 20, 20)
 //        NiggerRunnable().runTaskTimerAsynchronously(ThePit.getInstance(), 20, 20)
         /*        AntiCollateralRunnable().runTaskTimerAsynchronously(ThePit.getInstance(), 1 * 20 * 60, 60L)*/
-        bountyExecutor = ScheduledThreadPoolExecutor(1).also {
-            it.scheduleWithFixedDelay(BountyRunnable(), 100, 100, TimeUnit.MILLISECONDS)
-        }
+        // Holograms and player locations are Bukkit state. Keep the animation on
+        // the server thread and render at 5 FPS to avoid async packet races and
+        // needless client traffic from the previous 10 Hz native executor.
+        Bukkit.getScheduler().runTaskTimer(ThePit.getInstance(), BountyRunnable(), 20L, 4L)
     }
 
     private fun loadItems() {
@@ -217,9 +243,8 @@ object PitHook {
         }
     }
 
-    private fun loadEnchants() {
-        val enchantmentFactor = ThePit.getInstance().enchantmentFactor
-        val classes = mutableListOf(
+    @JvmStatic
+    fun builtInEnchantments(): List<Class<out AbstractEnchantment>> = listOf(
             JudgmentShot::class.java,
             LastStandEnchant::class.java,
             BreakTheMirror::class.java,
@@ -231,10 +256,32 @@ object PitHook {
             SoulEarterEnchant::class.java,
             PhantomShieldEnchant::class.java,
             KingKillersEnchant::class.java,
+            HsrEnchantments.AbundanceRegenEnchant::class.java,
+            HsrEnchantments.AbundanceSalvageEnchant::class.java,
+            HsrEnchantments.AimingProtocolEnchant::class.java,
+            HsrEnchantments.DestructionResonanceEnchant::class.java,
+            HsrEnchantments.DestructionRiposteEnchant::class.java,
+            HsrEnchantments.EruditionSpreadEnchant::class.java,
+            HsrEnchantments.EruditionStanceEnchant::class.java,
+            HsrEnchantments.FollowupArrowEnchant::class.java,
+            HsrEnchantments.HarmonyRepriseEnchant::class.java,
+            HsrEnchantments.HarmonyTrackEnchant::class.java,
+            HsrEnchantments.HuntAfterimageEnchant::class.java,
+            HsrEnchantments.HuntChainEnchant::class.java,
+            HsrEnchantments.MultimillionaireEnchant::class.java,
+            HsrEnchantments.NihilityLagEnchant::class.java,
+            HsrEnchantments.PreservationCounterEnchant::class.java,
+            HsrEnchantments.QuantumEntangleEnchant::class.java,
+            HsrEnchantments.RiftExecutionEnchant::class.java,
+            HsrEnchantments.ShieldPulseEnchant::class.java,
+            HsrEnchantments.StarrailSniperEnchant::class.java,
+            HsrEnchantments.StellarBrandEnchant::class.java,
+            HsrEnchantments.ToughnessSlashEnchant::class.java,
             //end
             ClubRodEnchant::class.java,
             GrandmasterEnchant::class.java,
             LuckOfPondEnchant::class.java,
+            PortablePondEnchant::class.java,
             RogueEnchant::class.java,
             Regularity::class.java,
             ThinkOfThePeopleEnchant::class.java,
@@ -248,6 +295,7 @@ object PitHook {
             SanguisugeEnchant::class.java,
             SomberEnchant::class.java,
             SpiteEnchant::class.java,
+            CatastrophicEnchant::class.java,
             ComboVenomEnchant::class.java,
             GoldenHandcuffsEnchant::class.java,
             EvilWithinEnchant::class.java,
@@ -345,6 +393,7 @@ object PitHook {
             ArchangelEnchant::class.java,
             AssassinEnchant::class.java,
             BillionaireEnchant::class.java,
+            ComboPowerfulEnchant::class.java,
             ComboStrikeEnchant::class.java,
             ComboStunEnchant::class.java,
             DivineMiracleEnchant::class.java,
@@ -365,6 +414,7 @@ object PitHook {
             SolitudeEnchant::class.java,
             SpeedyHitEnchant::class.java,
             ThePunchEnchant::class.java,
+            Unrestrained::class.java,
             VolleyEnchant::class.java,
             AegisEnchant::class.java,
             SoulRipperEnchant::class.java,
@@ -374,25 +424,64 @@ object PitHook {
             WitheredAndPiercingThroughTheHeart::class.java,
             LastShadowLeapForward::class.java,
             RealManEnchant::class.java,
-            BreachingChargeEnchant::class.java
+            BreachingChargeEnchant::class.java,
+            HeadOnBlow::class.java,
+            ToughCrewEnchant::class.java,
+            TrophyEnchant::class.java,
+            UniteEnchant::class.java,
+            StereoEnchant::class.java,
+            SweatyEnchant::class.java,
+            XpBumpEnchant::class.java,
+            MoctezumaEnchant::class.java,
+            LodbrokEnchant::class.java,
+            NegotiatorEnchant::class.java,
+            CricketEnchant::class.java,
+            McSwimmerEnchant::class.java,
+            DangerCloseEnchant::class.java,
+            HeartsEnchant::class.java,
+            PrickEnchant::class.java,
+            RevitalizeEnchant::class.java,
+            ExcessEnchant::class.java,
+            FirstShotEnchant::class.java,
+            JumpspammerEnchant::class.java,
+            ChippingEnchant::class.java,
+            PinDownEnchant::class.java,
+            PushComesToShoveEnchant::class.java,
+            WhatDoesntKillYouEnchant::class.java,
+            FancyRaiderEnchant::class.java,
+            GrasshopperEnchant::class.java,
+            ComboXpEnchant::class.java,
+            DuelistEnchant::class.java,
+            RevengeanceEnchant::class.java,
+            EggsEnchant::class.java,
+            SteaksEnchant::class.java,
+            EscapePodEnchant::class.java,
+            MartyrdomEnchant::class.java,
+            PhoenixEnchant::class.java,
+            RetroGravityMicrocosmEnchant::class.java,
+            KnockbackEnchant::class.java,
+            DevilChicksEnchant::class.java,
+            ExplosiveEnchant::class.java,
+            HiddenJewelEnchant::class.java,
+            SnowmenArmyEnchant::class.java,
+            WolfPackEnchant::class.java,
+            InstaBoomEnchant::class.java,
+            MinersEnchant::class.java,
+            DoItLikeTheFrenchEnchant::class.java,
+            HeighHoEnchant::class.java,
+            SybilEnchant::class.java,
+            LycanthropyEnchant::class.java,
+            NeedlessSufferingEnchant::class.java,
+            HeartripperEnchant::class.java,
+            NostalgiaEnchant::class.java,
+            SewerHiddenJewelEnchant::class.java,
+            WormEnchant::class.java,
+            TrashPandaEnchant::class.java
         )
 
-
-        fun filterDisabledEnchantments() {
-            val pitConfig = ThePit.getInstance().pitConfig
-            val iterator = classes.iterator()
-            while (iterator.hasNext()) {
-                val enchantClass = iterator.next()
-                val enchantNameMethod = enchantClass.getMethod("getEnchantName")
-                val enchantName =
-                    enchantNameMethod.invoke(enchantClass.getDeclaredConstructor().newInstance()) as String
-
-                if (pitConfig.disableEnchants.contains(enchantName)) {
-                    println("附魔启用覆盖: 忽略配置中的禁用项 $enchantName")
-                }
-                enchantNames.add(enchantName)
-            }
-        }
+    private fun loadEnchants() {
+        val enchantmentFactor = ThePit.getInstance().enchantmentFactor
+        val classes = builtInEnchantments().toMutableList()
 
         fun addEnchantments() {
             val enchantmentClasses: List<Class<*>> = EnchantedConstructor.getEnchantments()
@@ -404,11 +493,25 @@ object PitHook {
                 classes.addAll(enchantmentCollection)
             }
         }
-        filterDisabledEnchantments()
         addEnchantments()
 
         enchantmentFactor.init(classes)
         enchantmentInt = enchantmentFactor.enchantmentMap.size
+
+        // Enchantment constructors are not side-effect free: several register movement
+        // handlers, start cleanup tasks and load NBS files. Reuse the canonical instances
+        // created by EnchantmentFactor instead of reflectively constructing every class
+        // once for each derived registry.
+        val loadedEnchantments = enchantmentFactor.enchantments
+        val pitConfig = ThePit.getInstance().pitConfig
+        enchantNames.clear()
+        loadedEnchantments.forEach { enchantment ->
+            val enchantName = enchantment.enchantName
+            if (pitConfig.disableEnchants.contains(enchantName)) {
+                println("附魔启用覆盖: 忽略配置中的禁用项 $enchantName")
+            }
+            enchantNames.add(enchantName)
+        }
 
         val file = File(ThePit.getInstance().dataFolder, "Enable_Enchantment_List.txt")
         if (file.exists()) {
@@ -416,33 +519,17 @@ object PitHook {
         }
         file.createNewFile()
         file.writeText(enchantNames.joinToString("\n"))
-        fun filterEnchantmentList(annotationName: String): MutableList<AbstractEnchantment> {
-            return classes.mapNotNull {
-                val instance = it.getDeclaredConstructor().newInstance()
-                val hasAnnotation =
-                    it.declaredAnnotations.any { annotation -> annotation.annotationClass.simpleName == annotationName }
-                if (hasAnnotation && instance is AbstractEnchantment) {
-                    instance
-                } else {
-                    null
-                }
-            }.toMutableList()
-        }
-        all = classes.map {
-            it.getDeclaredConstructor().newInstance() as AbstractEnchantment
-        }.toMutableList()
-        music.apply {
-            add(JerryEnchant())
-            add(JerryEnchant2())
-            add(JerryEnchant3())
-            add(JerryEnchant4())
-            add(JerryEnchant5())
-            add(JerryEnchant6())
-            add(JerryEnchant7())
-        }
-        weapon = filterEnchantmentList("WeaponOnly")
-        bow = filterEnchantmentList("BowOnly")
-        armor = filterEnchantmentList("ArmorOnly")
+        all = loadedEnchantments.toMutableList()
+        music.clear()
+        music.addAll(loadedEnchantments.filter { enchantment ->
+            enchantment is JerryEnchant || enchantment is JerryEnchant2 ||
+                    enchantment is JerryEnchant3 || enchantment is JerryEnchant4 ||
+                    enchantment is JerryEnchant5 || enchantment is JerryEnchant6 ||
+                    enchantment is JerryEnchant7
+        })
+        weapon = loadedEnchantments.filter { it.isWeaponOnly }.toMutableList()
+        bow = loadedEnchantments.filter { it.isBowOnly }.toMutableList()
+        armor = loadedEnchantments.filter { it.isArmorOnly }.toMutableList()
         println("开启附魔列表已保存至: ${file.absolutePath}")
     }
 
@@ -450,11 +537,16 @@ object PitHook {
     private fun loadScoreBoard() {
         val assemble = Assemble(ThePit.getInstance(), Scoreboard())
         assemble.ticks = NewConfiguration.scoreboardUpdateTicks.toLong()
+        // Share the player scoreboard with nametag / ServerManager instead of
+        // replacing it. ServerManager uses the same board for TAB prefixes.
+        assemble.isHook = true
     }
 
     private fun loadNameTag() {
         val nametagHandler = NametagHandler(ThePit.getInstance(), NameTagImpl())
         nametagHandler.ticks = 20
+        nametagHandler.setHook(true)
+        ThePit.getInstance().nametagHandler = nametagHandler
     }
 
     private fun loadPerks() {
@@ -543,7 +635,6 @@ object PitHook {
             TrickleDownPerk::class.java,
             VampirePerk::class.java,
             BeastModeMegaStreak::class.java,
-            MonsterKillStreak::class.java,
             RAndRKillStreak::class.java,
             TacticalRetreatKillStreak::class.java,
             ToughSkinKillStreak::class.java,
@@ -568,7 +659,10 @@ object PitHook {
             SpongeSteveKillStreak::class.java,
             UberStreak::class.java,
             ToTheMoonMegaStreak::class.java,
-            SuperStreaker::class.java
+            SuperStreaker::class.java,
+            GoldStack::class.java,
+            XPStack::class.java,
+            QuestMasterPerk::class.java
         )
         val perkClasses: List<Class<*>> = PerkConstructor.getPerks()
         val perkCollection: List<Class<out AbstractPerk>> =
@@ -610,7 +704,8 @@ object PitHook {
                 ShopNPC::class.java,
                 StatusNPC::class.java,
                 LeaderNPC::class.java,
-                BakeMasterNpc::class.java
+                BakeMasterNpc::class.java,
+                KingNpc::class.java
             )
         )
     }
@@ -663,7 +758,7 @@ object PitHook {
     private fun registerActionBarManager() {
         val actionBarManager = ActionBarManager()
         ThePit.getInstance().actionBarManager = actionBarManager;
-        Bukkit.getScheduler().runTaskTimerAsynchronously(ThePit.getInstance(), {
+        Bukkit.getScheduler().runTaskTimer(ThePit.getInstance(), {
             actionBarManager.tick();
         }, 1, 2)
     }

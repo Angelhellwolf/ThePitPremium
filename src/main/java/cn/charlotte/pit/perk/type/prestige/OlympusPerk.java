@@ -86,6 +86,7 @@ public class OlympusPerk extends AbstractPerk implements IPlayerKilledEntity {
         lines.add("  &f▶ &3抗性提升 II &f(00:04)");
         lines.add("  &f▶ &b速度 I &f(00:24)");
         lines.add("  &f▶ &b+27 经验值!");
+        lines.add("&7Bot 掉落的药水保留药水效果，不提供额外经验");
         return lines;
     }
 

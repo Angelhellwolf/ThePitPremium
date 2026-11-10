@@ -16,7 +16,8 @@ public class StashVisibilityButton extends Button {
     public ItemStack getButtonItem(Player player) {
         List<String> lines = new ArrayList<>();
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-        lines.add("&7隐藏后将无法通过寄存处NPC打开仓库.");
+        lines.add("&7隐藏后将无法通过寄存处NPC打开仓库,");
+        lines.add("&7普通玩家也无法通过 /view 查看寄存箱.");
         lines.add(" ");
         lines.add("&7当前: " + (profile.getPlayerOption().isStashVisibility() ? "&a显示" : "&c隐藏"));
         lines.add("&e点击切换此选项!");

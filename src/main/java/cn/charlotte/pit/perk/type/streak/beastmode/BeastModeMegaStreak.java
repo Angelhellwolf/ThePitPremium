@@ -46,8 +46,8 @@ public class BeastModeMegaStreak extends AbstractPerk implements Listener, ITick
         int trigger = 50;
         //trigger check (get X streak)
         if (event.getFrom() < trigger && event.getTo() >= trigger) {
-            CC.boardCast(MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &a&l野兽模式 &7!");
-            Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player.getLocation(), Sound.WITHER_SPAWN, 0.8F, 1.5F));
+            cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.getPlayerProfile().getPlayerUuid(), MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &a&l野兽模式 &7!");
+            cn.charlotte.pit.junxu.JunxuMessages.audience(event.getPlayerProfile().getPlayerUuid()).forEach(player -> player.playSound(player.getLocation(), Sound.WITHER_SPAWN, 0.8F, 1.5F));
             myself.getInventory().addItem(
                     new ItemBuilder(Material.DIAMOND_HELMET)
                             .removeOnJoin(true)
@@ -145,8 +145,9 @@ public class BeastModeMegaStreak extends AbstractPerk implements Listener, ITick
         list.add("&7激活后:");
         list.add("  &a▶ &7获得一个临时的 &b钻石头盔");
         list.add("  &a▶ &7攻击造成的伤害 &c+25%");
-        list.add("  &a▶ &7击杀获得 &6+75% 硬币");
-        list.add("  &a▶ &7击杀获得 &b+50% 经验值");
+        list.add("  &a▶ &7击杀获得 &6+50% 硬币");
+        list.add("  &a▶ &7击杀获得 &b+75% 经验值");
+        list.add("  &7以上收益加成不适用于 Bot");
         list.add("  &c▶ &7激活后每击杀5名玩家,受到的基础伤害 &c+0.1❤");
         list.add(" ");
         list.add("&7激活后死亡时:");

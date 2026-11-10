@@ -99,7 +99,7 @@ public class GlassPickaxeKillStreak extends AbstractPerk implements Listener {
         }
         //trigger check (every X streak)
         int streak = 7;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             myself.getInventory().addItem(
                     new ItemBuilder(Material.DIAMOND_PICKAXE)

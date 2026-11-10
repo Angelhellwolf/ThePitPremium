@@ -36,6 +36,15 @@ public abstract class IMythicItem extends AbstractPitItem {
 
     protected boolean boostedByGem = false;
     protected String customName = null;
+    /** Comma/semicolon separated enchantment NBT names hidden from external profile viewers. */
+    private String viewHiddenEnchants;
+    private int hiddenJewelKills;
+    private int heartripperShards;
+
+    public int getHiddenJewelKills() { return hiddenJewelKills; }
+    public void setHiddenJewelKills(int kills) { hiddenJewelKills = Math.max(0, kills); }
+    public int getHeartripperShards() { return heartripperShards; }
+    public void setHeartripperShards(int shards) { heartripperShards = Math.max(0, shards); }
     @Getter
     private final static UUID defUUID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     public boolean boostedByGlobalGem = false;
@@ -180,7 +189,15 @@ public abstract class IMythicItem extends AbstractPitItem {
         }*/
         //Dark Pants
 
+        if (enchantments.keySet().stream().anyMatch(enchant -> enchant != null && enchant.getNbtName().startsWith("hidden_jewel_"))) {
+            lore.add("&7宝石击杀进度: &e" + hiddenJewelKills + "/117");
+        }
+        if (enchantments.keySet().stream().anyMatch(enchant -> enchant != null && "heartripper_enchant".equals(enchant.getNbtName()))) {
+            lore.add("&7血晶: &c" + heartripperShards + "/27");
+        }
         ItemBuilder builder = new ItemBuilder(this.getItemDisplayMaterial());
+        if (hiddenJewelKills > 0) builder.changeNbt("hidden_jewel_kills", hiddenJewelKills);
+        if (heartripperShards > 0) builder.changeNbt("heartripper_shards", heartripperShards);
         if (name != null) {
             builder.name(name);
         }
@@ -243,6 +260,10 @@ public abstract class IMythicItem extends AbstractPitItem {
             builder.prefix(prefix);
         }
 
+        if (viewHiddenEnchants != null && !viewHiddenEnchants.trim().isEmpty()) {
+            builder.changeNbt("view_hidden_enchants", viewHiddenEnchants);
+        }
+
         return builder
                 .buildWithUnbreakable();
     }
@@ -263,6 +284,8 @@ public abstract class IMythicItem extends AbstractPitItem {
         if (extra == null) {
             return;
         }
+        hiddenJewelKills = Math.max(0, extra.getInt("hidden_jewel_kills"));
+        heartripperShards = Math.max(0, extra.getInt("heartripper_shards"));
 
         if (extra.hasKey("prefix")) {
             this.prefix = extra.getString("prefix");
@@ -280,6 +303,12 @@ public abstract class IMythicItem extends AbstractPitItem {
         }
         if (extra.hasKey("customName")) {
             this.customName = extra.getString("customName");
+        }
+
+        if (extra.hasKey("view_hidden_enchants")) {
+            this.viewHiddenEnchants = extra.getString("view_hidden_enchants");
+        } else {
+            this.viewHiddenEnchants = null;
         }
 
         if (extra.hasKey("boostedByBook")) {
@@ -498,5 +527,13 @@ public abstract class IMythicItem extends AbstractPitItem {
 
     public void setCustomName(String customName) {
         this.customName = customName;
+    }
+
+    public String getViewHiddenEnchants() {
+        return viewHiddenEnchants;
+    }
+
+    public void setViewHiddenEnchants(String viewHiddenEnchants) {
+        this.viewHiddenEnchants = viewHiddenEnchants;
     }
 }

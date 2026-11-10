@@ -7,8 +7,16 @@ import cn.charlotte.pit.util.toMythicItem
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import java.util.UUID
 
 object ActionBarDisplayRunnable {
+
+    private const val DISPLAY_INTERVAL_TICKS = 10L
+    private const val KEEPALIVE_MS = 2000L
+
+    private data class CachedMessage(val text: String, val sentAt: Long)
+
+    private val lastMessages = HashMap<UUID, CachedMessage>()
 
     private val enchants by lazy {
         ThePit.getInstance().enchantmentFactor.actionDisplayEnchants
@@ -20,8 +28,10 @@ object ActionBarDisplayRunnable {
         // race conditions that kick 1.21 clients with "Internal Error".
         Bukkit.getScheduler().runTaskTimer(ThePit.getInstance(), Runnable {
             val currentTime = System.currentTimeMillis()
+            val online = HashSet<UUID>()
 
             Bukkit.getOnlinePlayers().forEach { player ->
+                online.add(player.uniqueId)
                 try {
                     val metadata = player.getMetadata("showing_damage_data")
                     val lastShownTime = metadata.firstOrNull()?.asLong() ?: 0L
@@ -36,15 +46,23 @@ object ActionBarDisplayRunnable {
                             }
                         }
 
-                        if (message.isNotBlank() || message.isNotEmpty()) {
-                            ActionBarUtil.sendActionBar(player, CC.translate(message))
+                        if (message.isNotBlank()) {
+                            val translated = CC.translate(message)
+                            val previous = lastMessages[player.uniqueId]
+                            if (previous == null || previous.text != translated ||
+                                currentTime - previous.sentAt >= KEEPALIVE_MS
+                            ) {
+                                ActionBarUtil.sendActionBar(player, translated)
+                                lastMessages[player.uniqueId] = CachedMessage(translated, currentTime)
+                            }
                         }
                     }
                 } catch (e: Exception) {
                     // Silently ignore per-player errors to avoid kicking
                 }
             }
-        }, 100L, 4L) // 100 tick delay, 4 tick interval (200ms)
+            lastMessages.keys.retainAll(online)
+        }, 100L, DISPLAY_INTERVAL_TICKS)
     }
 
     private fun Player.createActionDisplay(itemStack: ItemStack?): String {

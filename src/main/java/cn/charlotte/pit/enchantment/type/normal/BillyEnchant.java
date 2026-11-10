@@ -45,14 +45,15 @@ public class BillyEnchant extends AbstractEnchantment implements IPlayerDamaged 
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7每持有 &6&l1000g &7赏金,受到的伤害 &9-" + (1 + enchantLevel) + "%";
+        return "&7每持有 &6&l1000g &7赏金,受到的伤害 &9-" + (1 + enchantLevel) + "% &7(最高-" + (5 + 5 * enchantLevel) + "%,&65000g&7赏金)";
     }
 
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
         if (profile.getBounty() >= 1000) {
-            boostDamage.getAndAdd((-0.01 - 0.01 * enchantLevel) / 1000 * profile.getBounty());
+            int bounty = Math.min(5000, profile.getBounty());
+            boostDamage.getAndAdd((-0.01 - 0.01 * enchantLevel) / 1000.0 * bounty);
         }
     }
 }

@@ -240,7 +240,25 @@ public class ItemBuilder {
 
     public ItemBuilder isHealingItem(boolean isHealingItem) {
         this.changeNbt("isHealingItem", isHealingItem);
+        if (isHealingItem && cn.charlotte.pit.reward.KillRewardContext.isBotReward()) {
+            this.changeNbt("botReward", 1);
+            trainingReward = true;
+        }
         return this;
+    }
+
+    private boolean trainingReward;
+
+    private ItemStack addTrainingLore(ItemStack item) {
+        if (!trainingReward || item == null || item.getType() == Material.AIR) return item;
+        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+        java.util.List<String> lore = meta.hasLore() ? new java.util.ArrayList<>(meta.getLore()) : new java.util.ArrayList<>();
+        String note = "§8Bot 掉落：不提供额外金币或经验";
+        if (!lore.contains(note)) lore.add(note);
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
     }
 
     public ItemBuilder canTrade(boolean allow) {
@@ -348,7 +366,7 @@ public class ItemBuilder {
         tag.setBoolean("Unbreakable", true);
         nmsItem.setTag(tag);
 
-        return CraftItemStack.asBukkitCopy(nmsItem);
+        return addTrainingLore(CraftItemStack.asBukkitCopy(nmsItem));
     }
 
     public ItemBuilder internalName(String name) {
@@ -367,7 +385,7 @@ public class ItemBuilder {
     }
 
     public ItemStack build() {
-        return is;
+        return addTrainingLore(is);
     }
 
     public ItemBuilder deathDrop(boolean drop) {

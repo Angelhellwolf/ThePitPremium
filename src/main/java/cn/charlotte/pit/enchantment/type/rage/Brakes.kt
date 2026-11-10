@@ -1,6 +1,7 @@
 package cn.charlotte.pit.enchantment.type.rage
 
 import cn.charlotte.pit.enchantment.AbstractEnchantment
+import cn.charlotte.pit.enchantment.param.item.ArmorOnly
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity
 import cn.charlotte.pit.parm.listener.IAttackEntity
 import cn.charlotte.pit.parm.listener.IPlayerDamaged
@@ -12,6 +13,7 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import java.util.concurrent.atomic.AtomicBoolean
 
+@ArmorOnly
 class Brakes: AbstractEnchantment(), IAttackEntity, IPlayerDamaged {
     override fun getEnchantName(): String {
         return "停下!"
@@ -34,8 +36,8 @@ class Brakes: AbstractEnchantment(), IAttackEntity, IPlayerDamaged {
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7攻击目标的玩家如果拥有 &f速度&7 且效果为 &fI&7 级及以上, /s&7将其效果等级降至&f I&7 级." +
-                if (enchantLevel > 1) "/s&7高处玩家攻击你时减少 &9${if (enchantLevel == 2) "5" else "10"}%  &7" else ""
+        return "&7近战命中时将目标的速度 II 及以上效果降为速度 I." +
+                if (enchantLevel > 1) "/s&7受到位置比你高的玩家攻击时伤害减少 &9${if (enchantLevel == 2) "5" else "10"}%" else ""
     }
 
     override fun handleAttackEntity(
@@ -56,6 +58,7 @@ class Brakes: AbstractEnchantment(), IAttackEntity, IPlayerDamaged {
         }
     }
 
+    @cn.charlotte.pit.enchantment.param.event.PlayerOnly
     override fun handlePlayerDamaged(
         enchantLevel: Int,
         myself: Player,
@@ -65,7 +68,7 @@ class Brakes: AbstractEnchantment(), IAttackEntity, IPlayerDamaged {
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean?
     ) {
-        if (attacker is Player) {
+        if (enchantLevel > 1 && attacker is Player) {
             if (attacker.location.y > myself.location.y) {
                 boostDamage.set(boostDamage.get() * (1 - if (enchantLevel == 2) 0.05 else 0.1))
             }

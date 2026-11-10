@@ -50,7 +50,7 @@ public class DivineInterventionPerk extends AbstractPerk {
 
     @Override
     public List<String> getDescription(Player player) {
-        return Collections.singletonList("&7死亡时有 &d+5% &7的几率不损失背包内神话物品生命");
+        return Collections.singletonList("&7每级使死亡时保护神话物品生命的概率 &d+5%");
     }
 
     @Override

@@ -3,6 +3,8 @@ package cn.charlotte.pit.events.impl;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.BountyRules;
+import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.events.INormalEvent;
 import cn.charlotte.pit.util.chat.CC;
@@ -34,8 +36,9 @@ public class EveOneBountyEvent implements IEvent, INormalEvent {
         Bukkit.broadcastMessage(CC.translate("&6&l全员通缉! &7所有人现在都被以 &6100g &7的赏金悬赏了!"));
         for (Player player : Bukkit.getOnlinePlayers()) {
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-            if (profile.isInArena()) {
-                profile.setBounty(profile.getBounty() + 100);
+            if (profile.isLoaded() && !profile.isBot() && profile.isInArena()) {
+                int cap = BountyRules.cap(PlayerUtil.isPlayerChosePerk(player, "high_lander") && profile.getStreakKills() >= 50);
+                profile.setBounty(Math.min(cap, Math.max(0, profile.getBounty()) + 100));
             }
         }
         ThePit.getInstance()

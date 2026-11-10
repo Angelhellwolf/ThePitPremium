@@ -1,6 +1,7 @@
 package cn.charlotte.pit.enchantment.type.op;
 
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
+import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
@@ -51,11 +52,14 @@ public class LaserEnchant extends AbstractEnchantment implements IAttackEntity, 
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7攻击选中一名玩家并对其发射激光,持续5秒,每秒造成 &c0.5❤ 必中&7伤害";
+        return "&7攻击选中一名玩家并对其发射激光,持续5秒,每秒造成 &c0.5❤ 必中&7伤害（目标离开8格范围则中止）";
     }
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || cancel.get()) return;
+        TargetInfo previous = tracker.get(attacker.getUniqueId());
+        if (previous != null && previous.until <= System.currentTimeMillis()) { previous.beam.stop(); tracker.remove(attacker.getUniqueId()); }
         if (tracker.containsKey(attacker.getUniqueId())) {
             return;
         }
@@ -67,6 +71,8 @@ public class LaserEnchant extends AbstractEnchantment implements IAttackEntity, 
         targetInfo.beam = beam;
         targetInfo.player = (Player) target;
         targetInfo.number = 0;
+        targetInfo.until = System.currentTimeMillis() + 5000L;
+        targetInfo.life = cn.charlotte.pit.util.combat.PlayerLife.capture((Player) target);
 
         tracker.put(attacker.getUniqueId(), targetInfo);
     }
@@ -81,12 +87,12 @@ public class LaserEnchant extends AbstractEnchantment implements IAttackEntity, 
             return;
         }
 
-        if (target.player.isOnline()) {
-            if (player.getLocation().distanceSquared(target.player.getLocation()) <= 8 * 8 && target.number <= 5) {
+        if (cn.charlotte.pit.util.combat.PlayerLife.isCurrent(target.player, target.life) && player.getWorld().equals(target.player.getWorld())) {
+            if (player.getLocation().distanceSquared(target.player.getLocation()) <= 8 * 8 && target.number < 5 && System.currentTimeMillis() < target.until) {
                 target.number++;
                 target.beam.setStartingPosition(player.getLocation());
                 target.beam.setEndingPosition(target.player.getLocation());
-                target.player.damage(1, player);
+                PlayerUtil.damage(player, target.player, PlayerUtil.DamageType.TRUE, 1D, false);
                 return;
             }
         }
@@ -97,12 +103,14 @@ public class LaserEnchant extends AbstractEnchantment implements IAttackEntity, 
 
     @Override
     public int loopTick(int enchantLevel) {
-        return 10;
+        return 20;
     }
 
     public static class TargetInfo {
         private Player player;
         private int number;
+        private long until;
+        private Object life;
         private Beam beam;
     }
 }

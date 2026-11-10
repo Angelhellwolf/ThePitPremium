@@ -9,6 +9,8 @@ import cn.charlotte.pit.medal.impl.challenge.ObsidianBreakMedal;
 import cn.charlotte.pit.mode.Mode;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.runnable.ClearRunnable;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.Utils;
 import cn.charlotte.pit.util.chat.CC;
@@ -23,6 +25,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
@@ -62,7 +66,7 @@ public class ProtectListener implements Listener {
         event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     private void onPlace(BlockPlaceEvent event) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId());
         if (!profile.isEditingMode()) {
@@ -118,11 +122,11 @@ public class ProtectListener implements Listener {
 
                     tntPrimed.setMetadata("internal", new FixedMetadataValue(ThePit.getInstance(), "tnt_enchant_item"));
                     tntPrimed.setMetadata("shooter", new FixedMetadataValue(ThePit.getInstance(), event.getPlayer().getUniqueId().toString()));
-                    int enchantLevel = Utils.getEnchantLevel(event.getPlayer().getInventory().getLeggings(), "TNT");
+                    int enchantLevel = Utils.getEnchantLevel(event.getPlayer().getInventory().getLeggings(), "tnt_enchant");
                     tntPrimed.setMetadata("damage", new FixedMetadataValue(ThePit.getInstance(), Math.max(0, enchantLevel)));
                     return;
                 }
-                if ("insta_boom_enchant_item".equals(ItemUtil.getInternalName(event.getItemInHand()))) {
+                if ("insta_boom_tnt_enchant".equals(ItemUtil.getInternalName(event.getItemInHand()))) {
                     event.setCancelled(true);
                     PlayerUtil.takeOneItemInHand(event.getPlayer());
                     if (PlayerUtil.isVenom(event.getPlayer()) || PlayerUtil.isEquippingSomber(event.getPlayer())) {
@@ -131,17 +135,22 @@ public class ProtectListener implements Listener {
                     TNTPrimed tntPrimed = (TNTPrimed) event.getPlayer().getWorld().spawnEntity(event.getBlockPlaced().getLocation(), EntityType.PRIMED_TNT);
                     tntPrimed.setFuseTicks(0);
 
-                    tntPrimed.setMetadata("internal", new FixedMetadataValue(ThePit.getInstance(), "tnt_enchant_item"));
+                    tntPrimed.setMetadata("internal", new FixedMetadataValue(ThePit.getInstance(), "insta_boom_enchant_item"));
                     tntPrimed.setMetadata("shooter", new FixedMetadataValue(ThePit.getInstance(), event.getPlayer().getUniqueId().toString()));
                     int enchantLevel = Utils.getEnchantLevel(event.getPlayer().getInventory().getLeggings(), "insta_boom_tnt_enchant");
-                    tntPrimed.setMetadata("damage", new FixedMetadataValue(ThePit.getInstance(), Math.max(0, enchantLevel)));
+                    tntPrimed.setMetadata("damage", new FixedMetadataValue(ThePit.getInstance(), Math.max(0, enchantLevel) * 0.5));
 
                     return;
                 }
             }
 
+            Material placedType = event.getBlockPlaced().getType();
             long baseTime = 120L;
-            if (event.getBlockPlaced().getType() == Material.COBBLESTONE) {
+            if (placedType == Material.COBBLESTONE || placedType == Material.STONE) {
+                baseTime = 30L;
+            } else if (placedType == Material.OBSIDIAN) {
+                baseTime = 60L;
+            } else if (placedType == Material.WOOD) {
                 baseTime = 30L;
             }
             long existTime = baseTime;
@@ -150,9 +159,6 @@ public class ProtectListener implements Listener {
                     existTime = (long) (baseTime * (1 + (0.6 * entry.getValue().getLevel())));
                 }
             }
-            if (event.getBlockPlaced().getType() == Material.WOOD) {
-                existTime = 30L;
-            }
             /*
             if (ThePit.getInstance().getPitConfig().getArenaHighestY() - location.getY() <= 20) {
                 existTime = 12L;
@@ -160,7 +166,18 @@ public class ProtectListener implements Listener {
             }
 
              */
-            ClearRunnable.getClearRunnable().placeBlock(event.getBlock().getLocation(), new Cooldown(existTime, TimeUnit.SECONDS));
+            Block placed = event.getBlockPlaced();
+            final byte placedData = placed.getData();
+            final long lifetime = existTime;
+            Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+                if (event.isCancelled() || placed.getType() != placedType || placed.getData() != placedData) return;
+                ClearRunnable.getClearRunnable().placeBlock(
+                    placed.getLocation(),
+                    new Cooldown(lifetime, TimeUnit.SECONDS),
+                    placedType,
+                    placedData
+            );
+            });
         }
     }
 
@@ -173,7 +190,7 @@ public class ProtectListener implements Listener {
         e.setDroppedExp(0);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     private void onPlace(PlayerBucketEmptyEvent event) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId());
         if (!profile.isEditingMode()) {
@@ -182,7 +199,13 @@ public class ProtectListener implements Listener {
                 return;
             }
 
-            Location location = event.getBlockClicked().getLocation();
+            Location location = event.getBlockClicked().getRelative(event.getBlockFace()).getLocation();
+            if (location.getBlock().getType() != Material.AIR
+                    || location.getBlockY() >= ThePit.getInstance().getPitConfig().getArenaHighestY()
+                    || "rage_pit".equals(ThePit.getInstance().getEventFactory().getActiveEpicEventName())) {
+                event.setCancelled(true);
+                return;
+            }
 
             for (int i = -3; i < 3; i++) {
                 for (int j = -3; j < 3; j++) {
@@ -196,6 +219,60 @@ public class ProtectListener implements Listener {
                 }
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void trackBucket(PlayerBucketEmptyEvent event) {
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId());
+        if (profile.isEditingMode()) return;
+        Block target = event.getBlockClicked().getRelative(event.getBlockFace());
+        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+            if (!event.isCancelled() && target.isLiquid()) {
+                ClearRunnable.getClearRunnable().placeBlock(target.getLocation(), new Cooldown(120, TimeUnit.SECONDS));
+            }
+        });
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void protectBucketFill(PlayerBucketFillEvent event) {
+        if (PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId()).isEditingMode()) return;
+        ClearRunnable clear = ClearRunnable.getClearRunnable();
+        PlacedBlockData placement = clear.getTrackedPlacement(event.getBlockClicked().getLocation());
+        if (placement == null || !clear.isTrackedPlacement(placement)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void trackLiquidFlow(BlockFromToEvent event) {
+        if (!event.getBlock().isLiquid()) return;
+        ClearRunnable clear = ClearRunnable.getClearRunnable();
+        PlacedBlockData source = clear.getTrackedPlacement(event.getBlock().getLocation());
+        if (source == null || !clear.isTrackedPlacement(source)) return;
+        Block target = event.getToBlock();
+        // Temporary water/lava must never replace arena blocks or natural water.
+        if (target.getType() != Material.AIR) {
+            event.setCancelled(true);
+            return;
+        }
+        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+            if (!event.isCancelled() && target.isLiquid()) {
+                clear.placeBlock(target.getLocation(), source.getCooldown());
+            }
+        });
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void protectExplosion(EntityExplodeEvent event) {
+        event.blockList().removeIf(block -> !isBreakablePlacement(block));
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void protectBlockExplosion(BlockExplodeEvent event) {
+        event.blockList().removeIf(block -> !isBreakablePlacement(block));
+    }
+
+    private boolean isBreakablePlacement(Block block) {
+        ClearRunnable clear = ClearRunnable.getClearRunnable();
+        return clear != null && clear.isTrackedPlacement(clear.getTrackedPlacement(block.getLocation()));
     }
 
     @EventHandler
@@ -213,15 +290,10 @@ public class ProtectListener implements Listener {
 
     @EventHandler
     public void onCreatureSpawn(CreatureSpawnEvent event) {
-        // Allow chickens to spawn naturally (needed for King's Quest egg crafting)
-        if (event.getEntityType() == EntityType.CHICKEN) {
-            return;
-        }
-        // Allow plugin-spawned entities (NPCs, MythicMobs, event mobs, etc.)
+        // Allow plugin-spawned entities (King's Quest chickens, NPCs, event mobs, etc.)
         if (event.getSpawnReason() == CreatureSpawnEvent.SpawnReason.CUSTOM) {
             return;
         }
-        // Block all other natural/spawner/egg creature spawns
         event.setCancelled(true);
     }
 
@@ -277,9 +349,6 @@ public class ProtectListener implements Listener {
         if (event.getDamager() instanceof Projectile) {
             if (((Projectile) event.getDamager()).getShooter() instanceof Player) {
                 Player shooter = (Player) (((Projectile) event.getDamager()).getShooter());
-                if (event.getEntity().getUniqueId().equals(shooter.getUniqueId())) {
-                    event.setCancelled(true);
-                }
                 PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(shooter.getUniqueId());
                 if (!profile.isInArena()) {
                     event.setCancelled(true);
@@ -295,7 +364,7 @@ public class ProtectListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     private void onBreak(BlockBreakEvent event) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId());
         if (profile.isEditingMode()) {
@@ -307,6 +376,7 @@ public class ProtectListener implements Listener {
                 .getPlacedBlock()
                 .stream()
                 .filter(placedBlockData -> placedBlockData.getLocation().equals(block.getLocation()))
+                .filter(ClearRunnable.getClearRunnable()::isTrackedPlacement)
                 .findFirst();
 
         if (!first.isPresent()) {
@@ -323,17 +393,32 @@ public class ProtectListener implements Listener {
                 level = 0;
             }
             if (level > 0) {
-                profile.setCoins(profile.getCoins() + level * 3 + 3 - level);
-                if (level >= 2) {
-                    event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, level * 20, 2), true);
+                Material toolType = event.getPlayer().getItemInHand() == null ? Material.AIR : event.getPlayer().getItemInHand().getType();
+                if (toolType != Material.GOLD_PICKAXE) {
+                    int gold;
+                    switch (level) {
+                        case 1:
+                            gold = 7;
+                            break;
+                        case 2:
+                            gold = 11;
+                            break;
+                        default:
+                            gold = 15;
+                            break;
+                    }
+                    RewardService.grant(profile, RewardSource.LOOT, gold, 0);
+                    if (level >= 2) {
+                        event.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, (level >= 3 ? 3 : 2) * 20, 2), true);
+                    }
                 }
             }
         }
 
         ClearRunnable.getClearRunnable().removePlacedBlock(first.get());
         event.setCancelled(true);
-        if (ClearRunnable.getClearRunnable().isTrackedPlacement(first.get())) {
-            block.setType(Material.AIR);
+        if (block.getType() != Material.AIR) {
+            block.setType(Material.AIR, false);
         }
     }
 

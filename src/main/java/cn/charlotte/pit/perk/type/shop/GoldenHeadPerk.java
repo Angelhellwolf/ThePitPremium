@@ -82,7 +82,8 @@ public class GoldenHeadPerk extends AbstractPerk implements IPlayerKilledEntity 
         List<String> lines = new ArrayList<>();
         lines.add("&7将击杀获得的回复道具变成 &6金头 &7.");
         lines.add("&7食用 &6金头 &7后获得以下效果:");
-        lines.add("  &f▶ &c生命恢复 I &f(00:04)");
+        lines.add("  &f▶ &c生命恢复 II &f(00:04)");
+        lines.add("  &f▶ &b速度 I &f(00:07)");
         lines.add("  &f▶ &6伤害吸收 &f(&63❤&f)");
         return lines;
     }
@@ -100,7 +101,8 @@ public class GoldenHeadPerk extends AbstractPerk implements IPlayerKilledEntity 
 
         if (PlayerUtil.getPlayerHealItemAmount(myself) < PlayerUtil.getPlayerHealItemLimit(myself)) {
             for (ItemStack itemStack : myself.getInventory()) {
-                if (itemStack != null && itemStack.getType() == Material.SKULL_ITEM && ItemUtil.getInternalName(itemStack).equals("golden_head")) {
+                if (itemStack != null && itemStack.getType() == Material.SKULL_ITEM && "golden_head".equals(ItemUtil.getInternalName(itemStack))
+                        && cn.charlotte.pit.reward.BotRewards.isTrainingItem(itemStack) == cn.charlotte.pit.reward.KillRewardContext.isBotReward()) {
                     itemStack.setAmount(itemStack.getAmount() + 1);
                     return;
                 }

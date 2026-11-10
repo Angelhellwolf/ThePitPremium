@@ -80,14 +80,14 @@ public class ChatListener implements Listener {
         } else {
             if ("&7".equalsIgnoreCase(rank)) {
                 event.setFormat(CC.translate(tag
-                        + (profile.isSupporter() && profile.getPlayerOption().isSupporterStarDisplay() && !profile.isNicked() ? " &e✬ " : " ")
+                        + (profile.isSupporter() && profile.getPlayerOption().isSupporterStarDisplay() && !profile.isNicked() ? " " + profile.getSupporterStar() + " " : " ")
                         + rank
                         + RankUtil.getPlayerRankColor(player.getName()) + "%s: "
                         + (RankUtil.getPlayerRankColor(player.getUniqueId()).equalsIgnoreCase(CC.translate("&7")) ? "&7" : "&f")
                         + (player.hasPermission("thepit.admin") ? CC.translate("%s") : "%s")));
             } else {
                 event.setFormat(CC.translate(tag
-                        + (profile.isSupporter() && profile.getPlayerOption().isSupporterStarDisplay() && !profile.isNicked() ? " &e✬ " : " ")
+                        + (profile.isSupporter() && profile.getPlayerOption().isSupporterStarDisplay() && !profile.isNicked() ? " " + profile.getSupporterStar() + " " : " ")
                         + rank
                         + " "
                         + RankUtil.getPlayerRankColor(player.getName()) + "%s: "
@@ -95,6 +95,8 @@ public class ChatListener implements Listener {
                         + (player.hasPermission("thepit.admin") ? CC.translate("%s") : "%s")));
             }
         }
+        if (cn.charlotte.pit.reward.EconomyV2.active())
+            event.setFormat(CC.translate(cn.charlotte.pit.reward.GrowthProgress.badge(profile)) + event.getFormat());
     }
 
 }

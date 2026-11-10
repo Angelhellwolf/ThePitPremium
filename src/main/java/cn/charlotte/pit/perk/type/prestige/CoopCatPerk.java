@@ -56,6 +56,7 @@ public class CoopCatPerk extends AbstractPerk implements IPlayerAssist {
     public List<String> getDescription(Player player) {
         List<String> lines = new ArrayList<>();
         lines.add("&7助攻获得的硬币与经验值 &b+50% &7.");
+        lines.add("&7金币与经验加成排除 Bot");
         return lines;
     }
 
@@ -81,7 +82,7 @@ public class CoopCatPerk extends AbstractPerk implements IPlayerAssist {
 
     @Override
     public void handlePlayerAssist(int enchantLevel, Player myself, Entity target, double damage, double finalDamage, AtomicDouble coins, AtomicDouble experience) {
-        coins.getAndAdd(0.5);
-        experience.getAndAdd(0.5);
+        coins.set(coins.get() * 1.5);
+        experience.set(experience.get() * 1.5);
     }
 }

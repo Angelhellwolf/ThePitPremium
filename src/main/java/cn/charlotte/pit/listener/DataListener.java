@@ -8,6 +8,7 @@ import cn.charlotte.pit.data.sub.PlayerInv;
 import cn.charlotte.pit.event.PitProfileLoadedEvent;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.runnable.BountyRunnable;
+import cn.charlotte.pit.supporter.SupporterService;
 import cn.charlotte.pit.util.PitProfileUpdater;
 import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.chat.CC;
@@ -60,6 +61,7 @@ public class DataListener implements Listener {
 
                 try(Jedis jedis = jedisPool.getResource()) {
                     for (Player player : Bukkit.getOnlinePlayers()) {
+                        if (player.hasMetadata("NPC")) continue;
                         if (loadingMap.containsKey(player.getUniqueId())) {
                             continue;
                         }
@@ -81,7 +83,10 @@ public class DataListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event) {
         final Player player = event.getPlayer();
-        PlayerUtil.clearPlayer(player, true, true);
+        if (player.hasMetadata("NPC")) return;
+        // Inventory/state can be cleared immediately, but max-health attributes must
+        // wait for profile load so modern ViaVersion clients have an entity tracker.
+        PlayerUtil.clearPlayer(player, true, true, false);
 
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
@@ -111,6 +116,7 @@ public class DataListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         event.setQuitMessage(null);
+        if (event.getPlayer().hasMetadata("NPC")) return;
 
         BukkitRunnable loadingFuture = loadingMap.get(event.getPlayer().getUniqueId());
         if (loadingFuture != null) {
@@ -145,7 +151,8 @@ public class DataListener implements Listener {
                 profile.setLogin(false);
                 this.executor.execute(() -> {
                     profile.save(null);
-                    PlayerProfile.getCacheProfile().remove(event.getPlayer().getUniqueId());
+                    Bukkit.getScheduler().runTask(ThePit.getInstance(), () ->
+                            PlayerProfile.getCacheProfile().remove(event.getPlayer().getUniqueId(), profile));
                     String databaseName = ThePit.getInstance().getPitConfig().getDatabaseName();
 
                     JedisPool jedisPool = ThePit.getInstance().getJedis();
@@ -229,6 +236,9 @@ public class DataListener implements Listener {
             PlayerProfile profile = new PlayerProfile(player.getUniqueId(), player.getName());
 
             PlayerProfile load = profile.load();
+
+            SupporterService supporterService = SupporterService.get();
+            if (supporterService != null) supporterService.loadProfile(load);
 
             load.setPlayerName(player.getName());
             load.setLowerName(player.getName().toLowerCase());

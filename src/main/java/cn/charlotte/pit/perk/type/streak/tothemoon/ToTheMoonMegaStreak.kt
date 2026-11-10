@@ -2,7 +2,7 @@ package cn.charlotte.pit.perk.type.streak.tothemoon
 
 import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.data.PlayerProfile
-import cn.charlotte.pit.event.PitKillEvent
+import cn.charlotte.pit.event.PitRewardGrantedEvent
 import cn.charlotte.pit.event.PitStreakKillChangeEvent
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.parm.listener.IPlayerBeKilledByEntity
@@ -11,6 +11,8 @@ import cn.charlotte.pit.parm.listener.IPlayerKilledEntity
 import cn.charlotte.pit.perk.AbstractPerk
 import cn.charlotte.pit.perk.MegaStreak
 import cn.charlotte.pit.perk.PerkType
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.reward.RewardSource
 import cn.charlotte.pit.util.PlayerUtil
 import cn.charlotte.pit.util.chat.CC
 import cn.charlotte.pit.util.chat.MessageType
@@ -72,7 +74,8 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
             "",
             "&7当激活时: ",
             "  &a◼ &7击杀额外获得&b +20%经验&7.",
-            "  &a◼ &7击杀额外获得&b 最多100经验&7.",
+            "  &a◼ &7击杀额外获得&b 1–100经验&7.",
+            "  &7以上击杀经验加成不适用于 Bot",
             "",
             "&7但是: ",
             "  &c◼ &7每20击杀将额外承受&c +10%&7 的伤害.",
@@ -81,7 +84,8 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
             "&7       (从200连杀开始)",
             "",
             "&7连杀期间: ",
-            "  &b◼ &7复制并存储你获得的&b经验&7.",
+            "  &b◼ &7复制并存储激活后击杀实际到账的&b经验&7.",
+            "  &7包含 Bot 的基础击杀经验，不含助攻和其他来源",
             "",
             "&7当死亡时: ",
             "  &b◼ &7获得你存储的&b经验&7, 并且",
@@ -106,14 +110,15 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
 
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     fun quit(event: PlayerQuitEvent) {
         cache.remove(event.player.uniqueId)
     }
 
     @EventHandler
-    fun onKill(event: PitKillEvent) {
-        val killer = event.killer
+    fun onKill(event: PitRewardGrantedEvent) {
+        if (!event.isProgressionEligible || event.source != RewardSource.KILL) return
+        val killer = event.player
         val profile = PlayerProfile.getPlayerProfileByUuid(killer.uniqueId) ?: return
 
         if (!PlayerUtil.isPlayerChosePerk(killer, "to_the_moon")) {
@@ -121,7 +126,7 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
         }
 
         if (profile.streakKills >= 100) {
-            val i = cache.getOrDefault(killer.uniqueId, 0.0) + event.exp
+            val i = cache.getOrDefault(killer.uniqueId, 0.0) + event.experience
             cache[killer.uniqueId] = i
         }
     }
@@ -136,11 +141,11 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
         //trigger check (get X streak)
         //trigger check (get X streak)
         if (event.from < trigger && event.to >= trigger) {
-            CC.boardCast(
+            cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.playerProfile.playerUuid,
                 MessageType.COMBAT,
                 "&c&l超级连杀! " + event.playerProfile.formattedNameWithRoman + " &7激活了 &b&l月球之旅 &7!"
             )
-            Bukkit.getOnlinePlayers().forEach { player: Player? ->
+            cn.charlotte.pit.junxu.JunxuMessages.audience(event.playerProfile.playerUuid).forEach { player: Player? ->
                 player!!.playSound(
                     player.location,
                     Sound.WITHER_SPAWN,
@@ -162,7 +167,7 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
         if (profile.streakKills >= 100) {
             experience.addAndGet(experience.get() * 0.2)
 
-            val extra = Random.nextInt(1, 100)
+            val extra = Random.nextInt(1, 101)
             experience.addAndGet(extra.toDouble())
         }
     }
@@ -181,12 +186,12 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
 
         if (streakKills >= 100) {
             val extraBoost = floor((streakKills - 100) / 20.0)
-            boostDamage.addAndGet(extraBoost * 0.2)
+            boostDamage.addAndGet(extraBoost * 0.1)
         }
 
         if (streakKills >= 200) {
             val extraBoost = floor((streakKills - 200) / 20.0)
-            finalDamage.addAndGet(extraBoost * 0.1)
+            finalDamage.addAndGet(extraBoost * 0.2)
         }
     }
 
@@ -200,6 +205,11 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
         coins: AtomicDouble,
         experience: AtomicDouble
     ) {
+        rewardDeath(myself)
+    }
+
+    /** The stored reward also belongs to the victim when there is no killer entity. */
+    fun rewardDeath(myself: Player) {
         val profile = PlayerProfile.getPlayerProfileByUuid(myself.uniqueId) ?: return
         val streakKills = profile.streakKills
         if (streakKills >= 100) {
@@ -209,11 +219,11 @@ class ToTheMoonMegaStreak: AbstractPerk() , IPlayerKilledEntity, IPlayerDamaged,
 
             val stored = cache.remove(myself.uniqueId) ?: return
             if (stored > 0) {
-                val give = min(((streakKills - 100) * 0.005) * stored + stored, stored * 2)
-                val multiple = (give - stored) / stored
-                profile.experience += give
-                profile.applyExperienceToPlayer(myself)
-                myself.sendMessage(CC.translate("&b&l月球之旅! &7你挣取了 &b+${format.format(give)}经验&7 在这次连杀中. (&b${decimalFormat.format(multiple)}x &7倍率)"))
+                val economicStreak = if (cn.charlotte.pit.reward.EconomyV2.active()) profile.economyData.lifeEconomicUnits else streakKills
+                val give = min((maxOf(0.0, economicStreak - 100) * 0.005) * stored + stored, stored * 2)
+                val multiple = give / stored
+                val receipt = RewardService.grant(profile, RewardSource.STREAK_PAYOUT, 0.0, give)
+                myself.sendMessage(CC.translate("&b&l月球之旅! &7你挣取了 &b+${format.format(receipt.experience)}经验&7 在这次连杀中. (&b${decimalFormat.format(multiple)}x &7倍率)"))
             }
         }
     }

@@ -3,6 +3,8 @@ package cn.charlotte.pit.events.impl.major;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitAssistEvent;
 import cn.charlotte.pit.event.PitKillEvent;
 import cn.charlotte.pit.event.PitProfileLoadedEvent;
@@ -82,10 +84,9 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
         } else {
             redTeam.add(event.getPlayerProfile().getPlayerUuid());
         }
-        this.sendPacket(Bukkit.getPlayer(event.getPlayerProfile().getPlayerUuid()));
-        for (Player target : Bukkit.getOnlinePlayers()) {
-            this.sendPacket(target);
-        }
+        Player player = Bukkit.getPlayer(event.getPlayerProfile().getPlayerUuid());
+        broadcastTeamHelmet(player);
+        syncTeamHelmetsFor(player);
     }
 
     @Override
@@ -95,7 +96,7 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
 
         this.timer = new Cooldown(5, TimeUnit.MINUTES);
 
-        ArrayList<? extends Player> players = new ArrayList<>(Bukkit.getOnlinePlayers());
+        ArrayList<? extends Player> players = new ArrayList<>(cn.charlotte.pit.junxu.PublicPitParticipants.online());
         Collections.shuffle(players);
 
         new BukkitRunnable() {
@@ -114,9 +115,7 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
             scatterTeam(player);
         }
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            sendPacket(player);
-        }
+        syncAllTeamHelmets();
     }
 
     private void scatterTeam(Player player) {
@@ -175,10 +174,10 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
             }
 
 
-            for (Player player : Bukkit.getOnlinePlayers()) {
+            for (Player player : cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
                 PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
                 boolean redTeam = isRedTeam(player);
-                int rewardCoins = 0;
+                double rewardCoins = 0;
                 int rewardRenown = 0;
                 boolean win = false;
                 if (redWin) {
@@ -205,11 +204,11 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                 if (ThePit.getInstance().getPitConfig().isGenesisEnable() && profile.getGenesisData().getTier() >= 5 && rewardRenown > 0) {
                     rewardRenown++;
                 }
-                int enchantBoostLevel = Utils.getEnchantLevel(player.getInventory().getLeggings(), "Paparazzi");
+                int enchantBoostLevel = cn.charlotte.pit.enchantment.type.rare.PaparazziEnchant.getUsableLevel(player);
                 if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) {
                     enchantBoostLevel = 0;
                 }
-                if (enchantBoostLevel > 0) {
+                if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                     rewardCoins += 0.5 * enchantBoostLevel * rewardCoins;
                     rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown);
                     MythicLeggingsItem mythicLeggings = new MythicLeggingsItem();
@@ -234,8 +233,10 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                         }
                     }
                 }
-                profile.grindCoins(rewardCoins);
-                profile.setCoins(profile.getCoins() + rewardCoins);
+                cn.charlotte.pit.reward.MajorEventRewards.Result payout = cn.charlotte.pit.reward.MajorEventRewards.settle(
+                        player, "red_vs_blue", rewardCoins, rewardRenown, integer == null ? Integer.MAX_VALUE : integer,
+                        map, win, enchantBoostLevel);
+                rewardCoins = payout.coins; rewardRenown = payout.renown;
                 profile.setRenown(profile.getRenown() + rewardRenown);
                 profile.kingsQuestsData.checkUpdate();
                 if (profile.kingsQuestsData.getAccepted()) {
@@ -243,7 +244,7 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
                         profile.kingsQuestsData.setCollectedRenown(profile.kingsQuestsData.getCollectedRenown() + rewardRenown);
                     }
                 }
-                player.sendMessage(CC.translate("&6&l你的奖励: &6+" + rewardCoins + "硬币" + (rewardRenown == 0 ? "" : "&e +" + rewardRenown + "声望")));
+                player.sendMessage(CC.translate("&6&l你的奖励: &6+" + String.format(java.util.Locale.ROOT, "%.2f", rewardCoins) + "硬币" + (rewardRenown == 0 ? "" : "&e +" + rewardRenown + "声望")));
                 player.sendMessage(CC.translate("&6&l胜利队伍: " + (redWin ? "&c红队 &e以 " + redKills + " 击杀击败了 &9蓝队 &e(+" + (redKills - blueKills) + ")" : "&9蓝队 &e以 " + blueKills + " 击杀和助攻击败了 &c红队 &e(+" + (blueKills - redKills) + ")")));
                 player.sendMessage(CC.translate("&6&l团队奖励: " + (win ? "&a&l成功！ &7获得了大量金币奖励" : "&c&l失败")));
                 Integer ka = kaMap.get(player.getUniqueId());
@@ -267,7 +268,7 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
             }
         } catch (Exception e) {
             e.printStackTrace();
-            Bukkit.getOnlinePlayers().forEach(error -> {
+            cn.charlotte.pit.junxu.PublicPitParticipants.online().forEach(error -> {
                 CC.printError(error, e);
             });
         }
@@ -281,41 +282,91 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
     }
 
 
-    private void sendPacket(Player player) {
-        PacketPlayOutEntityEquipment packet = null;
-        if (redTeam.contains(player.getUniqueId())) {
-            packet = new PacketPlayOutEntityEquipment(player.getEntityId(), 4, CraftItemStack.asNMSCopy(new ItemBuilder(Material.WOOL).durability(14).build()));
-        } else if (blueTeam.contains(player.getUniqueId())) {
-            packet = new PacketPlayOutEntityEquipment(player.getEntityId(), 4, CraftItemStack.asNMSCopy(new ItemBuilder(Material.WOOL).durability(11).build()));
+    private PacketPlayOutEntityEquipment createTeamHelmetPacket(Player subject) {
+        if (subject == null || !subject.isOnline()) {
+            return null;
         }
+
+        int durability;
+        if (redTeam.contains(subject.getUniqueId())) {
+            durability = 14;
+        } else if (blueTeam.contains(subject.getUniqueId())) {
+            durability = 11;
+        } else {
+            return null;
+        }
+
+        return new PacketPlayOutEntityEquipment(
+                subject.getEntityId(),
+                4,
+                CraftItemStack.asNMSCopy(new ItemBuilder(Material.WOOL).durability(durability).build())
+        );
+    }
+
+    private void sendTeamHelmet(Player subject, Player viewer, PacketPlayOutEntityEquipment packet) {
+        if (packet == null || subject == null || viewer == null || subject.equals(viewer)
+                || !subject.isOnline() || !viewer.isOnline()) {
+            return;
+        }
+
+        ((CraftPlayer) viewer).getHandle().playerConnection.sendPacket(packet);
+    }
+
+    private void broadcastTeamHelmet(Player subject) {
+        PacketPlayOutEntityEquipment packet = createTeamHelmetPacket(subject);
         if (packet == null) {
             return;
         }
-        for (Player target : Bukkit.getOnlinePlayers()) {
-            if (target.equals(player)) continue;
-            ((CraftPlayer) target).getHandle()
-                    .playerConnection
-                    .sendPacket(packet);
+
+        for (Player viewer : cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
+            sendTeamHelmet(subject, viewer, packet);
+        }
+    }
+
+    private void syncTeamHelmetsFor(Player viewer) {
+        if (viewer == null || !viewer.isOnline()) {
+            return;
+        }
+
+        for (Player subject : cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
+            sendTeamHelmet(subject, viewer, createTeamHelmetPacket(subject));
+        }
+    }
+
+    private void syncAllTeamHelmets() {
+        List<Player> players = new ArrayList<>(cn.charlotte.pit.junxu.PublicPitParticipants.online());
+        for (Player subject : players) {
+            PacketPlayOutEntityEquipment packet = createTeamHelmetPacket(subject);
+            for (Player viewer : players) {
+                sendTeamHelmet(subject, viewer, packet);
+            }
         }
     }
 
     private void resetArmor() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
-            for (Player target : Bukkit.getOnlinePlayers()) {
-                if (player.equals(target)) continue;
-                connection.sendPacket(new PacketPlayOutEntityEquipment(target.getEntityId(), 4, CraftItemStack.asNMSCopy(target.getInventory().getHelmet())));
+        List<Player> players = new ArrayList<>(cn.charlotte.pit.junxu.PublicPitParticipants.online());
+        for (Player subject : players) {
+            PacketPlayOutEntityEquipment packet = new PacketPlayOutEntityEquipment(
+                    subject.getEntityId(),
+                    4,
+                    CraftItemStack.asNMSCopy(subject.getInventory().getHelmet())
+            );
+            for (Player viewer : players) {
+                if (viewer.equals(subject)) continue;
+                PlayerConnection connection = ((CraftPlayer) viewer).getHandle().playerConnection;
+                connection.sendPacket(packet);
             }
         }
     }
 
     @EventHandler
     public void onTeleport(PlayerTeleportEvent event) {
-        this.sendPacket(event.getPlayer());
+        broadcastTeamHelmet(event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
+        if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(event.getEntity())) return;
         Player damager = null;
         if (event.getDamager() instanceof Player) {
             damager = (Player) event.getDamager();
@@ -342,6 +393,8 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
 
     @EventHandler
     public void onKilled(PitKillEvent event) {
+        if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(event.getKiller())) return;
+        if (!event.isProgressionEligible() || !event.isHumanPvp()) return;
         if (redTeam.contains(event.getKiller().getUniqueId())) {
             redKills++;
         } else if (blueTeam.contains(event.getKiller().getUniqueId())) {
@@ -350,12 +403,16 @@ public class RedVSBlueEvent implements IEvent, IEpicEvent, Listener, IScoreBoard
 
         kaMap.putIfAbsent(event.getKiller().getUniqueId(), 0);
         kaMap.put(event.getKiller().getUniqueId(), kaMap.get(event.getKiller().getUniqueId()) + 1);
+        cn.charlotte.pit.reward.MajorEventRewards.mark("red_vs_blue", event.getKiller());
     }
 
     @EventHandler
     public void onAssist(PitAssistEvent event) {
+        if (!cn.charlotte.pit.junxu.PublicPitParticipants.humanCombat(event.getAssist(), event.getTarget())) return;
+        if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(event.getAssist())) return;
         kaMap.putIfAbsent(event.getAssist().getUniqueId(), 0);
         kaMap.put(event.getAssist().getUniqueId(), kaMap.get(event.getAssist().getUniqueId()) + 1);
+        cn.charlotte.pit.reward.MajorEventRewards.mark("red_vs_blue", event.getAssist());
     }
 
     @Override

@@ -40,7 +40,7 @@ class Unrestrained: AbstractEnchantment(), IPlayerBeKilledByEntity, IAttackEntit
                 "时对该玩家伤害额外增加&c24%&7(最高叠加至6层)"
     }
 
-    val map = HashMap<UUID, AttackData>()
+    val map = HashMap<UUID, MutableMap<UUID, AttackData>>()
 
     override fun handleAttackEntity(
         enchantLevel: Int,
@@ -51,7 +51,7 @@ class Unrestrained: AbstractEnchantment(), IPlayerBeKilledByEntity, IAttackEntit
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean?
     ) {
-        val attackData = map[target.uniqueId] ?: return
+        val attackData = map[attacker.uniqueId]?.get(target.uniqueId) ?: return
         boostDamage.addAndGet(attackData.amount * 0.24)
     }
 
@@ -62,11 +62,9 @@ class Unrestrained: AbstractEnchantment(), IPlayerBeKilledByEntity, IAttackEntit
         coins: AtomicDouble?,
         experience: AtomicDouble?
     ) {
-        val data = map[target.uniqueId] ?: kotlin.run {
-            AttackData(target.uniqueId).also {
-                map[target.uniqueId] = it
-            }
-        }
+        if (target !is Player || target.uniqueId == myself.uniqueId) return
+        val targets = map.getOrPut(myself.uniqueId) { HashMap() }
+        val data = targets.getOrPut(target.uniqueId) { AttackData(target.uniqueId) }
 
         data.amount = min(6, data.amount + 1)
     }

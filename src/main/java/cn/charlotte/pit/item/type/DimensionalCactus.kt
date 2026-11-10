@@ -15,7 +15,7 @@ class DimensionalCactus {
             "&7手持并右键可以从九件未附魔的",
             "&7随机 &a神&c话&e之&6甲 &7选择其一.",
             " ",
-            "&6(所有颜色可选择)"
+            "&6(从八种颜色中随机生成九项，可出现重复颜色)"
         ).internalName("dimensional_cactus")
             .canTrade(true).canSaveToEnderChest(true).shiny().build();
     }

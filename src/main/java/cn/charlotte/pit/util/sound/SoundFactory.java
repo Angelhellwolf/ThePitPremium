@@ -30,7 +30,7 @@ public class SoundFactory extends BukkitRunnable {
             }
         }
 
-        this.runTaskTimerAsynchronously(ThePit.getInstance(), 1, 1);
+        this.runTaskTimer(ThePit.getInstance(), 1, 1);
     }
 
     public void registerSound(AbstractPitSound sound) {
@@ -46,8 +46,14 @@ public class SoundFactory extends BukkitRunnable {
 
     @Override
     public void run() {
-        for (Map.Entry<String, AbstractPitSound> entry : this.pitSounds.entrySet()) {
-            entry.getValue().tick();
+        if (this.pitSounds.isEmpty()) {
+            return;
+        }
+
+        for (AbstractPitSound sound : this.pitSounds.values()) {
+            if (sound.hasActivePlayers()) {
+                sound.tick();
+            }
         }
     }
 }

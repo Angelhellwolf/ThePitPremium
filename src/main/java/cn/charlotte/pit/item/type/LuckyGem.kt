@@ -17,7 +17,8 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.metadata.FixedMetadataValue
-import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.scheduler.BukkitTask
+import java.util.UUID
 
 
 /**
@@ -26,6 +27,14 @@ import org.bukkit.scheduler.BukkitRunnable
  */
 @AutoRegister
 class LuckyGem : AbstractPitItem(), Listener {
+    companion object {
+        private const val EFFECT_DURATION_MS = 60_000L
+        private const val PARTICLE_PERIOD_TICKS = 5L
+    }
+
+    private val luckyUntil = HashMap<UUID, Long>()
+    private var effectTask: BukkitTask? = null
+
     override fun getInternalName(): String {
         return "lucky_gem"
     }
@@ -56,6 +65,7 @@ class LuckyGem : AbstractPitItem(), Listener {
 
     @EventHandler
     fun onInteract(event: PlayerInteractEvent) {
+        if (event.action != org.bukkit.event.block.Action.RIGHT_CLICK_AIR && event.action != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return
         if ("lucky_gem" == ItemUtil.getInternalName(event.item)) {
             event.isCancelled = true
             event.setUseInteractedBlock(Event.Result.DENY)
@@ -63,28 +73,45 @@ class LuckyGem : AbstractPitItem(), Listener {
             event.player.sendMessage(CC.translate("&e&l幸运! &7自身运气已大幅度提升。"))
             PlayerUtil.takeOneItemInHand(event.player)
             event.player.setMetadata("lucky", FixedMetadataValue(ThePit.getInstance(), true))
-            Bukkit.getScheduler().runTaskTimer(ThePit.getInstance(), object : BukkitRunnable() {
-                private var tick = 0
-
-                override fun run() {
-                    if (tick >= 1200) {
-                        this.cancel()
-                        event.player.sendMessage(CC.translate("&e&l幸运! &7自身运气已降低。"))
-                        event.player.removeMetadata("lucky", ThePit.getInstance())
-                    } else {
-                        ParticleBuilder(
-                            event.player.location.add(0.0, 2.0, 0.0),
-                            EnumParticle.VILLAGER_HAPPY
-                        ).setVelocity(
-                            0.5f
-                        )
-                            .setCount(5).play()
-                        tick++
-                    }
-                }
-            }, 0L, 1L)
+            luckyUntil[event.player.uniqueId] = System.currentTimeMillis() + EFFECT_DURATION_MS
+            ensureEffectTask()
 
         }
+    }
+
+    private fun ensureEffectTask() {
+        if (effectTask != null) {
+            return
+        }
+
+        effectTask = Bukkit.getScheduler().runTaskTimer(ThePit.getInstance(), Runnable {
+            val now = System.currentTimeMillis()
+            val iterator = luckyUntil.entries.iterator()
+            while (iterator.hasNext()) {
+                val entry = iterator.next()
+                val player = Bukkit.getPlayer(entry.key)
+                if (player == null || !player.isOnline) {
+                    iterator.remove()
+                    continue
+                }
+                if (now >= entry.value) {
+                    iterator.remove()
+                    player.sendMessage(CC.translate("&e&l幸运! &7自身运气已降低。"))
+                    player.removeMetadata("lucky", ThePit.getInstance())
+                    continue
+                }
+
+                ParticleBuilder(
+                    player.location.add(0.0, 2.0, 0.0),
+                    EnumParticle.VILLAGER_HAPPY
+                ).setVelocity(0.5f).setCount(5).play()
+            }
+
+            if (luckyUntil.isEmpty()) {
+                effectTask?.cancel()
+                effectTask = null
+            }
+        }, 0L, PARTICLE_PERIOD_TICKS)
     }
 
     override fun loadFromItemStack(item: ItemStack) {

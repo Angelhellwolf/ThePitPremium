@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.nonpurchased;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
@@ -90,7 +92,8 @@ public class OverDriveMegaStreak extends AbstractPerk implements Listener, IPlay
         list.add("  &c(必中伤害无法被免疫与抵抗)");
         list.add(" ");
         list.add("&7激活后死亡时:");
-        list.add("  &a▶ &7获得 &b4,000 经验值");
+        list.add(cn.charlotte.pit.reward.EconomyV2.active() ? "  &a▶ &7额外获得本次生命基础击杀金币与经验的20%" : "  &a▶ &7获得 &b4,000 经验值");
+        list.add("&7击杀收益加成排除 Bot；死亡经验奖励按已达成连杀结算");
         return list;
     }
 
@@ -122,8 +125,8 @@ public class OverDriveMegaStreak extends AbstractPerk implements Listener, IPlay
         int trigger = 50;
         //trigger check (get X streak)
         if (event.getFrom() < trigger && event.getTo() >= trigger) {
-            CC.boardCast(MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &e&l超速传动 &7!");
-            Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player.getLocation(), Sound.WITHER_SPAWN, 0.8F, 1.5F));
+            cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.getPlayerProfile().getPlayerUuid(), MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &e&l超速传动 &7!");
+            cn.charlotte.pit.junxu.JunxuMessages.audience(event.getPlayerProfile().getPlayerUuid()).forEach(player -> player.playSound(player.getLocation(), Sound.WITHER_SPAWN, 0.8F, 1.5F));
         }
     }
 
@@ -174,8 +177,15 @@ public class OverDriveMegaStreak extends AbstractPerk implements Listener, IPlay
     public void handlePlayerBeKilledByEntity(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
         if (profile.getStreakKills() >= 50) {
-            profile.setExperience(profile.getExperience() + 4000);
-            myself.sendMessage(CC.translate("&e&l超速传动! &7你获得了 &b4,000 &7经验值."));
+            if (cn.charlotte.pit.reward.EconomyV2.active() && profile.getEconomyData().lifeStreakPaid) return;
+            if (cn.charlotte.pit.reward.EconomyV2.active()) profile.getEconomyData().lifeStreakPaid = true;
+            RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.active() || cn.charlotte.pit.reward.EconomyV2.observing()
+                    ? cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.OVERDRIVE,
+                        0, 4000, cn.charlotte.pit.reward.CombatEconomy.state(profile).lifeBaseCoins * .2,
+                        cn.charlotte.pit.reward.CombatEconomy.state(profile).lifeBaseExperience * .2)
+                    : RewardService.grant(profile, RewardSource.STREAK, 0, 4000);
+            myself.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&e&l超速传动! &7获得 &6%.2f 金币 &b%.2f 经验 &7（储备 +%.2f）",
+                    reward.getCoins(), reward.getExperience(), reward.getReservedExperience())));
         }
     }
 

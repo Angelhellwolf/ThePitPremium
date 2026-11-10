@@ -32,7 +32,10 @@ public class ProfileLoadRunnable extends BukkitRunnable {
 
     public ProfileLoadRunnable(ThePit plugin) {
         instance = this;
-        this.runTaskTimerAsynchronously(plugin, 20, 20);
+        // This task only observes profile state; all of its actual work touches
+        // Bukkit players, potion effects and plugin messaging, which must stay on
+        // the server thread.
+        this.runTaskTimer(plugin, 20, 20);
     }
 
 

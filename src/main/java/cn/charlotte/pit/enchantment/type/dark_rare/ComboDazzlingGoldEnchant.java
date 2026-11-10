@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.dark_rare;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
@@ -57,15 +59,15 @@ public class ComboDazzlingGoldEnchant extends AbstractEnchantment implements IAt
 
     public String getText(int a, Player player) {
         a = player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW
-                ? PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getBowHit()
-                : PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getMeleeHit();
+                ? CombatContext.bowHits(player)
+                : CombatContext.meleeHits(player);
         return a % 5 == 0 ? "&a&l✔" : new StringBuilder().insert(0, "&e&l").append(5 - a % 5).toString();
     }
 
     @PlayerOnly
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % 5 == 0) {
+        if (CombatContext.meleeHits(attacker) % 5 == 0) {
             PlayerUtil.heal(attacker, 2.0);
             attacker.removePotionEffect(PotionEffectType.SPEED);
             attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 100, 1), true);
@@ -77,7 +79,7 @@ public class ComboDazzlingGoldEnchant extends AbstractEnchantment implements IAt
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % 5 == 0) {
+        if (CombatContext.bowHits(attacker) % 5 == 0) {
             PlayerUtil.heal(attacker, 2.0);
             attacker.removePotionEffect(PotionEffectType.SPEED);
             attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 100, 1), true);

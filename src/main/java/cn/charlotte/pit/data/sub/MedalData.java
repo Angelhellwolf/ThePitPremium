@@ -41,11 +41,8 @@ public class MedalData {
 
     @JsonIgnore
     public MedalStatus getMedalStatus(String medalInternal) {
-        if (!medalStatus.containsKey(medalInternal)) {
-            return medalStatus.get(medalInternal + "#" + getMedalLevel(medalInternal));
-        } else {
-            return medalStatus.get(medalInternal);
-        }
+        String key = medalInternal.contains("#") ? medalInternal : medalInternal + "#" + getMedalLevel(medalInternal);
+        return medalStatus.computeIfAbsent(key, ignored -> new MedalStatus());
     }
 
     @JsonIgnore
@@ -54,7 +51,8 @@ public class MedalData {
         medals.add(1);
         for (String medal : medalStatus.keySet()) {
             if (medal.startsWith(medalInternal + "#") && medalStatus.get(medal).isUnlocked()) {
-                medals.add(Integer.parseInt(medal.replace(medalInternal + "#", "")));
+                try { medals.add(Integer.parseInt(medal.substring(medalInternal.length() + 1))); }
+                catch (NumberFormatException ignored) { }
             }
         }
         return Collections.max(medals);
@@ -65,6 +63,7 @@ public class MedalData {
     public static class MedalStatus {
         private boolean unlocked;
         private int progress;
+        private double fractionalProgress;
         private long finishedTime;
     }
 

@@ -25,7 +25,7 @@ public class StrengthPerkMedal extends AbstractMedal implements Listener {
 
     @Override
     public String getRequirementDescription(int level) {
-        return "在天赋[力量]的最大增益下击杀一名玩家";
+        return "携带天赋[力量]并将其增益叠满10层";
     }
 
     @Override
@@ -55,8 +55,10 @@ public class StrengthPerkMedal extends AbstractMedal implements Listener {
 
     @EventHandler
     public void onKill(PitKillEvent event) {
+        if (!event.isProgressionEligible()) return;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(event.getKiller().getUniqueId());
-        if (profile.getStrengthNum() >= 5 && !profile.getStrengthTimer().hasExpired()) {
+        if (profile.getStrengthNum() >= 10 && !profile.getStrengthTimer().hasExpired()
+                && cn.charlotte.pit.util.PlayerUtil.isPlayerChosePerk(event.getKiller(), "Strength")) {
             addProgress(profile, 1);
         }
     }

@@ -1,0 +1,283 @@
+{
+  "revision": "r1",
+  "size": [
+    61,
+    51,
+    61
+  ],
+  "mainFloor": 22,
+  "worldBaseY": 48,
+  "arena": [
+    17,
+    34,
+    43,
+    56
+  ],
+  "sha256": "1acd33ed7fa84e0f43c8f84d8b8f73f4b188bcdb125c4f507486f3f021a395ed",
+  "nonAir": 46307,
+  "markers": [
+    {
+      "id": "arrival",
+      "role": "spawn",
+      "pos": [
+        30,
+        23,
+        11
+      ],
+      "yaw": 0
+    },
+    {
+      "id": "exit",
+      "role": "exit",
+      "pos": [
+        30,
+        23,
+        5
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "enchant",
+      "role": "npc",
+      "pos": [
+        18,
+        23,
+        18
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "talent",
+      "role": "npc",
+      "pos": [
+        42,
+        23,
+        18
+      ],
+      "yaw": 90
+    },
+    {
+      "id": "mastery",
+      "role": "npc",
+      "pos": [
+        24,
+        23,
+        30
+      ],
+      "yaw": 270
+    },
+    {
+      "id": "core",
+      "role": "objective",
+      "pos": [
+        30,
+        24,
+        23
+      ]
+    },
+    {
+      "id": "training_min",
+      "role": "boundary",
+      "pos": [
+        17,
+        23,
+        34
+      ]
+    },
+    {
+      "id": "training_max",
+      "role": "boundary",
+      "pos": [
+        43,
+        30,
+        56
+      ]
+    },
+    {
+      "id": "projection_01",
+      "role": "player_spawn",
+      "pos": [
+        20,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_02",
+      "role": "player_spawn",
+      "pos": [
+        25,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_03",
+      "role": "player_spawn",
+      "pos": [
+        30,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_04",
+      "role": "player_spawn",
+      "pos": [
+        35,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_05",
+      "role": "player_spawn",
+      "pos": [
+        40,
+        23,
+        42
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_06",
+      "role": "player_spawn",
+      "pos": [
+        20,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_07",
+      "role": "player_spawn",
+      "pos": [
+        25,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_08",
+      "role": "player_spawn",
+      "pos": [
+        30,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_09",
+      "role": "player_spawn",
+      "pos": [
+        35,
+        23,
+        50
+      ],
+      "yaw": 180
+    },
+    {
+      "id": "projection_10",
+      "role": "player_spawn",
+      "pos": [
+        40,
+        23,
+        50
+      ],
+      "yaw": 180
+    }
+  ],
+  "signs": [
+    {
+      "x": 30,
+      "y": 34,
+      "z": 3,
+      "lines": [
+        "§6第七军需处",
+        "§7余烬之约",
+        "",
+        "§b星火仍在"
+      ]
+    },
+    {
+      "x": 27,
+      "y": 23,
+      "z": 6,
+      "lines": [
+        "§6接待大厅",
+        "§f契约核心",
+        "§7前行进入",
+        ""
+      ]
+    },
+    {
+      "x": 30,
+      "y": 23,
+      "z": 19,
+      "lines": [
+        "§6星火核心",
+        "§f重燃军印",
+        "§7右键触碰核心",
+        ""
+      ]
+    },
+    {
+      "x": 20,
+      "y": 23,
+      "z": 17,
+      "lines": [
+        "§d符文工坊",
+        "§f符文师·伊瑟",
+        "§7附魔与符文",
+        ""
+      ]
+    },
+    {
+      "x": 40,
+      "y": 23,
+      "z": 17,
+      "lines": [
+        "§b战术室",
+        "§f战术导师·凯恩",
+        "§7天赋与路线",
+        ""
+      ]
+    },
+    {
+      "x": 26,
+      "y": 23,
+      "z": 31,
+      "lines": [
+        "§6兵器陈列廊",
+        "§f兵器大师·雷铎",
+        "§7精通与传承",
+        ""
+      ]
+    },
+    {
+      "x": 34,
+      "y": 23,
+      "z": 33,
+      "lines": [
+        "§c演武场边界",
+        "§7跨线进入战斗区",
+        "§f服务区禁止战斗",
+        ""
+      ]
+    }
+  ],
+  "walkableMainFloor": 2293,
+  "checks": [
+    "marker headroom",
+    "all NPC and Bot spawns reachable",
+    "legacy material IDs"
+  ],
+  "runtimeIntegration": "not_verified"
+}

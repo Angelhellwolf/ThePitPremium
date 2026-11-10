@@ -113,7 +113,9 @@
   - `/pitadmin eventcfg set portal_posa`
   - `/pitadmin eventcfg set portal_posb`
 - 建议：
-  - `spire_spirefloorlocations` 至少配置 10 个点（对应楼层索引 0~9）
+  - 内置 `spire.schematic` 有 9 层；`spire_spirefloorlocations` 按从下到上配置 9 个点（对应楼层索引 0~8）。
+  - 坐标 Y 是玩家脚部的站立高度，应为本层地板方块 Y + 1，不能在地板内部或下方。内置地图相对 `spire_spireloc` 的站立高度偏移为 `0, 16, 31, 47, 62, 77, 93, 107, 120`。
+  - 传送只在配置高度上下 3 格内寻找有完整地板和两格净空的落点；配置错误时不会向下搜索到其他楼层。
 
 ### 4.7 Auction（`auction`）
 

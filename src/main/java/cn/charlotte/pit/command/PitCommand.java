@@ -61,6 +61,44 @@ public class PitCommand {
     private final DecimalFormat numFormat = new DecimalFormat("0.00");
     private final Map<UUID, Cooldown> COOLDOWN_SHOW = new HashMap<>();
 
+    @Command(names = {"pitrules", "pit rules"})
+    public void gameplayRules(Player player) {
+        GameplayRules.show(player);
+    }
+
+    @Command(names = {"pitprogress", "pit progress"})
+    public void growth(Player player) {
+        if (!cn.charlotte.pit.reward.EconomyV2.active()) {
+            player.sendMessage(CC.translate("&e成长更新准备中。"));
+            return;
+        }
+        new cn.charlotte.pit.menu.growth.GrowthMenu().openMenu(player);
+    }
+
+    @Command(names = {"pit build save"})
+    public void saveBuild(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.save(player, index); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
+    @Command(names = {"pit build use"})
+    public void useBuild(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.apply(player, index); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
+    @Command(names = {"pit training save"})
+    public void saveTraining(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.training(player, index, true); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
+    @Command(names = {"pit training use"})
+    public void useTraining(Player player, @Parameter(name = "栏位") int index) {
+        try { cn.charlotte.pit.reward.BuildPresets.training(player, index, false); }
+        catch (IllegalArgumentException failure) { player.sendMessage(CC.translate("&c" + failure.getMessage())); }
+    }
+
     @Command(
             names = {
                     "option",
@@ -123,7 +161,7 @@ public class PitCommand {
     public void previewEvents(Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (!profile.isSupporter() && !PlayerUtil.isStaff(player)) {
-            player.sendMessage(CC.translate("&c你需要购买 &e天坑乱斗会员 &c才可以使用此指令!"));
+            player.sendMessage(CC.translate("&c你需要购买 &e天坑·会员 &c才可以使用此指令!"));
             return;
         }
         new EventPreviewerMenu().openMenu(player);
@@ -142,7 +180,7 @@ public class PitCommand {
     public void show(Player player) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (!profile.isSupporter() && !PlayerUtil.isStaff(player)) {
-            player.sendMessage(CC.translate("&c你需要购买 &e天坑乱斗会员 &c才可以使用此指令!"));
+            player.sendMessage(CC.translate("&c你需要购买 &e天坑·会员 &c才可以使用此指令!"));
             return;
         }
         COOLDOWN_SHOW.putIfAbsent(player.getUniqueId(), new Cooldown(0));
@@ -260,11 +298,11 @@ public class PitCommand {
             player.sendMessage(CC.translate("&c但对方仍可以通过使用 &e/trade " + player.getName() + " &c以同意你的请求."));
             return;
         } else {
-            player.sendMessage(CC.translate("&a&l交易请求发送! &7成功向 " + LevelUtil.getLevelTag(targetProfile.getPrestige(), targetProfile.getLevel()) + " " + RankUtil.getPlayerColoredName(target.getUniqueId()) + " &7发送了交易请求!"));
+            player.sendMessage(CC.translate("&a&l交易请求发送! &7成功向 " + targetProfile.getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(target.getUniqueId()) + " &7发送了交易请求!"));
         }
 
         target.spigot()
-                .sendMessage(new ChatComponentBuilder(CC.translate("&6&l交易请求! " + LevelUtil.getLevelTag(profile.getPrestige(), profile.getLevel()) + " " + RankUtil.getPlayerColoredName(player.getUniqueId()) + " &7向你发送了交易请求,请"))
+                .sendMessage(new ChatComponentBuilder(CC.translate("&6&l交易请求! " + profile.getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(player.getUniqueId()) + " &7向你发送了交易请求,请"))
                         .append(new ChatComponentBuilder(CC.translate(" &6&o点击这里")).setCurrentHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentBuilder(CC.translate("&6点击以接受")).create())).setCurrentClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/trade " + player.getName())).create())
                         .append(CC.translate(" &r&7以接受交易请求."))
                         .create());
@@ -361,9 +399,9 @@ public class PitCommand {
     public void onCheckKillRecap(Player player) {
 
         try {
-            KillRecap killRecap = KillRecap.recapMap.get(player.getUniqueId());
+            KillRecap killRecap = KillRecap.getRecentRecap(player.getUniqueId());
             if (killRecap == null || killRecap.getKiller() == null || killRecap.getAssistData() == null) {
-                player.sendMessage(CC.translate("&c&l错误! &7未找到有效的近期死亡回放数据,抱歉!"));
+                player.sendMessage(CC.translate("&c&l错误! &7未找到五分钟内的死亡回放数据."));
                 return;
             }
 
@@ -380,13 +418,7 @@ public class PitCommand {
                     .newLine()
                     .add(
                             BookUtil.TextBuilder
-                                    .of(CC.translate("&0此系统仍在开发中,"))
-                                    .build()
-                    )
-                    .newLine()
-                    .add(
-                            BookUtil.TextBuilder
-                                    .of(CC.translate("&0展示数据不保证100%准确!"))
+                                    .of(CC.translate("&8记录于 " + Math.max(0L, (System.currentTimeMillis() - killRecap.getCompleteTime()) / 1000L) + " 秒前"))
                                     .build()
                     )
                     .newLine()
@@ -441,12 +473,16 @@ public class PitCommand {
                 killerCoin.append(CC.translate("&f首杀奖励: &6+" + numFormat.format(killRecap.getNotStreakCoin())))
                         .append("\n");
             }
+            if (killRecap.getStreakCoin() > 0) {
+                killerCoin.append(CC.translate("&f连杀奖励: &6+" + numFormat.format(killRecap.getStreakCoin())))
+                        .append("\n");
+            }
             if (killRecap.getLevelDisparityCoin() > 0) {
                 killerCoin.append(CC.translate("&f等级/装备差距: &6+" + numFormat.format(killRecap.getLevelDisparityCoin())))
                         .append("\n");
             }
-            if (killRecap.getOtherCoin() > 0) {
-                killerCoin.append(CC.translate("&f其他奖励: &6+" + numFormat.format(killRecap.getOtherCoin())))
+            if (Math.abs(killRecap.getOtherCoin()) > 0.01) {
+                killerCoin.append(CC.translate("&f其他修正: &6" + (killRecap.getOtherCoin() > 0 ? "+" : "") + numFormat.format(killRecap.getOtherCoin())))
                         .append("\n");
             }
 
@@ -457,12 +493,16 @@ public class PitCommand {
                 killerExp.append(CC.translate("&f首杀奖励: &b+" + numFormat.format(killRecap.getNotStreakExp())))
                         .append("\n");
             }
+            if (killRecap.getStreakExp() > 0) {
+                killerExp.append(CC.translate("&f连杀奖励: &b+" + numFormat.format(killRecap.getStreakExp())))
+                        .append("\n");
+            }
             if (killRecap.getLevelDisparityExp() > 0) {
                 killerExp.append(CC.translate("&f等级/装备差距: &b+" + numFormat.format(killRecap.getLevelDisparityExp())))
                         .append("\n");
             }
-            if (killRecap.getOtherExp() > 0) {
-                killerExp.append(CC.translate("&f其他奖励: &b+" + numFormat.format(killRecap.getOtherExp())))
+            if (Math.abs(killRecap.getOtherExp()) > 0.01) {
+                killerExp.append(CC.translate("&f其他修正: &b" + (killRecap.getOtherExp() > 0 ? "+" : "") + numFormat.format(killRecap.getOtherExp())))
                         .append("\n");
             }
             pageBuilder.add(
@@ -481,14 +521,15 @@ public class PitCommand {
 
             pages.add(pageBuilder.build());
 
-            int i = 1;
-            pageBuilder = new BookUtil.PageBuilder().add(
-                    BookUtil.TextBuilder
-                            .of(CC.translate("&0助攻 (" + killRecap.getAssistData().size() + "):"))
-                            .build()).newLine();
-            for (KillRecap.AssistData assistData : killRecap.getAssistData()) {
+            int i = 0;
+            if (!killRecap.getAssistData().isEmpty()) {
+                pageBuilder = new BookUtil.PageBuilder().add(
+                        BookUtil.TextBuilder
+                                .of(CC.translate("&0&l助攻 (" + killRecap.getAssistData().size() + "):"))
+                                .build()).newLine();
+                for (KillRecap.AssistData assistData : killRecap.getAssistData()) {
                 StringBuilder assistCoin = new StringBuilder();
-                assistCoin.append(CC.translate("&f基础奖励: &6+" + numFormat.format(killRecap.getBaseCoin() * assistData.getPercentage())))
+                assistCoin.append(CC.translate("&f基础奖励: &6+" + numFormat.format(assistData.getBaseCoin())))
                         .append("\n");
                 if (assistData.getStreakCoin() > 0) {
                     assistCoin.append(CC.translate("&f连杀奖励: &6+" + numFormat.format(assistData.getStreakCoin())))
@@ -499,7 +540,7 @@ public class PitCommand {
                             .append("\n");
                 }
                 StringBuilder assistExp = new StringBuilder();
-                assistExp.append(CC.translate("&f基础奖励: &b+" + numFormat.format(killRecap.getBaseExp() * assistData.getPercentage())))
+                assistExp.append(CC.translate("&f基础奖励: &b+" + numFormat.format(assistData.getBaseExp())))
                         .append("\n");
                 if (assistData.getStreakExp() > 0) {
                     assistExp.append(CC.translate("&f连杀奖励: &b+" + numFormat.format(assistData.getStreakExp())))
@@ -530,23 +571,31 @@ public class PitCommand {
                         .newLine()
                         .newLine();
                 i++;
-                if (i >= 5) {
+                if (i >= 4) {
                     pages.add(pageBuilder.build());
-                    pageBuilder = new BookUtil.PageBuilder();
+                    pageBuilder = new BookUtil.PageBuilder().add(
+                            BookUtil.TextBuilder.of(CC.translate("&0&l助攻 (续):")).build()).newLine();
                     i = 0;
                 }
             }
             if (i > 0) {
                 pages.add(pageBuilder.build());
             }
-            i = 1;
-            pageBuilder = new BookUtil.PageBuilder().add(
-                    BookUtil.TextBuilder
-                            .of(CC.translate("&0&l伤害日志 (" + killRecap.getDamageLogs().size() + "):"))
-                            .build()).newLine();
-            for (KillRecap.DamageData damageData : killRecap.getDamageLogs()) {
+            }
+            i = 0;
+            if (!killRecap.getDamageLogs().isEmpty()) {
+                pageBuilder = new BookUtil.PageBuilder().add(
+                        BookUtil.TextBuilder
+                                .of(CC.translate("&0&l战斗记录 (" + killRecap.getDamageLogs().size() + "):"))
+                                .build()).newLine();
+                for (KillRecap.DamageData damageData : killRecap.getDamageLogs()) {
+                long damageAt = damageData.getTimestamp();
+                if (damageAt <= 0 && damageData.getTimer() != null) {
+                    damageAt = damageData.getTimer().getStart();
+                }
+                long secondsBeforeDeath = Math.max(0L, (killRecap.getCompleteTime() - damageAt) / 1000L);
                 BookUtil.TextBuilder builder = BookUtil.TextBuilder
-                        .of(CC.translate("&7" + ((killRecap.getCompleteTime() - damageData.getTimer().getStart()) / 1000) + "秒前  &c" + numFormat.format(damageData.getDamage()) + " " + (damageData.isMelee() ? "近战" : "远程")));
+                        .of(CC.translate("&7" + secondsBeforeDeath + "秒前  &c" + numFormat.format(damageData.getDamage()) + "❤ " + (damageData.isMelee() ? "近战" : "远程")));
                 if (damageData.getUsedItem() != null && damageData.getUsedItem().getType() != Material.AIR) {
                     builder.onHover(BookUtil.HoverAction.showItem(damageData.getUsedItem()));
                 }
@@ -555,9 +604,7 @@ public class PitCommand {
                 ).newLine();
                 String damageHover = CC.translate((damageData.isAttack() ? "&c攻击" : "&c受到攻击")) +
                         "\n" +
-                        CC.translate("&7攻击后" + (damageData.isAttack() ? "此玩家" : "自身") + "剩余血量: &c" + numFormat.format(damageData.getAfterHealth()) +
-                                "\n" +
-                                CC.translate("&7附魔/天赋 附加伤害: &c" + numFormat.format(damageData.getBoostDamage())));
+                        CC.translate("&7命中后" + (damageData.isAttack() ? "对方" : "自身") + "血量: &c" + numFormat.format(damageData.getAfterHealth()) + "❤");
                 pageBuilder.add(
                         BookUtil.TextBuilder
                                 .of(CC.translate((damageData.isAttack() ? "&0⚔ " : "&0☬ ") + damageData.getDisplayName()))
@@ -565,14 +612,16 @@ public class PitCommand {
                                 .build()
                 ).newLine().newLine();
                 i++;
-                if (i >= 5) {
+                if (i >= 4) {
                     pages.add(pageBuilder.build());
-                    pageBuilder = new BookUtil.PageBuilder();
+                    pageBuilder = new BookUtil.PageBuilder().add(
+                            BookUtil.TextBuilder.of(CC.translate("&0&l战斗记录 (续):")).build()).newLine();
                     i = 0;
                 }
             }
             if (i > 0) {
                 pages.add(pageBuilder.build());
+            }
             }
             BookUtil.openPlayer(player,
                     BookUtil.writtenBook()
@@ -640,6 +689,7 @@ public class PitCommand {
             final Mail mail = new Mail();
             mail.setExpireTime(System.currentTimeMillis() + 30 * 24 * 60 * 60 * 1000L);
             mail.setCoins(data.getCoins());
+            mail.setRewardOrigin("gameplay");
             mail.setExp(data.getExp());
             mail.setRenown(data.getRenown());
             mail.setItem(data.getItem());
@@ -804,9 +854,9 @@ public class PitCommand {
             player.sendMessage(CC.translate("&c对方在游戏选项之后中设置了不接受交易请求,因此无法查看你的请求提示."));
             player.sendMessage(CC.translate("&c但对方仍可以通过使用 &e/viewOffer " + player.getName() + " &c以同意你的请求."));
         } else {
-            player.sendMessage(CC.translate("&e&l交易报价发送! &7成功向 " + LevelUtil.getLevelTag(targetProfile.getPrestige(), targetProfile.getLevel()) + " " + RankUtil.getPlayerColoredName(target.getUniqueId()) + " &7发送了交易报价!"));
+            player.sendMessage(CC.translate("&e&l交易报价发送! &7成功向 " + targetProfile.getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(target.getUniqueId()) + " &7发送了交易报价!"));
             target.spigot()
-                    .sendMessage(new ChatComponentBuilder(CC.translate("&e&l交易报价! " + LevelUtil.getLevelTag(profile.getPrestige(), profile.getLevel()) + " " + RankUtil.getPlayerColoredName(player.getUniqueId()) + " &7向你发送了交易报价,请"))
+                    .sendMessage(new ChatComponentBuilder(CC.translate("&e&l交易报价! " + profile.getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(player.getUniqueId()) + " &7向你发送了交易报价,请"))
                             .append(new ChatComponentBuilder(CC.translate(" &e点击这里")).setCurrentHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ChatComponentBuilder(CC.translate("&6点击以接受")).create())).setCurrentClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/viewOffer " + player.getName())).create())
                             .append(CC.translate(" &r&7以查看此交易报价."))
                             .create());
@@ -852,6 +902,21 @@ public class PitCommand {
         } else {
             player.sendMessage(CC.translate("&c当前没有精通玩家在线!"));
         }
+    }
+
+    @Command(names = "pit luck")
+    public void showCherryLuck(Player player) {
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (!profile.isLoaded()) {
+            player.sendMessage(CC.translate("&c玩家数据尚未就绪，请稍后再试。"));
+            return;
+        }
+        long now = System.currentTimeMillis();
+        int luck = cn.charlotte.pit.map.kingsquests.CherryLuck.points(profile, now);
+        long seconds = luck == 0 ? 0 : (profile.getCherryLuckExpiresAt() - now + 999L) / 1000L;
+        player.sendMessage(CC.translate("&d樱桃幸运值：&a" + luck + (luck == 0
+                ? " &7（食用樱桃可获得临时幸运效果）"
+                : " &7（剩余 " + seconds / 60 + " 分 " + seconds % 60 + " 秒，稀有附魔概率略微提高）")));
     }
 
     @Command(

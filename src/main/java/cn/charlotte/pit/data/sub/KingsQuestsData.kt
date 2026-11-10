@@ -13,6 +13,15 @@ class KingsQuestsData {
     var killedPlayer = 0
     var collectedRenown = 0
 
+    fun recordEventRenown(amount: Int) {
+        if (amount <= 0) return
+
+        checkUpdate()
+        if (accepted && !completed) {
+            collectedRenown += amount
+        }
+    }
+
 
     fun checkUpdate() {
         if (currentKingQuestsUuid == null) {

@@ -12,6 +12,7 @@ import java.util.*;
  * @Date: 2021/2/2 22:45
  */
 public class KillRecap {
+    private static final long RECAP_TTL_MILLIS = 5 * 60 * 1000L;
     public static Map<UUID, KillRecap> recapMap = new HashMap<>();
 
 
@@ -283,7 +284,20 @@ public class KillRecap {
         recapMap.remove(uuid);
     }
 
+    public static KillRecap getRecentRecap(UUID uuid) {
+        KillRecap recap = recapMap.get(uuid);
+        if (recap == null) {
+            return null;
+        }
+        if (recap.getCompleteTime() <= 0 || System.currentTimeMillis() - recap.getCompleteTime() > RECAP_TTL_MILLIS) {
+            recapMap.remove(uuid);
+            return null;
+        }
+        return recap;
+    }
+
     public static class DamageData {
+        private long timestamp;
         private boolean attack;
         private boolean melee;
         private double damage;
@@ -295,6 +309,14 @@ public class KillRecap {
         private Cooldown timer;
 
         public DamageData() {
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(long timestamp) {
+            this.timestamp = timestamp;
         }
 
         public boolean isAttack() {
@@ -366,6 +388,7 @@ public class KillRecap {
             if (!(o instanceof DamageData)) return false;
             final DamageData other = (DamageData) o;
             if (!other.canEqual((Object) this)) return false;
+            if (this.getTimestamp() != other.getTimestamp()) return false;
             if (this.isAttack() != other.isAttack()) return false;
             if (this.isMelee() != other.isMelee()) return false;
             if (Double.compare(this.getDamage(), other.getDamage()) != 0) return false;
@@ -391,6 +414,8 @@ public class KillRecap {
         public int hashCode() {
             final int PRIME = 59;
             int result = 1;
+            final long $timestamp = this.getTimestamp();
+            result = result * PRIME + (int) ($timestamp >>> 32 ^ $timestamp);
             result = result * PRIME + (this.isAttack() ? 79 : 97);
             result = result * PRIME + (this.isMelee() ? 79 : 97);
             final long $damage = Double.doubleToLongBits(this.getDamage());
@@ -409,7 +434,7 @@ public class KillRecap {
         }
 
         public String toString() {
-            return "KillRecap.DamageData(attack=" + this.isAttack() + ", melee=" + this.isMelee() + ", damage=" + this.getDamage() + ", boostDamage=" + this.getBoostDamage() + ", displayName=" + this.getDisplayName() + ", afterHealth=" + this.getAfterHealth() + ", usedItem=" + this.getUsedItem() + ", timer=" + this.getTimer() + ")";
+            return "KillRecap.DamageData(timestamp=" + this.getTimestamp() + ", attack=" + this.isAttack() + ", melee=" + this.isMelee() + ", damage=" + this.getDamage() + ", boostDamage=" + this.getBoostDamage() + ", displayName=" + this.getDisplayName() + ", afterHealth=" + this.getAfterHealth() + ", usedItem=" + this.getUsedItem() + ", timer=" + this.getTimer() + ")";
         }
     }
 
@@ -431,7 +456,7 @@ public class KillRecap {
         private double totalExp;
 
         public double getBaseExp() {
-            return baseExp * percentage;
+            return baseExp;
         }
 
         public void setBaseExp(double baseExp) {
@@ -439,7 +464,7 @@ public class KillRecap {
         }
 
         public double getStreakExp() {
-            return streakExp * percentage;
+            return streakExp;
         }
 
         public void setStreakExp(double streakExp) {
@@ -447,7 +472,7 @@ public class KillRecap {
         }
 
         public double getLevelDisparityExp() {
-            return levelDisparityExp * percentage;
+            return levelDisparityExp;
         }
 
         public void setLevelDisparityExp(double levelDisparityExp) {
@@ -455,7 +480,7 @@ public class KillRecap {
         }
 
         public double getStreakCoin() {
-            return streakCoin * percentage;
+            return streakCoin;
         }
 
         public void setStreakCoin(double streakCoin) {
@@ -463,7 +488,7 @@ public class KillRecap {
         }
 
         public double getLevelDisparityCoin() {
-            return levelDisparityCoin * percentage;
+            return levelDisparityCoin;
         }
 
         public void setLevelDisparityCoin(double levelDisparityCoin) {
@@ -471,7 +496,7 @@ public class KillRecap {
         }
 
         public double getBaseCoin() {
-            return baseCoin * percentage;
+            return baseCoin;
         }
 
         public void setBaseCoin(double baseCoin) {
@@ -479,7 +504,7 @@ public class KillRecap {
         }
 
         public double getTotalCoin() {
-            return totalCoin * percentage;
+            return totalCoin;
         }
 
         public void setTotalCoin(double totalCoin) {
@@ -487,7 +512,7 @@ public class KillRecap {
         }
 
         public double getTotalExp() {
-            return totalExp * percentage;
+            return totalExp;
         }
 
         public void setTotalExp(double totalExp) {

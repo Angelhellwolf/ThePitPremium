@@ -1,6 +1,7 @@
 package cn.charlotte.pit.events.impl.major
 
 import cn.charlotte.pit.ThePit
+import cn.charlotte.pit.events.EventBlockTracker
 import cn.charlotte.pit.config.NewConfiguration.eventOnlineRequired
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.enchantment.type.rare.PaparazziEnchant
@@ -40,6 +41,9 @@ import kotlin.random.Random
 class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInsert, ISortedEvent {
 
     companion object {
+        private const val PARTICLE_STEP_DEGREES = 12
+        private const val PARTICLE_VIEW_DISTANCE_SQUARED = 48.0 * 48.0
+
         @JvmStatic
         private val startChars = 'A'
 
@@ -107,6 +111,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
             if (bannerLocation.block.type != Material.AIR) {
                 continue
             }
+            EventBlockTracker.get().captureBlock(EventBlockTracker.SQUADS, bannerLocation)
             bannerLocation.block.type = Material.STANDING_BANNER
             val blockState = bannerLocation.block.state
             val banner = blockState as org.bukkit.block.Banner
@@ -118,7 +123,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
             placedBannerLocations.add(bannerLocation)
         }
 
-        for (player in Bukkit.getOnlinePlayers()) {
+        for (player in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
             var data = teamMap[player.uniqueId]
             if (data == null) {
                 data = createTeam()
@@ -131,7 +136,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
                 continue
             }
 
-            val players = Bukkit.getOnlinePlayers().toList()
+            val players = cn.charlotte.pit.junxu.PublicPitParticipants.online().toList()
             players.sortedBy { it.location.distanceSquared(player.location) }
             for (target in players) {
                 val teamData = teamMap[target.uniqueId]
@@ -149,8 +154,8 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
         }
 
         Bukkit.getPluginManager().registerEvents(this, ThePit.getInstance())
-        logicRunnable.runTaskTimerAsynchronously(ThePit.getInstance(), 20L, 20L)
-        effectRunnable.runTaskTimerAsynchronously(ThePit.getInstance(), 20L, 10L)
+        logicRunnable.runTaskTimer(ThePit.getInstance(), 20L, 20L)
+        effectRunnable.runTaskTimer(ThePit.getInstance(), 20L, 10L)
 
         object : BukkitRunnable() {
             override fun run() {
@@ -165,6 +170,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
     }
 
     override fun onInactive() {
+        EventBlockTracker.get().restoreImmediately(EventBlockTracker.SQUADS)
         for (banner in banners) {
             val bannerLocation = banner.location.block.location
             if (placedBannerLocations.remove(bannerLocation) && bannerLocation.block.type == Material.STANDING_BANNER) {
@@ -192,17 +198,17 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
         Bukkit.broadcastMessage(CC.CHAT_BAR)
         Bukkit.broadcastMessage("&6&l天坑事件结束: " + this.eventName + "&6&l!")
 
-        for (player in Bukkit.getOnlinePlayers()) {
+        for (player in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
             val team = teamMap[player.uniqueId] ?: continue
 
             val rank = team.rank
             val profile = PlayerProfile.getPlayerProfileByUuid(player.uniqueId)
             var rewardCoins = 0.0
             var rewardRenown = 0
-            if (rank <= 3) {
+            if (rank > 0 && rank <= 3) {
                 rewardCoins += 2000.0
                 rewardRenown += 2
-            } else if (rank <= 20) {
+            } else if (rank > 0 && rank <= 20) {
                 rewardCoins += 500.0
                 rewardRenown += 1
             } else {
@@ -214,11 +220,11 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
             if (ThePit.getInstance().pitConfig.isGenesisEnable && profile.genesisData.tier >= 5 && rewardRenown > 0) {
                 rewardRenown++
             }
-            var enchantBoostLevel = PaparazziEnchant().getItemEnchantLevel(player.inventory.leggings)
+            var enchantBoostLevel = PaparazziEnchant.getUsableLevel(player)
             if (PlayerUtil.shouldIgnoreEnchant(player)) {
                 enchantBoostLevel = 0
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += 0.5 * enchantBoostLevel * rewardCoins
                 rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown).toInt()
                 val mythicLeggings = MythicLeggingsItem()
@@ -233,17 +239,20 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
                 }
             }
             if (PlayerUtil.isPlayerUnlockedPerk(player, "self_confidence")) {
-                if (rank <= 5) {
+                if (rank > 0 && rank <= 5) {
                     rewardCoins += 5000.0
-                } else if (rank <= 10) {
+                } else if (rank > 0 && rank <= 10) {
                     rewardCoins += 2500.0
-                } else if (rank <= 15) {
+                } else if (rank > 0 && rank <= 15) {
                     rewardCoins += 1000.0
                 }
             }
-            profile.grindCoins(rewardCoins)
-            profile.coins = profile.coins + rewardCoins
+            val payout = cn.charlotte.pit.reward.MajorEventRewards.settle(player, "squads", rewardCoins, rewardRenown,
+                rank, teamMap.mapValues { it.value.rank }, false, enchantBoostLevel)
+            rewardCoins = payout.coins
+            rewardRenown = payout.renown
             profile.renown = profile.renown + rewardRenown
+            profile.kingsQuestsData.recordEventRenown(rewardRenown)
             player.sendMessage(CC.translate("&6你的奖励: &6+" + rewardCoins + "硬币 &e+" + rewardRenown + "声望"))
             if (rank > 0) {
                 player.sendMessage(CC.translate("&6&l你的队伍: &7获得了 &b" + team.score + " &7分数 (排名#" + rank + ")"))
@@ -275,9 +284,16 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
     }
 
     override fun onPreActive() {
-        for (player in Bukkit.getOnlinePlayers()) {
+        for (player in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
             this.playerMap[player.uniqueId] = PlayerData(player.uniqueId)
         }
+    }
+
+    override fun onPreInactive() {
+        playerMap.clear()
+        teamMap.clear()
+        unFullTeams.clear()
+        usedChars.clear()
     }
 
     private fun refreshRank() {
@@ -293,9 +309,12 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
 
     @EventHandler
     fun onKill(event: PitKillEvent) {
+        if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(event.killer)) return
+        if (!event.isProgressionEligible || !event.isHumanPvp) return
         val killer = event.killer
         val data = teamMap[killer.uniqueId] ?: return
         data.score += 25
+        cn.charlotte.pit.reward.MajorEventRewards.mark("squads", killer)
 
         killer.sendMessage(CC.translate("&b&l击杀! &7您通过击杀获得了 &b25积分&7 !"))
     }
@@ -527,12 +546,18 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
         }
 
         private fun drawCircle(effect: EnumParticle, color: Color?) {
-            val clone = location.clone()
-            for (degree in 0..359) {
-                if (degree % 3 != 0) {
-                    continue
-                }
+            val viewers = cn.charlotte.pit.junxu.PublicPitParticipants.online().filter { player ->
+                player.world == location.world &&
+                        player.location.distanceSquared(location) <= PARTICLE_VIEW_DISTANCE_SQUARED
+            }
+            if (viewers.isEmpty()) {
+                return
+            }
 
+            val clone = location.clone()
+            // Thirty points are visually continuous at this radius. The previous
+            // 120-point ring was broadcast to every player, even in other worlds.
+            for (degree in 0 until 360 step PARTICLE_STEP_DEGREES) {
                 val radians = Math.toRadians(degree.toDouble())
                 val x = cos(radians) * 3
                 val y = sin(radians) * 3
@@ -550,7 +575,7 @@ class SquadsEvent : IEpicEvent, IEvent, IPrepareEvent, Listener, IScoreBoardInse
                     0,
                     0
                 )
-                Bukkit.getOnlinePlayers().forEach {
+                viewers.forEach {
                     (it as CraftPlayer).handle.playerConnection.sendPacket(packet)
                 }
                 clone.subtract(x, 0.0, y)

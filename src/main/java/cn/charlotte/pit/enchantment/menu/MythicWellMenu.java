@@ -233,10 +233,6 @@ public class MythicWellMenu extends Menu {
 
 
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-            if (InventoryUtil.isInvFull(player)) {
-                player.sendMessage(CC.translate("&c背包已满,无法操作背包物品!"));
-                return;
-            }
 
             if (item.getType() == Material.LEATHER_LEGGINGS) {
                 if (PlayerUtil.getPlayerUnlockedPerkLevel(player, "Mythicism") < 9 && profile.getEnchantingItem() == null) {
@@ -286,30 +282,27 @@ public class MythicWellMenu extends Menu {
                             for (MythicColor color : MythicColor.values()) {
                                 if (color.getInternalName().equals(mythic_color)) {
                                     //找到点击物品颜色
-                                    String mythicColor = ItemUtil.getItemStringData(item, "mythic_color");
-                                    for (MythicColor targetColor : MythicColor.values()) {
-                                        if (targetColor.getInternalName().equals(mythicColor)) {
-                                            //再检查点击物品颜色是否符合附魔物品
-                                            if (color == targetColor) {
-                                                //如果之前放了一条，那么退还给玩家
-                                                if (profile.getEnchantingScience() != null) {
-                                                    ItemStack oldSince = InventoryUtil.deserializeItemStack(profile.getEnchantingScience());
-                                                    if (oldSince != null && oldSince.getType() != Material.AIR) {
-                                                        if (InventoryUtil.isInvFull(player)) {
-                                                            player.sendMessage("&c你的背包已满,无法进行此操作!");
-                                                            return;
-                                                        }
-                                                        player.getInventory().addItem(oldSince);
-                                                    }
+                                    MythicColor targetColor = MythicColor.valueOfInternalName(
+                                            ItemUtil.getItemStringData(item, "mythic_color"));
+                                    //再检查点击物品颜色是否符合附魔物品
+                                    if (color == targetColor) {
+                                        //如果之前放了一条，那么退还给玩家
+                                        if (profile.getEnchantingScience() != null) {
+                                            ItemStack oldSince = InventoryUtil.deserializeItemStack(profile.getEnchantingScience());
+                                            if (oldSince != null && oldSince.getType() != Material.AIR) {
+                                                if (InventoryUtil.isInvFull(player)) {
+                                                    player.sendMessage("&c你的背包已满,无法进行此操作!");
+                                                    return;
                                                 }
-                                                //放入材料Slot
-                                                profile.setEnchantingScience(InventoryUtil.serializeItemStack(event.getCurrentItem()));
-                                                event.getClickedInventory().setItem(event.getSlot(), new ItemBuilder(Material.AIR).build());
-                                                this.openMenu(player);
-                                                player.playSound(player.getLocation(), Sound.CHICKEN_EGG_POP, 1, 0.9F);
-                                                return;
+                                                player.getInventory().addItem(oldSince);
                                             }
                                         }
+                                        //放入材料Slot；即使背包原本已满，当前点击格也会立即腾空。
+                                        profile.setEnchantingScience(InventoryUtil.serializeItemStack(event.getCurrentItem()));
+                                        event.getClickedInventory().setItem(event.getSlot(), new ItemBuilder(Material.AIR).build());
+                                        this.openMenu(player);
+                                        player.playSound(player.getLocation(), Sound.CHICKEN_EGG_POP, 1, 0.9F);
+                                        return;
                                     }
                                     player.playSound(player.getLocation(), Sound.VILLAGER_NO, 1, 1.2F);
                                     player.sendMessage(CC.translate("&c颜色不符合! 您需要放入 " + color.getChatColor() + color.getDisplayName() + "色神话之甲 &c作为附魔材料."));

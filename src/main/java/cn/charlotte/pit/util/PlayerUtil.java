@@ -4,10 +4,12 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.UtilKt;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.data.sub.PerkData;
+import cn.charlotte.pit.event.PitDirectDamageEvent;
 import cn.charlotte.pit.event.PitPotionEffectEvent;
 import cn.charlotte.pit.event.PitRegainHealthEvent;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.mode.Mode;
+import cn.charlotte.pit.listener.CombatListener;
 import cn.charlotte.pit.perk.AbstractPerk;
 import cn.charlotte.pit.perk.MegaStreak;
 import cn.charlotte.pit.perk.PerkType;
@@ -87,7 +89,10 @@ public class PlayerUtil {
 
         PacketPlayOutSpawnEntityWeather packet = new PacketPlayOutSpawnEntityWeather(lightning);
         for (Player player : Bukkit.getOnlinePlayers()) {
-            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+            if (player.getWorld().equals(thunderLocation.getWorld())
+                    && player.getLocation().distanceSquared(thunderLocation) <= 64.0D * 64.0D) {
+                ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
+            }
         }
     }
 
@@ -100,6 +105,8 @@ public class PlayerUtil {
     }
 
     public static boolean isCritical(Player player) {
+        Boolean projectile = cn.charlotte.pit.util.combat.CombatContext.projectileCritical(player);
+        if (projectile != null) return projectile;
         final EntityPlayer entityPlayer = ((CraftPlayer) player).getHandle();
         return entityPlayer.fallDistance > 0.0F && !entityPlayer.onGround && !entityPlayer.k_() && !entityPlayer.V() && !entityPlayer.hasEffect(MobEffectList.BLINDNESS) && entityPlayer.vehicle == null;
     }
@@ -119,6 +126,9 @@ public class PlayerUtil {
     }
 
     public static boolean isSinkingMoonlight(Player player) {
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (profile != null && profile.getCurrentQuest() != null
+                && "sinking_moonlight".equals(profile.getCurrentQuest().getInternalName())) return true;
         return player.hasMetadata("sinking_moonlight") && player.getMetadata("sinking_moonlight").get(0).asLong() > System.currentTimeMillis();
     }
 
@@ -151,11 +161,12 @@ public class PlayerUtil {
      * @return 此伤害是否被免疫
      */
     public static boolean damage(Player victim, DamageType damageType, Double damage, Boolean canImmune) {
-        boolean immune = false;
-        if (victim.getInventory().getLeggings() != null && victim.getInventory().getLeggings().getType() != Material.AIR) {
-            immune = canImmune && ThePit.getApi().getItemEnchantLevel(victim.getInventory().getLeggings(), "Mirror") >= 1;
-        }
-        if (immune && damageType == DamageType.TRUE) return true;
+        if (!cn.charlotte.pit.junxu.JunxuManager.permitsDamage(null, victim)) return true;
+        if (damage == null || !Double.isFinite(damage) || damage <= 0) return false;
+        if (damageType == DamageType.TRUE && Boolean.TRUE.equals(canImmune)
+                && cn.charlotte.pit.util.combat.TrueDamageRules.hasResistance(victim)) return true;
+        if (damageType == DamageType.TRUE && Boolean.TRUE.equals(canImmune))
+            damage *= cn.charlotte.pit.util.combat.TrueDamageRules.damageMultiplier(victim, null);
         switch (damageType) {
             case NORMAL:
                 victim.damage(damage);
@@ -164,7 +175,7 @@ public class PlayerUtil {
                 if (victim.getHealth() > damage) {
                     victim.setHealth(Math.min(victim.getMaxHealth(), Math.max(victim.getHealth() - damage, 0.0)));
                 } else {
-                    victim.damage(victim.getMaxHealth() * 100);
+                    cn.charlotte.pit.util.combat.SecondaryDamage.lethalTrueDamage(null, victim, damage);
                 }
                 break;
         }
@@ -172,7 +183,12 @@ public class PlayerUtil {
     }
 
     public static void damage(Entity victim, DamageType damageType, Double damage, Boolean canImmune) {
-
+        if (victim instanceof Player) {
+            damage((Player) victim, damageType, damage, canImmune);
+        } else if (victim instanceof org.bukkit.entity.LivingEntity && damage != null
+                && Double.isFinite(damage) && damage > 0) {
+            ((org.bukkit.entity.LivingEntity) victim).damage(damage);
+        }
     }
 
     public static boolean cantIgnore(Player player) {
@@ -190,18 +206,39 @@ public class PlayerUtil {
      * @return 此伤害是否被免疫
      */
     public static void damage(Player attacker, Player victim, DamageType damageType, Double damage, Boolean canImmune) {
-        boolean immune = damage(victim, damageType, damage, canImmune);
-        if (immune) {
-            //Mirror附魔反弹伤害
-            if (damageType == DamageType.TRUE && victim.getInventory().getLeggings() != null && victim.getInventory().getLeggings().getType() != Material.AIR) {
-                int level = ThePit.getApi().getItemEnchantLevel(victim.getInventory().getLeggings(), "Mirror");
-                if (level >= 2) damage(attacker, damageType, damage * (0.25 * level - 0.25), false);
+        if (!cn.charlotte.pit.junxu.JunxuManager.permitsDamage(attacker, victim)) return;
+        if (attacker == null || damage == null || !Double.isFinite(damage) || damage <= 0) return;
+        if (damageType == DamageType.NORMAL) {
+            victim.damage(damage, attacker);
+            return;
+        }
+        if (Boolean.TRUE.equals(canImmune)) {
+            damage *= cn.charlotte.pit.quest.QuestRules.trueDamageMultiplier(attacker)
+                    * cn.charlotte.pit.util.combat.TrueDamageRules.damageMultiplier(victim, attacker);
+            if (damage <= 0) return;
+            if (cn.charlotte.pit.util.combat.TrueDamageRules.hasResistance(victim, attacker)) return;
+            int mirror = cn.charlotte.pit.util.combat.TrueDamageRules.mirrorLevel(victim, attacker);
+            if (mirror > 0) {
+                double reflected = cn.charlotte.pit.util.combat.TrueDamageRules.reflectable(victim, mirror, damage);
+                if (reflected > 0) damage(victim, attacker, DamageType.TRUE, reflected, false);
+                return;
             }
+        }
+        if (victim.getHealth() > damage) {
+            if (CombatListener.INSTANCE != null) CombatListener.INSTANCE.recordDirectDamage(attacker, victim, damage);
+            victim.setHealth(victim.getHealth() - damage);
+            if (!attacker.getUniqueId().equals(victim.getUniqueId())) {
+                Bukkit.getPluginManager().callEvent(new PitDirectDamageEvent(attacker, victim, damage));
+            }
+        } else {
+            cn.charlotte.pit.util.combat.SecondaryDamage.lethalTrueDamage(attacker, victim, damage);
         }
     }
 
     public static void damage(Player attacker, Entity victim, DamageType damageType, Double damage, Boolean canImmune) {
-
+        if (victim instanceof Player) {
+            damage(attacker, (Player) victim, damageType, damage, canImmune);
+        }
     }
 
     public static boolean isStaffSpectating(Player player) {
@@ -227,6 +264,7 @@ public class PlayerUtil {
         boolean overHeal = isPlayerChosePerk(player, "OverHeal");
         boolean olympusPresent = PlayerUtil.isPlayerChosePerk(player, "Olympus");
         int overHealEnchant = ThePit.getApi().getItemEnchantLevel(player.getInventory().getLeggings(), "over_heal_enchant");
+        int excessEnchant = ThePit.getApi().getItemEnchantLevel(player.getInventory().getLeggings(), "excess_enchant");
         if (olympusPresent) {
             limit = 1;
         }
@@ -235,6 +273,9 @@ public class PlayerUtil {
         }
         if (overHealEnchant > 0 && !isEquippingSomber(player) && !isVenom(player)) {
             limit += overHealEnchant;
+        }
+        if (excessEnchant > 0 && !isEquippingSomber(player) && !isVenom(player)) {
+            limit += excessEnchant;
         }
         if (ramboPresent || vampirePresent) {
             limit = -999;
@@ -318,6 +359,7 @@ public class PlayerUtil {
         int defense = 0;
         ItemStack[] is = player.getInventory().getArmorContents();
         for (ItemStack i : is) {
+            if (i == null || i.getType() == Material.AIR) continue;
             if (i.getType() == Material.LEATHER_HELMET || i.getType() == Material.LEATHER_BOOTS || i.getType() == Material.GOLD_BOOTS || i.getType() == Material.CHAINMAIL_BOOTS) {
                 defense += 1;
             }
@@ -404,6 +446,11 @@ public class PlayerUtil {
     }
 
     public static void clearPlayer(Player player, boolean closeInventory, boolean clearInventory) {
+        clearPlayer(player, closeInventory, clearInventory, true);
+    }
+
+    public static void clearPlayer(Player player, boolean closeInventory, boolean clearInventory,
+                                   boolean refreshMaxHealth) {
         player.setSaturation(12.8F);
         player.setMaximumNoDamageTicks(20);
         player.setFireTicks(0);
@@ -438,12 +485,14 @@ public class PlayerUtil {
         //temp disable
         player.setWalkSpeed(0.2F);
 
-        double extraMaxHealth = profile.getExtraMaxHealthValue();
+        if (refreshMaxHealth) {
+            double extraMaxHealth = profile.getExtraMaxHealthValue();
 
-        if (ThePit.getInstance().getEventFactory().getActiveEpicEvent() != null && ((IEvent) ThePit.getInstance().getEventFactory().getActiveEpicEvent()).getEventInternalName().equals("rage_pit")) {
-            player.setMaxHealth(40.0 + extraMaxHealth);
-        } else {
-            player.setMaxHealth(profile.getMaxHealth());
+            if (ThePit.getInstance().getEventFactory().getActiveEpicEvent() != null && ((IEvent) ThePit.getInstance().getEventFactory().getActiveEpicEvent()).getEventInternalName().equals("rage_pit")) {
+                player.setMaxHealth(40.0 + extraMaxHealth);
+            } else {
+                player.setMaxHealth(profile.getMaxHealth());
+            }
         }
         //apply stats - end
         //heal player
@@ -596,14 +645,7 @@ public class PlayerUtil {
     }
 
     public static void ewplayThunderEffect(Location thunderLocation) {
-        EntityLightning lightning = new EntityLightning(
-                ((CraftWorld) thunderLocation.getWorld()).getHandle(), thunderLocation.getX(), thunderLocation.getY(), thunderLocation.getZ(), true, true
-        );
-
-        PacketPlayOutSpawnEntityWeather packet = new PacketPlayOutSpawnEntityWeather(lightning);
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            ((CraftPlayer) player).getHandle().playerConnection.sendPacket(packet);
-        }
+        playThunderEffect(thunderLocation);
     }
 
     public static void addPotionEffect(Player player, PotionEffect effect) {

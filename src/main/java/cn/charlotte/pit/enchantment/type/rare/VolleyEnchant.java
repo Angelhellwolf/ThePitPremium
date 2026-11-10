@@ -6,27 +6,22 @@ import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.util.PlayerUtil;
-import cn.charlotte.pit.util.Utils;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.cooldown.Cooldown;
-import cn.charlotte.pit.util.item.ItemBuilder;
-import lombok.SneakyThrows;
-import net.minecraft.server.v1_8_R3.EntityHuman;
-import net.minecraft.server.v1_8_R3.EntityPlayer;
-import net.minecraft.server.v1_8_R3.ItemBow;
-import net.minecraft.server.v1_8_R3.ItemStack;
 import org.bukkit.Material;
-import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_8_R3.inventory.CraftItemStack;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
-import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -39,14 +34,7 @@ import java.util.concurrent.TimeUnit;
 @BowOnly
 public class VolleyEnchant extends AbstractEnchantment implements Listener {
     private static final HashMap<UUID, Cooldown> cooldown = new HashMap<>();
-
-    private final Field playerUsingFiled;
-
-    @SneakyThrows
-    public VolleyEnchant() {
-        this.playerUsingFiled = EntityHuman.class.getDeclaredField("h");
-        this.playerUsingFiled.setAccessible(true);
-    }
+    private final Map<UUID, Boolean> isShooting = new HashMap<>();
 
     @Override
     public String getEnchantName() {
@@ -75,17 +63,17 @@ public class VolleyEnchant extends AbstractEnchantment implements Listener {
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7射箭时同时射出 &e" + (enchantLevel + 2) + " &7支箭矢";
+        return "&7非潜行射箭时追加 &e" + (enchantLevel + 1) + " &7支箭矢，共 &e" + (enchantLevel + 2) + " &7支"
+                + "/s&7追加箭矢间隔0.1秒，连射期间不重复触发";
     }
 
-    private Map<UUID, Boolean> isShooting = new HashMap<>();
     @EventHandler
-    public void onQuit(PlayerQuitEvent e){
+    public void onQuit(PlayerQuitEvent e) {
         cooldown.remove(e.getPlayer().getUniqueId());
+        isShooting.remove(e.getPlayer().getUniqueId());
     }
 
-    @EventHandler
-    @SneakyThrows
+    @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
     public void onInteract(EntityShootBowEvent event) {
         if (!(event.getEntity() instanceof Player)) return;
         final Player player = (Player) event.getEntity();
@@ -102,48 +90,53 @@ public class VolleyEnchant extends AbstractEnchantment implements Listener {
         if (player.isSneaking()) {
             return;
         }
-        if (itemInHand.getType() == Material.BOW) {
-            try {
-                if (cooldown.getOrDefault(player.getUniqueId(), new Cooldown(0)).hasExpired()) {
-                    //shoot 5 arrows need 400ms u suck why u set it to 200ms
-                    event.setCancelled(true);
-
-                    final ItemStack item = CraftItemStack.asNMSCopy(itemInHand);
-                    final ItemBow bow = (ItemBow) item.getItem();
-
-                    final EntityPlayer entityPlayer = ((CraftPlayer) player).getHandle();
-
-                    final int value = (int) this.playerUsingFiled.get(entityPlayer);
-                    ItemBuilder arrowBuilder = new ItemBuilder(Material.ARROW).internalName("default_arrow").defaultItem().canDrop(false).canSaveToEnderChest(false);
-
-                    //let shooting multiple arrows cost 1 arrow at once
-                    player.getInventory().addItem(arrowBuilder.amount(level + 1).build());
-
-                    new BukkitRunnable() {
-                        int tick = 0;
-                        {
-                            isShooting.put(player.getUniqueId(), true);
-                        }
-
-                        @Override
-                        public void run() {
-                            if (tick >= level + 1) {
-                                cooldown.put(player.getUniqueId(), new Cooldown(15, TimeUnit.MILLISECONDS));
-                                isShooting.remove(player.getUniqueId());
-                                this.cancel();
-                            }
-                            tick++;
-                            if (Utils.getEnchantLevel(player.getItemInHand(), "mega_long_bow_enchant") >= 1) {
-                                bow.a(item, entityPlayer.world, entityPlayer, 0);
-                            } else {
-                                bow.a(item, entityPlayer.world, entityPlayer, value);
-                            }
-                        }
-                    }.runTaskTimer(ThePit.getInstance(), 0, 2);
-                }
-            } catch (Exception e) {
-                CC.printError(player, e);
+        if (!(event.getProjectile() instanceof Projectile)) {
+            return;
+        }
+        if (itemInHand.getType() != Material.BOW) {
+            return;
+        }
+        try {
+            if (!cooldown.getOrDefault(player.getUniqueId(), new Cooldown(0)).hasExpired()) {
+                return;
             }
+            // Keep the original shot and clone extra arrows from it. Recreating
+            // arrows through ItemBow#a can fail to launch or knock the shooter.
+            final Projectile source = (Projectile) event.getProjectile();
+            final Object life = cn.charlotte.pit.util.combat.PlayerLife.capture(player);
+            final double arrowSpeed = source.getVelocity().length();
+            final List<MetadataValue> enchantMeta = source.hasMetadata("enchant") ? source.getMetadata("enchant") : null;
+            isShooting.put(player.getUniqueId(), true);
+            new BukkitRunnable() {
+                int extra = 0;
+
+                @Override
+                public void run() {
+                    if (!cn.charlotte.pit.util.combat.PlayerLife.isCurrent(player, life) || extra >= level + 1) {
+                        cooldown.put(player.getUniqueId(), new Cooldown(15, TimeUnit.MILLISECONDS));
+                        isShooting.remove(player.getUniqueId());
+                        cancel();
+                        return;
+                    }
+                    extra++;
+                    Vector velocity = player.getEyeLocation().getDirection().normalize().multiply(arrowSpeed);
+                    Arrow extraArrow = player.launchProjectile(Arrow.class, velocity);
+                    extraArrow.setShooter(player);
+                    extraArrow.setCritical(source instanceof Arrow && ((Arrow) source).isCritical());
+                    extraArrow.setBounce(false);
+                    extraArrow.setFireTicks(source.getFireTicks());
+                    extraArrow.setMetadata("pit_volley_extra", new org.bukkit.metadata.FixedMetadataValue(ThePit.getInstance(), true));
+                    if (enchantMeta != null && !enchantMeta.isEmpty()) {
+                        extraArrow.setMetadata("enchant", enchantMeta.get(0));
+                    }
+                    if (!source.getMetadata("pit_shot_sneaking").isEmpty()) {
+                        extraArrow.setMetadata("pit_shot_sneaking", source.getMetadata("pit_shot_sneaking").get(0));
+                    }
+                }
+            }.runTaskTimer(ThePit.getInstance(), 2L, 2L);
+        } catch (Exception e) {
+            isShooting.remove(player.getUniqueId());
+            CC.printError(player, e);
         }
     }
 }

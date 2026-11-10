@@ -16,10 +16,15 @@ object EventsHandler {
     fun refreshEvents() {
         val factory = ThePit.getInstance().eventFactory
 
+        val epicNames = factory.epicEvents.map { (it as IEvent).eventInternalName }.toSet()
+        val normalNames = factory.normalEvents.map { (it as IEvent).eventInternalName }.toSet()
+        epicQueue.removeIf { it !in epicNames }
+        normalQueue.removeIf { it !in normalNames }
+
         var count = epicQueue.size
-        if (count < 50) {
+        if (count < 50 && factory.epicEvents.isNotEmpty()) {
             val need = 50 - count
-            for (index in 0..need) {
+            repeat(need) {
                 val event = factory.epicEvents[Random.nextInt(factory.epicEvents.size)] as IEvent
                 epicQueue.add(event.eventInternalName)
             }
@@ -27,9 +32,9 @@ object EventsHandler {
 
         count = normalQueue.size
 
-        if (count < 100) {
+        if (count < 100 && factory.normalEvents.isNotEmpty()) {
             val need = 100 - count
-            for (index in 0..need) {
+            repeat(need) {
                 val event = factory.normalEvents[Random.nextInt(factory.normalEvents.size)] as IEvent
                 if (event.eventInternalName.equals("auction") && RandomUtil.hasSuccessfullyByChance(0.75)) {
                     val anotherEvent = factory.normalEvents[Random.nextInt(factory.normalEvents.size)] as IEvent
@@ -73,7 +78,12 @@ object EventsHandler {
     }
 
     fun nextEvent(major: Boolean): String {
-        val event = if (major) epicQueue.poll() else normalQueue.poll()
+        val factory = ThePit.getInstance().eventFactory
+        val queue = if (major) epicQueue else normalQueue
+        if (queue.isEmpty()) refreshEvents()
+        val registered = if (major) factory.epicEvents.map { it as IEvent }
+                         else factory.normalEvents.map { it as IEvent }
+        val event = EventQueueSelector.pollEligible(queue, registered, EventFactory.publicOnline())
         this.refreshEvents()
 
         return event ?: "No event available"

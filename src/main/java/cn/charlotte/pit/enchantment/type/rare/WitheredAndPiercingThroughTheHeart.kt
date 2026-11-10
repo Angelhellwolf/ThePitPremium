@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.rare
 
+import cn.charlotte.pit.util.combat.CombatContext
+
 import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.enchantment.AbstractEnchantment
@@ -43,7 +45,7 @@ class WitheredAndPiercingThroughTheHeart: AbstractEnchantment(), IPlayerShootEnt
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7第四次攻击对敌人施加禁锢(持续${enchantLevel * 0.5}秒)（禁锢：让敌人停止在原地)/s并且自身获得${1 + enchantLevel}心额外生命值，${enchantLevel}秒的生命回复二"
+        return "&7每4次箭矢命中，对目标施加禁锢 ${enchantLevel * 0.5}秒/s&7(禁锢对每名目标10秒冷却)/s&7自身获得 ${1 + enchantLevel}❤ 伤害吸收与生命恢复 II (${enchantLevel}秒)"
     }
 
     override fun handleShootEntity(
@@ -57,7 +59,7 @@ class WitheredAndPiercingThroughTheHeart: AbstractEnchantment(), IPlayerShootEnt
     ) {
         val victim = (target as? Player) ?: return
 
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.uniqueId).bowHit % 4 == 0) {
+        if (CombatContext.bowHits(attacker) % 4 == 0) {
             val metadata = victim.getMetadata("lastThroughTheHeart")
             val lastTimeStamp = metadata.firstOrNull()?.asLong() ?: -1L
             if (System.currentTimeMillis() - lastTimeStamp >= 10 * 1000L) {
@@ -85,7 +87,7 @@ class WitheredAndPiercingThroughTheHeart: AbstractEnchantment(), IPlayerShootEnt
             victim.playSound(attacker.location, Sound.ANVIL_LAND, 1f, 1f)
 
             val ePlayer = (attacker as CraftPlayer).handle
-            ePlayer.absorptionHearts = min(((1f + enchantLevel) * 2) * 2, (1f + enchantLevel) * 2)
+            ePlayer.absorptionHearts = kotlin.math.max(ePlayer.absorptionHearts, (1f + enchantLevel) * 2)
             attacker.addPotionEffect(
                 PotionEffect(
                     PotionEffectType.REGENERATION,
@@ -99,9 +101,7 @@ class WitheredAndPiercingThroughTheHeart: AbstractEnchantment(), IPlayerShootEnt
 
     override fun getText(level: Int, player: Player): String {
         val hit =
-            (if (player.itemInHand != null && player.itemInHand.type == Material.BOW) PlayerProfile.getPlayerProfileByUuid(
-                player.uniqueId
-            ).bowHit else PlayerProfile.getPlayerProfileByUuid(player.uniqueId).meleeHit)
+            (if (player.itemInHand != null && player.itemInHand.type == Material.BOW) CombatContext.bowHits(player) else CombatContext.meleeHits(player))
         val require = 4
         return if (hit % require == 0) "&a&l✔" else "&e&l" + (require - hit % require)
     }

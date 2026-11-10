@@ -68,6 +68,7 @@ public class GoldMinerPerk extends AbstractPerk implements IPlayerKilledEntity, 
         lines.add("&7助攻获得的硬币 &6+2 &7.");
         lines.add("&7箭矢命中其他玩家后,该玩家死亡时");
         lines.add("&7你参与击杀/助攻获得的硬币 &6+50% &7.");
+        lines.add("&7标记持续30秒，结算后清除；收益加成排除 Bot");
         return lines;
     }
 
@@ -89,25 +90,34 @@ public class GoldMinerPerk extends AbstractPerk implements IPlayerKilledEntity, 
     @Override
     @PlayerOnly
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
-        if (myself.hasMetadata("mixed_combat_" + myself.getUniqueId())) {
+        if (markedBy(target, myself)) {
             coins.getAndAdd(0.5 * coins.get());
-            myself.removeMetadata("mixed_combat_" + myself.getUniqueId(), ThePit.getInstance());
+            target.removeMetadata("mixed_combat_" + myself.getUniqueId(), ThePit.getInstance());
         }
     }
 
     @Override
     @PlayerOnly
     public void handlePlayerAssist(int enchantLevel, Player myself, Entity target, double damage, double finalDamage, AtomicDouble coins, AtomicDouble experience) {
-        if (myself.hasMetadata("mixed_combat_" + myself.getUniqueId())) {
+        if (markedBy(target, myself)) {
             coins.getAndAdd(0.5 * coins.get());
-            myself.removeMetadata("mixed_combat_" + myself.getUniqueId(), ThePit.getInstance());
+            target.removeMetadata("mixed_combat_" + myself.getUniqueId(), ThePit.getInstance());
         }
         coins.getAndAdd(2);
     }
 
     @Override
     @PlayerOnly
+    @cn.charlotte.pit.parm.type.BowOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        target.setMetadata("mixed_combat_" + attacker.getUniqueId(), new FixedMetadataValue(ThePit.getInstance(), true));
+        cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> target.setMetadata("mixed_combat_" + attacker.getUniqueId(),
+                new FixedMetadataValue(ThePit.getInstance(), System.currentTimeMillis() + 30000L)));
+    }
+
+    private boolean markedBy(Entity target, Player attacker) {
+        for (org.bukkit.metadata.MetadataValue value : target.getMetadata("mixed_combat_" + attacker.getUniqueId())) {
+            if (value.getOwningPlugin() == ThePit.getInstance() && value.asLong() > System.currentTimeMillis()) return true;
+        }
+        return false;
     }
 }

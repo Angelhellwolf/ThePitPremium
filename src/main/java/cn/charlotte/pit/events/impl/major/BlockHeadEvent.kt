@@ -1,6 +1,7 @@
 package cn.charlotte.pit.events.impl.major
 
 import cn.charlotte.pit.ThePit
+import cn.charlotte.pit.events.EventBlockTracker
 import cn.charlotte.pit.config.NewConfiguration.eventOnlineRequired
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.data.sub.PlacedBlockData
@@ -90,7 +91,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
                     return
                 }
 
-                for (player in Bukkit.getOnlinePlayers()) {
+                for (player in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
                     val cooldown = quickTrail[player.uniqueId] ?: continue
                     if (cooldown.hasExpired()) {
                         quickTrail.remove(player.uniqueId)
@@ -151,6 +152,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
     }
 
     fun onMove(player: Player, from: Location, to: Location) {
+        if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(player)) return
         for (data in buffCache) {
             if (!data.cooldown.hasExpired()) continue
 
@@ -206,14 +208,10 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
                 }
                 player.playSound(player.location, Sound.LEVEL_UP, 4F, 2F)
                 data.cooldown = Cooldown(30, TimeUnit.SECONDS)
-                for (target in Bukkit.getOnlinePlayers()) {
-                    data.changeItem(false)
-                }
+                data.changeItem(false)
 
-                Bukkit.getScheduler().runTaskLaterAsynchronously(ThePit.getInstance(), {
-                    for (target in Bukkit.getOnlinePlayers()) {
-                        data.changeItem(true)
-                    }
+                Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), {
+                    data.changeItem(true)
                 }, 20 * 30L)
                 break
             }
@@ -249,6 +247,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             val data = cache[player.uniqueId] ?: return
             locationToPlayer[location] = data.uuid
             data.gotBlocks.add(location)
+            cn.charlotte.pit.reward.MajorEventRewards.mark("block_head", player)
             data.block.let {
                 location.block.type = it
                 location.block.data = data.data.toByte()
@@ -281,6 +280,8 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
 
     @EventHandler
     fun whenKill(event: PitKillEvent) {
+        if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(event.killer)) return
+        if (!event.isProgressionEligible || !event.isHumanPvp) return
         val killData = cache[event.killer.uniqueId] ?: return
         val targetData = cache[event.target.uniqueId] ?: return
 
@@ -327,13 +328,15 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
         location.world.playEffect(location, Effect.EXPLOSION_HUGE, 1)
 
         val dropped = ArrayList<EntityFallingBlock>()
+        val effectViewers = PlayerUtil.getNearbyPlayers(location, 30.0).toList()
         for (index in 0 until 10) {
-            dropped.add(this.generateFallingBlocks(location, killData.block, killData.data.toByte()))
+            dropped.add(this.generateFallingBlocks(location, killData.block, killData.data.toByte(), effectViewers))
         }
-        Bukkit.getScheduler().runTaskLaterAsynchronously(ThePit.getInstance(), {
-            for (block in dropped) {
-                for (player in Bukkit.getOnlinePlayers()) {
-                    (player as CraftPlayer).handle.playerConnection.sendPacket(PacketPlayOutEntityDestroy(block.id))
+        Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), {
+            val destroyPacket = PacketPlayOutEntityDestroy(*dropped.map { it.id }.toIntArray())
+            for (player in effectViewers) {
+                if (player.isOnline) {
+                    (player as CraftPlayer).handle.playerConnection.sendPacket(destroyPacket)
                 }
             }
         }, 10)
@@ -347,6 +350,13 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
     }
 
     private fun generateBlock(data: BlockHeadData, location: Location) {
+        val affected = ArrayList<Location>()
+        for (xOffset in 5 downTo -5) {
+            for (zOffset in 5 downTo -5) {
+                affected.add(location.clone().add(xOffset.toDouble(), 0.0, zOffset.toDouble()).block.location)
+            }
+        }
+        EventBlockTracker.get().captureBlocks(EventBlockTracker.BLOCK_HEAD, affected)
         for (xOffset in 5 downTo -5) {
             for (zOffset in 5 downTo -5) {
                 val offsetLoc = location.clone().add(xOffset.toDouble(), 0.0, zOffset.toDouble()).block.location
@@ -369,7 +379,12 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
         }
     }
 
-    private fun generateFallingBlocks(location: Location, type: Material, byte: Byte): EntityFallingBlock {
+    private fun generateFallingBlocks(
+        location: Location,
+        type: Material,
+        byte: Byte,
+        viewers: Collection<Player>
+    ): EntityFallingBlock {
         val x = kotlin.random.Random.nextDouble() - 0.5
 
         val y = -3.0 + Math.random() * 2.0
@@ -395,7 +410,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
         val vectorPacket = PacketPlayOutEntityVelocity(fallingBlock)
 
 
-        for (player in PlayerUtil.getNearbyPlayers(location, 30.0)) {
+        for (player in viewers) {
             val entityPlayer = (player as CraftPlayer).handle
             entityPlayer.playerConnection.sendPacket(spawnPacket)
             entityPlayer.playerConnection.sendPacket(vectorPacket)
@@ -422,7 +437,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             data.spawn()
         }
 
-        for (player in Bukkit.getOnlinePlayers()) {
+        for (player in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
             val index = kotlin.random.Random.nextInt(blockList.size)
             val material = blockList[index]
             if (material == Material.WOOL) {
@@ -448,8 +463,8 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
 
         ClearRunnable.getClearRunnable().clearAllPlacedBlocks()
 
-        for (self in Bukkit.getOnlinePlayers()) {
-            for (target in Bukkit.getOnlinePlayers()) {
+        for (self in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
+            for (target in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
                 val data = cache[target.uniqueId] ?: continue
                 (self as CraftPlayer).handle.playerConnection.sendPacket(
                     PacketPlayOutEntityEquipment(
@@ -476,8 +491,8 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             data.despawn()
         }
 
-        for (self in Bukkit.getOnlinePlayers()) {
-            for (target in Bukkit.getOnlinePlayers()) {
+        for (self in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
+            for (target in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
                 (self as CraftPlayer).handle.playerConnection.sendPacket(
                     PacketPlayOutEntityEquipment(
                         target.entityId,
@@ -503,7 +518,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
 
         val success = globalCache.size >= 100000
 
-        for (player in Bukkit.getOnlinePlayers()) {
+        for (player in cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
             val i = rank[player.uniqueId] ?: continue
             val data = cache[player.uniqueId] ?: continue
 
@@ -524,11 +539,11 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             if (ThePit.getInstance().pitConfig.isGenesisEnable && profile.genesisData.tier >= 5 && rewardRenown > 0) {
                 rewardRenown++
             }
-            var enchantBoostLevel = PaparazziEnchant().getItemEnchantLevel(player.inventory.leggings)
+            var enchantBoostLevel = PaparazziEnchant.getUsableLevel(player)
             if (PlayerUtil.shouldIgnoreEnchant(player)) {
                 enchantBoostLevel = 0
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += (0.5 * enchantBoostLevel * rewardCoins).toInt()
                 rewardRenown += floor(0.5 * enchantBoostLevel * rewardRenown).toInt()
                 val mythicLeggings = MythicLeggingsItem()
@@ -555,13 +570,16 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             if (success) {
                 rewardCoins *= 2
             }
-            profile.grindCoins(rewardCoins.toDouble())
-            profile.coins = profile.coins + rewardCoins
+            val payout = cn.charlotte.pit.reward.MajorEventRewards.settle(player, "block_head", rewardCoins.toDouble(),
+                rewardRenown, integer, rank.mapValues { it.value + 1 }, success, enchantBoostLevel)
+            val creditedCoins = payout.coins
+            rewardRenown = payout.renown
             profile.renown = profile.renown + rewardRenown
+            profile.kingsQuestsData.recordEventRenown(rewardRenown)
 
 
             player.sendMessage(CC.GOLD + CC.CHAT_BAR)
-            player.sendMessage(CC.translate("&6你的奖励: &6+${rewardCoins}硬币 &e+${rewardRenown}声望"))
+            player.sendMessage(CC.translate("&6你的奖励: &6+${creditedCoins}硬币 &e+${rewardRenown}声望"))
             if (globalCache.size >= 100000) {
                 player.sendMessage(CC.translate("&6&l全局奖励: &a&l成功! &7所有人获得的金币翻倍!"))
             } else {
@@ -579,10 +597,7 @@ class BlockHeadEvent : IEvent, IEpicEvent, IScoreBoardInsert, Listener {
             player.sendMessage(CC.GOLD + CC.CHAT_BAR)
         }
 
-        for (entry in this.globalCache.entries) {
-            entry.key.block.type = entry.value.material
-            entry.key.block.data = entry.value.data
-        }
+        EventBlockTracker.get().restore(EventBlockTracker.BLOCK_HEAD)
 
         // Clean up all event data
         globalCache.clear()

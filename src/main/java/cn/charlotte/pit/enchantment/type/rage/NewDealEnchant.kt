@@ -40,7 +40,11 @@ class NewDealEnchant : AbstractEnchantment(), IPlayerDamaged {
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7受到的伤害 &9-" + (enchantLevel * 2 + 2) + "% &7且自身免疫附魔 &6亿万富翁 &7的效果"
+        return "&7自身免疫附魔 &6亿万富翁 &7的效果" + if (enchantLevel > 1) {
+            "/s&7受到的伤害 &9-" + (if (enchantLevel >= 3) 8 else 4) + "%"
+        } else {
+            ""
+        }
     }
 
     override fun handlePlayerDamaged(
@@ -52,22 +56,10 @@ class NewDealEnchant : AbstractEnchantment(), IPlayerDamaged {
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean
     ) {
-        if (attacker is Player) {
-            val itemInHand = attacker.inventory.itemInHand
-            if ("mythic_sword" == ItemUtil.getInternalName(itemInHand)) {
-                val item = MythicSwordItem()
-                item.loadFromItemStack(itemInHand)
-                item.enchantments.entries
-                    .stream()
-                    .filter { (key): Map.Entry<AbstractEnchantment, Int?> -> key.nbtName == "billionaire" }
-                    .findFirst()
-                    .ifPresent { (_, value): Map.Entry<AbstractEnchantment?, Int> ->
-                        boostDamage.set(
-                            boostDamage.get() / (1 + 35 * value * 0.01)
-                        )
-                    }
-            }
+        if (enchantLevel >= 3) {
+            boostDamage.getAndAdd(-0.08)
+        } else if (enchantLevel >= 2) {
+            boostDamage.getAndAdd(-0.04)
         }
-        boostDamage.getAndAdd(enchantLevel * -0.02 - 0.02)
     }
 }

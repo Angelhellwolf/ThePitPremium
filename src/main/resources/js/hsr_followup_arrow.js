@@ -1,3 +1,4 @@
+var CombatContext = Java.type('cn.charlotte.pit.util.combat.CombatContext');
 ENCHANT_NAME = "回合外箭";
 INTERNAL_NAME = "hsr_followup_arrow_enchant";
 RARITY = "NORMAL";
@@ -17,7 +18,7 @@ function shoot(enchant_level, attacker, target, damage, final_damage, boost_dama
         return;
     }
     var profile = pit_profile(attacker);
-    var hit = profile.getBowHit();
+    var hit = CombatContext.bowHits(attacker);
     if (hit % 3 !== 0) {
         return;
     }

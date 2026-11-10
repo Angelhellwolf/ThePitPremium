@@ -47,6 +47,7 @@ class GoldenHelmet : IMythicItem(), Listener {
 
     @EventHandler
     fun onKill(event: PitKillEvent) {
+        if (!event.isProgressionEligible || !event.isHumanPvp) return
         val killer = event.killer
         if (internalName == ItemUtil.getInternalName(killer.inventory.helmet)) {
             event.exp *= 1.1
@@ -60,7 +61,7 @@ class GoldenHelmet : IMythicItem(), Listener {
                 "&7生命: " + (if (live / (maxLive * 1.0) <= 0.6) if (live / (maxLive * 1.0) <= 0.3) "&c" else "&e" else "&a") + live + "&7/" + maxLive,
                 "",
                 "&9皇室",
-                "&7击杀经验值&b +10%&7.",
+                "&7击杀真人经验值&b +10%&7（不加成 Bot 基础经验）.",
                 "",
                 "&6穿着时提供钻石头盔相同的伤害减免效果"
             )

@@ -7,6 +7,7 @@ import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.parm.type.BowOnly;
 import cn.charlotte.pit.perk.AbstractPerk;
 import cn.charlotte.pit.perk.PerkType;
+import cn.charlotte.pit.util.PlayerUtil;
 import cn.charlotte.pit.util.Utils;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Material;
@@ -68,8 +69,9 @@ public class BountyHunterPerk extends AbstractPerk implements IAttackEntity, IPl
         List<String> lines = new ArrayList<>();
         lines.add("&7击杀获得的硬币 &6+4g &7.");
         lines.add("&7攻击被悬赏的玩家时,");
-        lines.add("&7此玩家每有 &6&l50g &7赏金,");
+        lines.add("&7此玩家每有 &6&l100g &7赏金,");
         lines.add("&7你造成的伤害 &a+1% &7.");
+        lines.add("&7击杀 Bot 不获得额外硬币");
         return lines;
     }
 
@@ -93,7 +95,7 @@ public class BountyHunterPerk extends AbstractPerk implements IAttackEntity, IPl
         if (target instanceof Player) {
             Player targetPlayer = (Player) target;
             final int level = Utils.getEnchantLevel(targetPlayer.getInventory().getLeggings(), "hunt_the_hunter");
-            if (targetPlayer.getInventory().getLeggings() != null && level > 0) {
+            if (targetPlayer.getInventory().getLeggings() != null && level > 0 && !PlayerUtil.isPlayerChosePerk(targetPlayer, "high_lander")) {
                 if (level == 1) {
                     boostDamage.set(boostDamage.get() + 0.005 * (0.5 / 50) * PlayerProfile.getPlayerProfileByUuid(targetPlayer.getUniqueId()).getBounty());
                 }
@@ -114,7 +116,7 @@ public class BountyHunterPerk extends AbstractPerk implements IAttackEntity, IPl
         if (target instanceof Player) {
             Player targetPlayer = (Player) target;
             final int level = Utils.getEnchantLevel(targetPlayer.getInventory().getLeggings(), "hunt_the_hunter");
-            if (targetPlayer.getInventory().getLeggings() != null && level > 0) {
+            if (targetPlayer.getInventory().getLeggings() != null && level > 0 && !PlayerUtil.isPlayerChosePerk(targetPlayer, "high_lander")) {
                 if (level == 1) {
                     boostDamage.set(boostDamage.get() + 0.005 * (0.5 / 50) * PlayerProfile.getPlayerProfileByUuid(targetPlayer.getUniqueId()).getBounty());
                 }

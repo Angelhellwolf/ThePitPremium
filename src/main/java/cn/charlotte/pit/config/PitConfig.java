@@ -75,7 +75,7 @@ public class PitConfig extends Configuration {
     @ConfigData(
             path = "arenaHighestY"
     )
-    private int arenaHighestY;
+    public int arenaHighestY;
     @ConfigData(
             path = "loc.spawn"
     )
@@ -218,7 +218,7 @@ public class PitConfig extends Configuration {
             path = "loc.events.rage.middle" //the middle point of rage pit
     )
     @ConfigSerializer(serializer = LocationSerializer.class)
-    private Location ragePitMiddle;
+    public Location ragePitMiddle;
     @ConfigData(
             path = "loc.events.rage.radius" //the radius of rage pit
     )
@@ -325,10 +325,21 @@ public class PitConfig extends Configuration {
     )
     @ConfigSerializer(serializer = LocationSerializer.class)
     private Location bakeMasterNpcLocation;
+    @ConfigData(path = "npc.kingNpcLoc")
+    @ConfigSerializer(serializer = LocationSerializer.class)
+    private Location kingNpcLocation;
     @ConfigData(
             path = "booster"
     )
     private double booster = 1.0;
+    @ConfigData(
+            path = "inactive-kill-reward.after-seconds"
+    )
+    private int inactiveKillRewardAfterSeconds = 30;
+    @ConfigData(
+            path = "inactive-kill-reward.multiplier"
+    )
+    private double inactiveKillRewardMultiplier = 0.5;
 
     @ConfigData(path = "beta-version")
     public boolean betaVersion = false;

@@ -134,6 +134,7 @@ class JewelSword : IMythicItem(), Listener {
 
     @EventHandler
     fun onKill(event: PitKillEvent) {
+        if (!event.isProgressionEligible) return
         val killer = event.killer
         val lastDamageCause = event.target.lastDamageCause
         if (lastDamageCause is EntityDamageByEntityEvent) {
@@ -156,7 +157,7 @@ class JewelSword : IMythicItem(), Listener {
         sword.killed += 1
 
         if (sword.killed >= KILL_TARGET) {
-            val rare = RandomUtil.hasSuccessfullyByChance(0.05)
+            val rare = cn.charlotte.pit.reward.RareSupply.rareFromKill(0.05, killer, event.target)
             val list = ThePit.getInstance()
                 .enchantmentFactor
                 .enchantments

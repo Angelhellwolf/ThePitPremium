@@ -4,9 +4,12 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.config.PitConfig;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.events.EventBlockTracker;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.events.INormalEvent;
 import cn.charlotte.pit.medal.impl.challenge.CakeEventMedal;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.util.LocationUtil;
 import cn.charlotte.pit.util.aabb.AxisAlignedBB;
 import cn.charlotte.pit.util.chat.CC;
@@ -92,8 +95,14 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
         final Vector pos1 = region.getPos1();
         final Vector pos2 = region.getPos2();
         this.alignedBB = new AxisAlignedBB(pos1.getX(), pos1.getY(), pos1.getZ(), pos2.getX(), pos2.getY(), pos2.getZ());
+        EventBlockTracker.get().captureRegion(
+                EventBlockTracker.CAKE,
+                Bukkit.getWorlds().get(0),
+                pos1.getBlockX(), pos1.getBlockY(), pos1.getBlockZ(),
+                pos2.getBlockX(), pos2.getBlockY(), pos2.getBlockZ()
+        );
 
-        TaskManager.IMP.async(() -> {
+        Runnable build = () -> {
             BukkitWorld world = new BukkitWorld(Bukkit.getWorlds().get(0));
             this.session = FaweAPI.getEditSessionBuilder(world).build();
 
@@ -105,7 +114,8 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
             session.setBlocks(region, pattern);
 
             session.flushQueue();
-        });
+        };
+        build.run();
 
         Bukkit.getPluginManager()
                 .registerEvents(this, ThePit.getInstance());
@@ -122,14 +132,12 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
 
     @Override
     public void onInactive() {
-        TaskManager.IMP.async(() -> {
-            this.session.undo(session);
-            this.session.flushQueue();
-        });
+        EventBlockTracker.get().restoreImmediately(EventBlockTracker.CAKE);
+        this.session = null;
 
         HandlerList.unregisterAll(this);
 
-        this.runnable.cancel();
+        if (this.runnable != null) this.runnable.cancel();
 
         for (UUID uuid : dataCache.keySet()) {
             if (dataCache.get(uuid).coins >= 5000 && Bukkit.getPlayer(uuid) != null) {
@@ -186,13 +194,14 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
                 block.getState().update();
 
                 // final double totalCoins = baseCoins + baseCoins * i * 0.25D;
-                final double totalCoins = baseCoins;
+                double v2Gold = (baseCoins == 6 ? 10 : 2) * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                RewardService.Receipt cakeReceipt = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                        cn.charlotte.pit.reward.RewardDetail.CAKE, baseCoins, 0, v2Gold, v2Gold * 4);
+                final double totalCoins = cakeReceipt.getCoins();
+                cakePlayerData.experience += cakeReceipt.getExperience();
 
                 cakePlayerData.clicked++;
                 cakePlayerData.coins += totalCoins;
-
-                profile.grindCoins(totalCoins);
-                profile.setCoins(profile.getCoins() + totalCoins);
 
                 player.playSound(player.getLocation(), Sound.EAT, 1, 1);
 
@@ -203,29 +212,31 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
                 if (data == 2) {
                     block.setType(Material.AIR);
 
-                    double totalCoins = 20;
+                    double side = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                    RewardService.Receipt cherryReceipt = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                            cn.charlotte.pit.reward.RewardDetail.CAKE, 20, 0, 20 * side, 80 * side);
+                    double totalCoins = cherryReceipt.getCoins();
+                    cakePlayerData.experience += cherryReceipt.getExperience();
                     cakePlayerData.clicked++;
                     cakePlayerData.coins += totalCoins;
 
-                    profile.grindCoins(totalCoins);
-                    profile.setCoins(profile.getCoins() + totalCoins);
-
                     player.playSound(player.getLocation(), Sound.EAT, 1, 1);
 
-                    CC.send(MessageType.EVENT, player, "&d&l蛋糕! &7吃下了 &c樱桃 &6+20金币&7!");
+                    CC.send(MessageType.EVENT, player, "&d&l蛋糕! &7吃下了 &c樱桃 &6+" + numFormatTwo.format(totalCoins) + "金币&7!");
                 } else if (data == 15) {
                     block.setType(Material.AIR);
 
-                    double totalXp = 20;
+                    double side = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+                    RewardService.Receipt chocolateReceipt = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                            cn.charlotte.pit.reward.RewardDetail.CAKE, 0, 20, 5 * side, 160 * side);
+                    double totalXp = chocolateReceipt.getExperience();
+                    cakePlayerData.coins += chocolateReceipt.getCoins();
                     cakePlayerData.clicked++;
-                    cakePlayerData.coins += totalXp;
-
-                    profile.setExperience(profile.getExperience() + totalXp);
-                    profile.applyExperienceToPlayer(player);
+                    cakePlayerData.experience += totalXp;
 
                     player.playSound(player.getLocation(), Sound.EAT, 1, 1);
 
-                    CC.send(MessageType.EVENT, player, "&d&l蛋糕! &7吃下了 &4巧克力 &b+20经验&7!");
+                    CC.send(MessageType.EVENT, player, "&d&l蛋糕! &7吃下了 &4巧克力 &b+" + numFormatTwo.format(totalXp) + "经验&7!");
                 }
             }
         }
@@ -244,7 +255,8 @@ public class CakeEvent implements IEvent, INormalEvent, Listener {
     public static class CakePlayerData {
         private UUID uuid;
         private String name;
-        private int coins;
+        private double coins;
+        private double experience;
         private int clicked;
         private Cooldown cooldown;
     }

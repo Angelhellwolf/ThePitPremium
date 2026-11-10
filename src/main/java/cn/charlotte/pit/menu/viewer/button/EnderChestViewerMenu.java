@@ -38,7 +38,7 @@ public class EnderChestViewerMenu extends Menu {
             button.put(i, new Button() {
                 @Override
                 public ItemStack getButtonItem(Player player) {
-                    return enderChest.getContents()[finalI] == null ? new ItemBuilder(Material.AIR).build() : enderChest.getContents()[finalI];
+                    return enderChest.getContents()[finalI] == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, enderChest.getContents()[finalI]);
                 }
 
                 @Override

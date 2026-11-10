@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.highlander;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
@@ -71,6 +73,7 @@ public class KhanateKillStreak extends AbstractPerk implements Listener, IAttack
         list.add("&7触发时:");
         list.add("  &a▶ &7立刻获得 &6+8 硬币");
         list.add("  &a▶ &7获得效果: 攻击被悬赏的玩家造成的伤害 &c+4% &7(可叠加,最高10层)");
+        list.add("&7Bot 击杀可推进连杀，但触发时不发放额外金币或经验");
         return list;
     }
 
@@ -105,9 +108,9 @@ public class KhanateKillStreak extends AbstractPerk implements Listener, IAttack
         }
         //trigger check (every X streak)
         int streak = 3;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
-            event.getPlayerProfile().setCoins(event.getPlayerProfile().getCoins() + 8);
+            cn.charlotte.pit.reward.EconomyV2.streak(event.getPlayerProfile(), 3, 8, 0);
         }
     }
 

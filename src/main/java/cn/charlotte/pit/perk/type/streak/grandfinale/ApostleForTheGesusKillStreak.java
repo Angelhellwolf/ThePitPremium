@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.grandfinale;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.item.type.ChunkOfVileItem;
 import cn.charlotte.pit.item.type.mythic.MythicBowItem;
@@ -97,10 +99,11 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
         list.add("  &e▶ &72 的倍数: &c生命恢复 I &f(00:20)");
         list.add("  &e▶ &73 的倍数: &b速度 I &f(00:15)");
         list.add("  &e▶ &74 的倍数: &c生命恢复 II &f(00:10)");
-        list.add("  &e▶ &77 的倍数: &6500 ~ 5000 硬币");
-        list.add("  &e▶ &78 的倍数: &b500 ~ 5000 经验值");
+        list.add(cn.charlotte.pit.reward.EconomyV2.active() ? "  &e▶ &77 的倍数: &6250 ~ 1500 基础硬币" : "  &e▶ &77 的倍数: &6500 ~ 5000 硬币");
+        list.add(cn.charlotte.pit.reward.EconomyV2.active() ? "  &e▶ &78 的倍数: &b1000 ~ 6000 基础经验" : "  &e▶ &78 的倍数: &b500 ~ 5000 经验值");
         list.add("  &e▶ &712 的倍数 : &6+4❤ 生命吸收");
         list.add("  &e▶ &713 的倍数 : &c+25% 攻击伤害 &f(00:30)");
+        list.add("&7Bot 击杀可推进连杀，但触发时不发放额外金币或经验");
         return list;
     }
 
@@ -136,19 +139,19 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
         }
         //trigger check (every X streak)
         int streak = 25;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             //1d100
             int dice = RandomUtil.random.nextInt(100) + 1;
             myself.sendMessage(CC.translate("&e&l掷骰! &7你掷到了 &e" + dice + " &7!"));
-            if (dice == 27 || dice == 43) {
+            if ((dice == 27 || dice == 43) && cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "rng_renown", 25)) {
                 profile.setRenown(profile.getRenown() + 1);
                 myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &e1 声望 &7."));
             } else if (dice == 45) {
                 float heart = (((CraftPlayer) myself).getHandle()).getAbsorptionHearts();
                 (((CraftPlayer) myself).getHandle()).setAbsorptionHearts(heart + 20);
                 myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &610❤ 伤害吸收效果 &7."));
-            } else if (dice == 50) {
+            } else if (dice == 50 && cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "rng_helmet", 25)) {
                 myself.getInventory().addItem(
                         new ItemBuilder(Material.DIAMOND_HELMET)
                                 .canTrade(true)
@@ -159,10 +162,11 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
                                 .buildWithUnbreakable()
                 );
                 myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &b钻石头盔 &7."));
-            } else if (dice == 13 || dice == 66) {
+            } else if ((dice == 13 || dice == 66) && cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "rng_vile", 25)) {
                 myself.getInventory().addItem(ChunkOfVileItem.toItemStack());
                 myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &51 暗聚块 &7."));
-            } else if (dice == 77 || dice == 88) {
+            } else if ((dice == 77 || dice == 88) && cn.charlotte.pit.reward.CombatEconomy.claimRecent(profile, "rng_mythic", 25)
+                    && cn.charlotte.pit.reward.RareSupply.guaranteed(cn.charlotte.pit.reward.RareSupplyLedger.Pool.FRESH, myself)) {
                 myself.getInventory().addItem((ItemStack) RandomUtil.helpMeToChooseOne(
                         new MythicSwordItem().toItemStack(),
                         new MythicBowItem().toItemStack(),
@@ -190,14 +194,21 @@ public class ApostleForTheGesusKillStreak extends AbstractPerk implements Listen
             }
             if (dice % 7 == 0) {
                 int diceCoins = RandomUtil.random.nextInt(4501) + 500;
-                profile.setCoins(profile.getCoins() + diceCoins);
-                profile.grindCoins(diceCoins);
-                myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &6" + diceCoins + " 硬币 &7."));
+                double nextGold = (250 + Math.floor((diceCoins - 500) * 1250.0 / 4500))
+                        * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige())
+                        * cn.charlotte.pit.reward.CombatEconomy.recentHumanRatio(profile, 25);
+                RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                        cn.charlotte.pit.reward.RewardDetail.DICE, diceCoins, 0, nextGold, 0);
+                myself.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&e&l掷骰! &7你获得了 &6%.2f 硬币 &7.", reward.getCoins())));
             }
             if (dice % 8 == 0) {
                 int diceExperience = RandomUtil.random.nextInt(4501) + 500;
-                profile.setExperience(profile.getExperience() + diceExperience);
-                myself.sendMessage(CC.translate("&e&l掷骰! &7你获得了 &b" + diceExperience + " 经验值 &7."));
+                double nextXp = (1000 + Math.floor((diceExperience - 500) * 5000.0 / 4500))
+                        * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige())
+                        * cn.charlotte.pit.reward.CombatEconomy.recentHumanRatio(profile, 25);
+                RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                        cn.charlotte.pit.reward.RewardDetail.DICE, 0, diceExperience, 0, nextXp);
+                myself.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, "&e&l掷骰! &7你获得了 &b%.2f 经验值 &7.", reward.getExperience())));
             }
             if (dice % 12 == 0) {
                 float heart = (((CraftPlayer) myself).getHandle()).getAbsorptionHearts();

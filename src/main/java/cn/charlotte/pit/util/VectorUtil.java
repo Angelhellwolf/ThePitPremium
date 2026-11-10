@@ -52,7 +52,13 @@ public class VectorUtil {
     public static void entityPush(Entity entity, Location to, double velocity) {
         Location from = entity.getLocation();
         Vector vector = getPushVector(from, to, velocity);
-        if (vector.getX() != 0 && vector.getY() != 0 && vector.getZ() != 0) {
+        if (vector.lengthSquared() > 1.0E-6D
+                && Double.isFinite(vector.getX())
+                && Double.isFinite(vector.getY())
+                && Double.isFinite(vector.getZ())) {
+            if (entity instanceof Player) {
+                SpiterCompatibility.exemptVelocity((Player) entity, 100L);
+            }
             entity.setVelocity(vector);
         }
     }
@@ -99,4 +105,3 @@ public class VectorUtil {
         return v4 < check ? null : Math.atan((v2 - Math.sqrt(v4 - check)) / (20.0 * distance));
     }
 }
-

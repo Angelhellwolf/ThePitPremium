@@ -103,7 +103,7 @@ public class AssuredStrikeKillStreak extends AbstractPerk implements Listener, I
             return;
         }
         //trigger check
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             myself.setMetadata("assured_strike", new FixedMetadataValue(ThePit.getInstance(), true));
         }

@@ -105,7 +105,7 @@ public class MonsterKillStreak extends AbstractPerk implements Listener {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
         //trigger check (every X streak)
         int streak = 25;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             if (times.get(myself.getUniqueId()) < 2) {
                 myself.setMaxHealth(myself.getMaxHealth() + 2);
                 times.put(myself.getUniqueId(), times.get(myself.getUniqueId()) + 1);

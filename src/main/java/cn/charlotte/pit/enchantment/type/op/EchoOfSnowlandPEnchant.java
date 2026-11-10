@@ -53,9 +53,8 @@ public class EchoOfSnowlandPEnchant extends AbstractEnchantment implements IPlay
     @PlayerOnly
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player targetPlayer = (Player) attacker;
-        if (targetPlayer.getActivePotionEffects().contains(PotionEffectType.WEAKNESS) && targetPlayer.getActivePotionEffects().contains(PotionEffectType.SLOW)) {
+        if (targetPlayer.hasPotionEffect(PotionEffectType.WEAKNESS) && targetPlayer.hasPotionEffect(PotionEffectType.SLOW)) {
             boostDamage.set(boostDamage.get() - 0.3);
-            finalDamage.set(0);
         }
     }
 }

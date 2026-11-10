@@ -39,6 +39,6 @@ public class PebbleEnchant extends AbstractEnchantment {
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         return "&7拾起金锭时获得 &6" + (enchantLevel * 10) + " 硬币" + (enchantLevel >= 3 ?
-                "/s&7并恢复自身 &c1❤ &7生命值" : "");
+                "/s&7并获得 &61❤ &7伤害吸收 (最高&64❤&7)" : "");
     }
 }

@@ -51,7 +51,7 @@ public class MindAssaultEnchant extends AbstractEnchantment implements Listener 
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7你造成的伤害 &9-60% &7,同时周围11格内每有一名穿着 &6神话之甲 &7的玩家,你攻击的基础伤害 &c+0.75❤ &7(上限&c8❤&7)";
+        return "&7你造成的伤害 &9-60% &7,同时周围12格内每有一名穿着 &6皮革装备 &7的玩家(包括你),你攻击的基础伤害 &c+0.75❤ &7(上限&c8❤&7)";
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -66,15 +66,24 @@ public class MindAssaultEnchant extends AbstractEnchantment implements Listener 
             return;
         }
 
+        if (!isEffectActive(damager, event.getEntity() instanceof Player ? (Player) event.getEntity() : null)) return;
         final int level = Utils.getEnchantLevel(damager.getInventory().getLeggings(), "mind_assault_enchant");
         if (level < 1) return;
 
         event.setDamage(event.getDamage() * 0.4);
-        final long size = PlayerUtil.getNearbyPlayers(damager.getLocation(), 11.0)
+        final long size = PlayerUtil.getNearbyPlayers(damager.getLocation(), 12.0)
                 .stream()
-                .filter(entity -> "mythic_leggings".equals(ItemUtil.getInternalName(entity.getInventory().getLeggings())))
+                .filter(entity -> {
+                    org.bukkit.inventory.ItemStack[] armor = entity.getInventory().getArmorContents();
+                    for (org.bukkit.inventory.ItemStack item : armor) {
+                        if (item != null && item.getType().name().contains("LEATHER")) {
+                            return true;
+                        }
+                    }
+                    return false;
+                })
                 .count();
-        event.setDamage(event.getDamage() + Math.min((size - 1) * 1.5, 16.0));
+        event.setDamage(event.getDamage() + Math.min(size * 1.5, 16.0));
     }
 
 }

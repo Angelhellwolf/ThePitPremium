@@ -1,5 +1,8 @@
 package cn.charlotte.pit.enchantment.type.rage
 
+import cn.charlotte.pit.util.combat.CombatContext
+
+import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.enchantment.AbstractEnchantment
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly
@@ -9,11 +12,10 @@ import cn.charlotte.pit.parm.listener.IAttackEntity
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity
 import cn.charlotte.pit.util.cooldown.Cooldown
 import com.google.common.util.concurrent.AtomicDouble
+import org.bukkit.Material
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffectType
-import java.util.*
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 
@@ -45,7 +47,15 @@ class BreachingChargeEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShoo
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7攻击清空命中玩家的 &3抗性提升 &7效果 (" + (4 - enchantLevel) + "秒冷却)"
+        return "&7每 &e" + getRequiredHits(enchantLevel) + " &7次攻击清空命中玩家的 &3抗性提升 &7效果"
+    }
+
+    private fun getRequiredHits(enchantLevel: Int): Int {
+        return when (enchantLevel) {
+            1 -> 4
+            2 -> 3
+            else -> 2
+        }
     }
 
     @PlayerOnly
@@ -59,9 +69,7 @@ class BreachingChargeEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShoo
         cancel: AtomicBoolean
     ) {
         val targetPlayer = target as Player
-        if (Companion.cooldown.getOrDefault(attacker.uniqueId, Cooldown(0)).hasExpired()) {
-            Companion.cooldown[attacker.uniqueId] =
-                Cooldown((4 - enchantLevel).toLong(), TimeUnit.SECONDS)
+        if (CombatContext.meleeHits(attacker) % getRequiredHits(enchantLevel) == 0) {
             targetPlayer.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE)
         }
     }
@@ -77,18 +85,18 @@ class BreachingChargeEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShoo
         cancel: AtomicBoolean
     ) {
         val targetPlayer = target as Player
-        if (Companion.cooldown.getOrDefault(attacker.uniqueId, Cooldown(0)).hasExpired()) {
-            Companion.cooldown[attacker.uniqueId] =
-                Cooldown((4 - enchantLevel).toLong(), TimeUnit.SECONDS)
+        if (CombatContext.bowHits(attacker) % getRequiredHits(enchantLevel) == 0) {
             targetPlayer.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE)
         }
     }
 
     override fun getText(level: Int, player: Player): String {
-        return getCooldownActionText(Companion.cooldown.getOrDefault(player.uniqueId, Cooldown(0)))
-    }
-
-    companion object {
-        private val cooldown = HashMap<UUID, Cooldown>()
+        val hit = if (player.itemInHand != null && player.itemInHand.type == Material.BOW) {
+            CombatContext.bowHits(player)
+        } else {
+            CombatContext.meleeHits(player)
+        }
+        val require = getRequiredHits(level)
+        return if (hit % require == 0) "&a&l✔" else "&e&l" + (require - hit % require)
     }
 }

@@ -111,7 +111,7 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
     }
 
     override fun getLocation(): Location {
-        return loc
+        return loc.clone()
     }
 
     override fun setLocation(loc: Location) {
@@ -119,8 +119,17 @@ class DecentHologramImpl(var loc: Location, var inputText: String): Hologram {
     }
 
     override fun move(loc: Location) {
-        hologram.location = loc
-        this.loc = loc
+        if (this.loc.world == loc.world &&
+            this.loc.x == loc.x &&
+            this.loc.y == loc.y &&
+            this.loc.z == loc.z
+        ) {
+            return
+        }
+
+        val target = loc.clone()
+        hologram.location = target
+        this.loc = target
     }
 
     override fun isTouchable(): Boolean {

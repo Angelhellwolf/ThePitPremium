@@ -36,6 +36,7 @@ public class EvilWithinEnchant extends AbstractEnchantment {
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7你的攻击免疫附魔 &9沉默 &7的效果.";
+        return "&7穿戴世界末日之靴时，你的附魔可对抗目标的无尽黑暗"
+                + "/s&7无法抵御自身无尽黑暗、毒液沉默或沉沦任务";
     }
 }

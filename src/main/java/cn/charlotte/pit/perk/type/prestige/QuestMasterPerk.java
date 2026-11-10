@@ -84,12 +84,15 @@ public class QuestMasterPerk extends AbstractPerk implements Listener {
     @EventHandler
     public void onQuestInactive(PitQuestInactiveEvent event) {
         Player player = event.getPlayer();
+        if (!cn.charlotte.pit.util.PlayerUtil.isPlayerUnlockedPerk(player, getInternalPerkName())) return;
         if (event.getQuestData().getCurrent() >= event.getQuestData().getTotal() && isNightQuest(PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId()), event.getQuestData())) {
             player.getInventory().addItem(ChunkOfVileItem.toItemStack());
+            PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+            profile.getQuestLimit().setTimes(profile.getQuestLimit().getTimes() + 1);
         }
     }
 
     private static boolean isNightQuest(PlayerProfile profile, QuestData quest) {
-        return profile.isNightQuestEnable() && TimeUtil.getMinecraftTick(quest.getStartTime()) > 12000;
+        return cn.charlotte.pit.quest.QuestRules.isNight(profile, quest);
     }
 }

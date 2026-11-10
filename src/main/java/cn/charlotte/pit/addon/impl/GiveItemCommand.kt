@@ -3,6 +3,8 @@ package cn.charlotte.pit.addon.impl
 import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.addon.Addon
 import cn.charlotte.pit.data.PlayerProfile
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.reward.RewardSource
 import cn.charlotte.pit.item.AbstractPitItem
 import cn.charlotte.pit.util.command.Command
 import cn.charlotte.pit.util.command.CommandHandler
@@ -39,12 +41,11 @@ class GiveItemCommand : Addon {
             } else {
                 if (itemString == "exp") {
                     PlayerProfile.getPlayerProfileByUuid(player.uniqueId)?.apply {
-                        experience += amount
+                        RewardService.grant(this, RewardSource.ADMIN, 0.0, amount.toDouble())
                     }
                 } else if (itemString == "coin") {
                     PlayerProfile.getPlayerProfileByUuid(player.uniqueId)?.apply {
-                        grindedCoins += amount
-                        coins += amount
+                        RewardService.grant(this, RewardSource.ADMIN, amount.toDouble(), 0.0)
                     }
                 }
             }

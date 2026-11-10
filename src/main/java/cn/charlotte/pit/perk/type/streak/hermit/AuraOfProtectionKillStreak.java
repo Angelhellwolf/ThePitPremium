@@ -15,6 +15,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -73,6 +74,7 @@ public class AuraOfProtectionKillStreak extends AbstractPerk implements Listener
         list.add(" ");
         list.add("&7触发时:");
         list.add("  &a▶ &7立刻获得一个 &a保护光环触发器");
+        list.add("  &7最多携带2个，右键使用");
         list.add("&7物品 &a保护光环触发器&7: 使用后对自身施加 &3抗性提升 II &f(00:04) &7与 &a真实伤害抗性 &f(00:15) &7状态");
         list.add("&7状态 &a真实伤害抗性&7: 免疫自身受到的&f真实&7伤害");
         return list;
@@ -109,7 +111,7 @@ public class AuraOfProtectionKillStreak extends AbstractPerk implements Listener
         }
         //trigger check (every X streak)
         int streak = 10;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             final int amount = InventoryUtil.getAmountOfItem(myself, "aura_of_protection");
             if (amount < 2) {
@@ -121,7 +123,7 @@ public class AuraOfProtectionKillStreak extends AbstractPerk implements Listener
                                 .deathDrop(true)
                                 .internalName("aura_of_protection")
                                 .name("&a保护光环触发器")
-                                .lore("&7使用后对自身施加 &3抗性提升 II &f(00:15) &7与 &a真实伤害抗性 &f(00:15) &7状态")
+                                .lore("&7右键获得 &3抗性提升 II &f(00:04)", "&7与 &a真实伤害抗性 &f(00:15)")
                                 .build());
             }
         }
@@ -129,14 +131,17 @@ public class AuraOfProtectionKillStreak extends AbstractPerk implements Listener
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         Player player = e.getPlayer();
         ItemStack item = player.getItemInHand();
         if (item == null || item.getType() == Material.AIR) {
             return;
         }
         if ("aura_of_protection".equals(ItemUtil.getInternalName(item))) {
+            e.setCancelled(true);
             PlayerUtil.takeOneItemInHand(player);
-            player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 4 * 20, 1), true);
+            cn.charlotte.pit.util.combat.CombatPotions.refresh(player,
+                    new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 4 * 20, 1));
             player.setMetadata("true_damage_immune", new FixedMetadataValue(ThePit.getInstance(), System.currentTimeMillis() + 15 * 1000L));
             //effect goes here
         }

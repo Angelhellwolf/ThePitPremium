@@ -68,7 +68,6 @@ object JSHandler {
 
     private val defaultBundledScripts = listOf(
         // Keep this list in sync with src/main/resources/js/*
-        "example.js",
         "hsr_abundance_regen.js",
         "hsr_abundance_salvage.js",
         "hsr_aiming_protocol.js",
@@ -81,6 +80,7 @@ object JSHandler {
         "hsr_harmony_track.js",
         "hsr_hunt_afterimage.js",
         "hsr_hunt_chain.js",
+        "hsr_multimillionaire.js",
         "hsr_nihility_lag.js",
         "hsr_preservation_counter.js",
         "hsr_quantum_entangle.js",
@@ -89,6 +89,17 @@ object JSHandler {
         "hsr_starrail_sniper.js",
         "hsr_stellar_brand.js",
         "hsr_toughness_slash.js",
+    )
+
+    private val forceRefreshBundledScripts = setOf(
+        "hsr_nihility_lag.js",
+        "hsr_erudition_stance.js",
+        "hsr_aiming_protocol.js",
+        "hsr_hunt_chain.js",
+        "hsr_starrail_sniper.js",
+        "hsr_erudition_spread.js",
+        "hsr_shield_pulse.js",
+        "hsr_multimillionaire.js",
     )
 
     private val scriptEngineFactory by lazy {
@@ -142,6 +153,13 @@ object JSHandler {
         jsDir.walk().forEach {
             if (it.extension == "js") {
                 val script = it.readText()
+                // example.js is a development sample that schedules a delayed task and
+                // sends a debug message for every matching attack. Do not enable the
+                // untouched bundled sample on production servers; a customized file
+                // with the same name remains loadable for backwards compatibility.
+                if (isUntouchedBundledExample(it, script)) {
+                    return@forEach
+                }
                 if (load(script, it)) {
                     println("已加载JS附魔 ${it.name}")
                 }
@@ -149,10 +167,22 @@ object JSHandler {
         }
     }
 
+    private fun isUntouchedBundledExample(file: File, script: String): Boolean {
+        if (file.name != "example.js") {
+            return false
+        }
+
+        val bundledScript = ThePit.getInstance().getResource("js/example.js")
+            ?.bufferedReader()
+            ?.use { it.readText() }
+            ?: return false
+        return script == bundledScript
+    }
+
     private fun ensureBundledScripts(jsDir: File) {
         for (name in defaultBundledScripts) {
             val target = File(jsDir, name)
-            if (target.exists()) continue
+            if (target.exists() && name !in forceRefreshBundledScripts) continue
 
             val resource = ThePit.getInstance().getResource("js/$name") ?: continue
             target.parentFile?.mkdirs()
@@ -171,6 +201,7 @@ object JSHandler {
                 playerDamageds -= existJsEnchant
                 attackEntities -= existJsEnchant
                 playerBeKilledByEntities -= existJsEnchant
+                playerKilledEntities -= existJsEnchant
                 playerShootEntities -= existJsEnchant
                 playerAssists -= existJsEnchant
             }
@@ -296,6 +327,9 @@ object JSHandler {
                 }
                 if (beKilledFunc) {
                     playerBeKilledByEntities += jsEnchantment
+                }
+                if (killedFunc) {
+                    playerKilledEntities += jsEnchantment
                 }
                 if (shootFunc) {
                     playerShootEntities += jsEnchantment

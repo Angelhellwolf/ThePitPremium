@@ -72,9 +72,10 @@ public class AssembleBoardEntry {
      * @param position of entry.
      */
     public void send(int position) {
+        String prefix;
+        String suffix;
         if (this.text.length() > 16) {
-            String prefix = this.text.substring(0, 16);
-            String suffix;
+            prefix = this.text.substring(0, 16);
 
             if (prefix.charAt(15) == ChatColor.COLOR_CHAR) {
                 prefix = prefix.substring(0, 15);
@@ -93,16 +94,21 @@ public class AssembleBoardEntry {
             if (suffix.length() > 16) {
                 suffix = suffix.substring(0, 16);
             }
-
-            this.team.setPrefix(prefix);
-            this.team.setSuffix(suffix);
         } else {
-            this.team.setPrefix(this.text);
-            this.team.setSuffix("");
+            prefix = this.text;
+            suffix = "";
         }
 
-        Score score = this.board.getObjective().getScore(this.identifier);
-        score.setScore(position);
+        if (!this.team.getPrefix().equals(prefix)) {
+            this.team.setPrefix(prefix);
+        }
+        if (!this.team.getSuffix().equals(suffix)) {
+            this.team.setSuffix(suffix);
+        }
+        if (this.lastScore != position) {
+            Score score = this.board.getObjective().getScore(this.identifier);
+            score.setScore(position);
+        }
         this.lastScore = position;
     }
 

@@ -87,6 +87,12 @@ public class TradeManager {
         if (end) {
             return;
         }
+        if (!canReceive(playerA, bItems) || !canReceive(playerB, aItems)) {
+            playerA.sendMessage(CC.translate("&c接收方背包空间不足，交易已取消，物品与金币退回。"));
+            playerB.sendMessage(CC.translate("&c接收方背包空间不足，交易已取消，物品与金币退回。"));
+            onPlayerCancel(playerA);
+            return;
+        }
 
         TradeData tradeData = new TradeData(this.playerA.getUniqueId().toString(), this.playerB.getUniqueId().toString(), this.playerA.getName(), this.getPlayerB().getName());
         tradeData.setAPaidCoin((long) this.aCoins);
@@ -112,11 +118,12 @@ public class TradeManager {
         for (ItemStack item : bItems) {
             playerA.getInventory().addItem(item);
         }
+        cn.charlotte.pit.reward.RareSupply.tradeCompleted(this);
         PlayerProfile profileA = PlayerProfile.getPlayerProfileByUuid(playerA.getUniqueId());
-        profileA.setCoins(profileA.getCoins() + bCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileA, profileA.getCoins() + bCoins, cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "trade_complete");
 
         PlayerProfile profileB = PlayerProfile.getPlayerProfileByUuid(playerB.getUniqueId());
-        profileB.setCoins(profileB.getCoins() + aCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileB, profileB.getCoins() + aCoins, cn.charlotte.pit.reward.CoinLedger.Flow.TRANSFER, "trade_complete");
 
         profileA.getTradeLimit().setAmount(profileA.getTradeLimit().getAmount() + aCoins + bCoins);
         profileB.getTradeLimit().setAmount(profileB.getTradeLimit().getAmount() + aCoins + bCoins);
@@ -144,7 +151,7 @@ public class TradeManager {
         trades.remove(playerA.getUniqueId());
         trades.remove(playerB.getUniqueId());
 
-        Bukkit.getScheduler().runTaskLaterAsynchronously(ThePit.getInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), () -> {
             playerA.closeInventory();
             playerB.closeInventory();
         }, 1L);
@@ -199,14 +206,28 @@ public class TradeManager {
             playerB.getInventory().addItem(item);
         }
         PlayerProfile profileA = PlayerProfile.getPlayerProfileByUuid(playerA.getUniqueId());
-        profileA.setCoins(profileA.getCoins() + aCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileA, profileA.getCoins() + aCoins, cn.charlotte.pit.reward.CoinLedger.Flow.REFUND, "trade_cancel");
 
         PlayerProfile profileB = PlayerProfile.getPlayerProfileByUuid(playerB.getUniqueId());
-        profileB.setCoins(profileB.getCoins() + bCoins);
+        cn.charlotte.pit.reward.CoinLedger.set(profileB, profileB.getCoins() + bCoins, cn.charlotte.pit.reward.CoinLedger.Flow.REFUND, "trade_cancel");
 
         trades.remove(playerA.getUniqueId());
         trades.remove(playerB.getUniqueId());
+        aItems.clear();
+        bItems.clear();
+        aCoins = 0;
+        bCoins = 0;
 
+    }
+
+    private boolean canReceive(Player player, List<ItemStack> incoming) {
+        org.bukkit.inventory.Inventory simulation = Bukkit.createInventory(null, 36);
+        ItemStack[] contents = player.getInventory().getContents();
+        for (int slot = 0; slot < Math.min(36, contents.length); slot++)
+            if (contents[slot] != null) simulation.setItem(slot, contents[slot].clone());
+        for (ItemStack item : incoming)
+            if (item != null && !simulation.addItem(item.clone()).isEmpty()) return false;
+        return true;
     }
 
     public Player getPlayerA() {

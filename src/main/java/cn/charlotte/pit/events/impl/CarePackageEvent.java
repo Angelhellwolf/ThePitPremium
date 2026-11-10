@@ -1,6 +1,7 @@
 package cn.charlotte.pit.events.impl;
 
 import cn.charlotte.pit.ThePit;
+import cn.charlotte.pit.events.EventBlockTracker;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.events.INormalEvent;
@@ -147,11 +148,12 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
 
         Bukkit.getPluginManager()
                 .registerEvents(this, ThePit.getInstance());
-        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+        Runnable spawn = () -> {
             location.getWorld().strikeLightningEffect(location);
             CC.boardCast("&6&l空投! &7一个新的空投已在地图降落!打开可以获得神话物品,声望等稀有物资!");
             chestOriginalType = location.getBlock().getType();
             chestOriginalData = location.getBlock().getData();
+            EventBlockTracker.get().captureBlock(EventBlockTracker.CARE_PACKAGE, location);
             location.getBlock().setType(Material.CHEST);
             chest = location;
 
@@ -180,7 +182,10 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
 
             for (int i = 0; i < RandomUtil.random.nextInt(3) + 3; i++) {
                 if (items.get(i) == null) {
-                    items.put(i, (ItemStack) RandomUtil.helpMeToChooseOne(new ItemBuilder(Material.EXP_BOTTLE).name("&b+1000经验值").internalName("xp_reward").shiny().build(), new ItemBuilder(Material.GOLD_INGOT).name("&6+1000硬币").internalName("coin_reward").shiny().build()));
+                    items.put(i, (ItemStack) RandomUtil.helpMeToChooseOne(new ItemBuilder(Material.EXP_BOTTLE)
+                            .name(cn.charlotte.pit.reward.EconomyV2.active() ? "&b+4000经验值" : "&b+1000经验值")
+                            .internalName(cn.charlotte.pit.reward.EconomyV2.active() ? "xp_reward_v2" : "xp_reward").shiny().build(),
+                            new ItemBuilder(Material.GOLD_INGOT).name("&6+1000硬币").internalName("coin_reward").shiny().build()));
                 }
             }
 
@@ -201,7 +206,8 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
             };
             endTimer = new Cooldown(5, TimeUnit.MINUTES);
             runnable.runTaskLater(ThePit.getInstance(), 20 * 60 * 5);
-        });
+        };
+        spawn.run();
     }
 
     @Override
@@ -217,10 +223,7 @@ public class CarePackageEvent implements INormalEvent, IEvent, Listener, IScoreB
                 }
             }
             PackageMenu.getItems().clear();
-            if (chest != null && chest.getBlock().getType() == Material.CHEST) {
-                chest.getBlock().setType(chestOriginalType);
-                chest.getBlock().setData(chestOriginalData);
-            }
+            EventBlockTracker.get().restoreImmediately(EventBlockTracker.CARE_PACKAGE);
             chestData = null;
             chest = null;
             endTimer = null;

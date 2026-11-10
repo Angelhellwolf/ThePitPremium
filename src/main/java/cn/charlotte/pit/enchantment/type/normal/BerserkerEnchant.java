@@ -46,12 +46,23 @@ public class BerserkerEnchant extends AbstractEnchantment implements IAttackEnti
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         return "&7使用时允许你不跳跃也能造成暴击伤害."
-                + "/s&7(在地面攻击时有 &e" + (10 * enchantLevel) + "% &7的几率造成的伤害 &c+50% &7)";
+                + "/s&7(在地面攻击时有 &e" + getChancePercent(enchantLevel) + "% &7的几率造成的伤害 &c+50% &7)";
+    }
+
+    private int getChancePercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 12;
+            case 2:
+                return 20;
+            default:
+                return 30;
+        }
     }
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (RandomUtil.hasSuccessfullyByChance(0.1 * enchantLevel) && attacker.isOnGround()) {
+        if (RandomUtil.hasSuccessfullyByChance(getChancePercent(enchantLevel) * 0.01) && attacker.isOnGround()) {
             boostDamage.getAndAdd(0.5);
         }
     }

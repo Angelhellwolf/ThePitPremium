@@ -68,6 +68,7 @@ public class ElGatoBoostPerk extends AbstractPerk implements IPlayerKilledEntity
         lines.add("&7下一升级:");
         lines.add("  &d前 " + (profile.getChosePerk().get(-7) == null ? 1 : Math.min(5, profile.getChosePerk().get(-7).getLevel() + 1)) + " 个击杀 &7额外 &6+5硬币 &b+5经验值 &7.");
         lines.add("  &7当前: &d前 " + (profile.getChosePerk().get(-7) == null ? 0 : profile.getChosePerk().get(-7).getLevel()) + " 个击杀");
+        lines.add("&7以上击杀或助攻收益加成排除 Bot");
         return lines;
     }
 

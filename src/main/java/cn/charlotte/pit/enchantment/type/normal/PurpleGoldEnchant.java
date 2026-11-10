@@ -39,7 +39,19 @@ public class PurpleGoldEnchant extends AbstractEnchantment {
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7破坏黑曜石时获得 &6+" + (enchantLevel * 3 + (3 - enchantLevel)) + " 硬币" + (enchantLevel >= 2 ?
-                "/s&7并为自身施加 &c生命恢复 III &f(" + TimeUtil.millisToTimer(enchantLevel * 1000L) + "&f)" : "");
+        return "&7破坏黑曜石时获得 &6+" + getGold(enchantLevel) + " 硬币" + (enchantLevel >= 2 ?
+                "/s&7并为自身施加 &c生命恢复 III &f(" + TimeUtil.millisToTimer((enchantLevel >= 3 ? 3 : 2) * 1000L) + "&f)" : "")
+                + "/s&7(使用金镐破坏时不生效)";
+    }
+
+    private int getGold(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 7;
+            case 2:
+                return 11;
+            default:
+                return 15;
+        }
     }
 }

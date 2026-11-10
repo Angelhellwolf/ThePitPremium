@@ -5,7 +5,6 @@ import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
-import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.entity.Entity;
@@ -18,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @Created_In: 2021/1/27 14:39
  */
 @WeaponOnly
-public class BillionaireEnchant extends AbstractEnchantment implements IAttackEntity, IPlayerShootEntity {
+public class BillionaireEnchant extends AbstractEnchantment implements IAttackEntity {
 
     @Override
     public String getEnchantName() {
@@ -47,27 +46,53 @@ public class BillionaireEnchant extends AbstractEnchantment implements IAttackEn
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7攻击造成的伤害 &c+" + (35 * enchantLevel) + "% /s&7但每次使用扣除自身 &6" + (enchantLevel * 100 + (enchantLevel >= 3 ? 50 : 0)) + " 硬币";
+        return "&7近战造成的伤害 &c+" + getBoostPercent(enchantLevel) + "% /s&7但每次使用扣除自身 &6" + getCost(enchantLevel) + " 硬币";
     }
 
-    @Override
-    public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
+    private int getCost(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 100;
+            case 2:
+                return 200;
+            default:
+                return 350;
+        }
+    }
 
-        if (profile.getCoins() >= enchantLevel * 100) {
-            boostDamage.getAndAdd(enchantLevel * 0.35);
-            profile.setCoins(profile.getCoins() - enchantLevel * 100 - (enchantLevel >= 3 ? 50 : 0));
+    private double getBoost(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 1.0 / 3.0;
+            case 2:
+                return 2.0 / 3.0;
+            default:
+                return 1.0;
+        }
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 33;
+            case 2:
+                return 67;
+            default:
+                return 100;
         }
     }
 
     @Override
-    @cn.charlotte.pit.parm.type.BowOnly
-    public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+    public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (cancel.get() || damage <= 0) return;
+        if (target instanceof Player && cn.charlotte.pit.util.Utils.getEnchantLevel(((Player) target).getInventory().getLeggings(), "new_deal") > 0
+                && !cn.charlotte.pit.util.PlayerUtil.shouldIgnoreEnchant((Player) target, attacker)) return;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
-
-        if (profile.getCoins() >= enchantLevel * 100) {
-            boostDamage.getAndAdd(enchantLevel * 0.35);
-            profile.setCoins(profile.getCoins() - enchantLevel * 100 - (enchantLevel >= 3 ? 50 : 0));
+        int cost = getCost(enchantLevel);
+        if (profile.getCoins() >= cost) {
+            boostDamage.getAndAdd(getBoost(enchantLevel));
+            cn.charlotte.pit.util.combat.CombatContext.afterAccepted(() -> cn.charlotte.pit.reward.CoinLedger.set(profile,
+                    Math.max(0, profile.getCoins() - cost), cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "billionaire"));
         }
     }
 }

@@ -56,10 +56,10 @@ public class JudgmentShot extends AbstractEnchantment implements IPlayerShootEnt
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || cancel.get() || damage <= 0) return;
         Player targetPlayer = (Player) target;
-        if (targetPlayer.getHealth() - damage * boostDamage.get() < (1.5 + (enchantLevel * 0.5))) {
-            cancel.set(true);
-            targetPlayer.damage(9999);
+        double threshold = (1.5 + enchantLevel * 0.5) * 2;
+        Runnable effect = () -> {
             attacker.playSound(attacker.getLocation(), Sound.VILLAGER_DEATH, 1, 1F);
 
             Location deathLoc = target.getLocation();
@@ -69,6 +69,11 @@ public class JudgmentShot extends AbstractEnchantment implements IPlayerShootEnt
             PlayerConnection connection = ((CraftPlayer) attacker).getHandle().playerConnection;
             connection.sendPacket(packetA);
             connection.sendPacket(packetB);
+        };
+        if (cn.charlotte.pit.util.combat.CombatContext.queueFinisher(threshold, 10000, effect)) return;
+        if (targetPlayer.getHealth() - damage * Math.max(0.2, boostDamage.get()) - finalDamage.get() < threshold) {
+            finalDamage.addAndGet(10000);
+            effect.run();
         }
     }
 }

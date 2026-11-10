@@ -1,0 +1,16 @@
+name: ThePitDJCompensation
+version: 1.0.2
+main: com.remiaft.ops.djcomp.DJCompensationPlugin
+load: POSTWORLD
+depend: [ThePitPremium]
+
+commands:
+  djcomp:
+    description: One-shot, UUID-bound DJ pants compensation
+    usage: /djcomp <scan|scanoffline|traceoffline|apply|applyoffline|issueoffline|retune|status|verify|disarm>
+    permission: thepit.djcomp.admin
+
+permissions:
+  thepit.djcomp.admin:
+    description: Manage the one-shot DJ pants compensation
+    default: op

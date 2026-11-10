@@ -8,6 +8,7 @@ import cn.charlotte.pit.menu.viewer.button.EnderChestViewerMenu;
 import cn.charlotte.pit.menu.viewer.button.InventoryViewerMenu;
 import cn.charlotte.pit.menu.viewer.button.PitPassiveStatusButton;
 import cn.charlotte.pit.menu.viewer.button.PitStatusButton;
+import cn.charlotte.pit.menu.viewer.button.StashViewerMenu;
 import cn.charlotte.pit.menu.viewer.button.admin.TradeDataViewerButton;
 import cn.charlotte.pit.perk.AbstractPerk;
 import cn.charlotte.pit.util.PlayerUtil;
@@ -49,6 +50,7 @@ public class StatusViewerMenu extends Menu {
             profile.getPlayerOption().setInventoryVisibility(true);
             profile.getPlayerOption().setEnderChestVisibility(true);
             profile.getPlayerOption().setProfileVisibility(true);
+            profile.getPlayerOption().setStashVisibility(true);
         }
         PlayerInv inventory = profile.getInventory();
         Map<Integer, Button> button = new HashMap<>();
@@ -58,7 +60,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility()) {
-                    return profile.getInventory().getHelmet() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getHelmet();
+                    return profile.getInventory().getHelmet() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getHelmet());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -72,7 +74,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                    return profile.getInventory().getChestPiece() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getChestPiece();
+                    return profile.getInventory().getChestPiece() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getChestPiece());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -86,7 +88,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                    return profile.getInventory().getLeggings() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getLeggings();
+                    return profile.getInventory().getLeggings() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getLeggings());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -100,7 +102,7 @@ public class StatusViewerMenu extends Menu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                    return profile.getInventory().getBoots() == null ? new ItemBuilder(Material.AIR).build() : profile.getInventory().getBoots();
+                    return profile.getInventory().getBoots() == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, profile.getInventory().getBoots());
                 }
                 return new ItemBuilder(Material.AIR).build();
             }
@@ -118,7 +120,7 @@ public class StatusViewerMenu extends Menu {
                 @Override
                 public ItemStack getButtonItem(Player player) {
                     if (profile.getPlayerOption().isInventoryVisibility() || PlayerUtil.isStaff(player)) {
-                        return inventory.getContents()[finalI] == null ? new ItemBuilder(Material.AIR).build() : inventory.getContents()[finalI];
+                        return inventory.getContents()[finalI] == null ? new ItemBuilder(Material.AIR).build() : InventoryViewerMenu.forViewer(player, profile, inventory.getContents()[finalI]);
                     }
                     return new ItemBuilder(Material.AIR).build();
                 }
@@ -180,7 +182,7 @@ public class StatusViewerMenu extends Menu {
                             List<String> lores = new ArrayList<>();
                             lores.add("&7携带天赋: &a" + perk.getDisplayName());
                             lores.add(" ");
-                            lores.addAll(perk.getDescription(player));
+                            lores.addAll(perk.getEconomyDescription(player));
                             return perk.getIconWithNameAndLore("&e天赋栏 #" + (finalI + 1), lores, 0, finalI + 1);
                         }
                     }
@@ -278,6 +280,23 @@ public class StatusViewerMenu extends Menu {
                     return;
                 }
                 new EnderChestViewerMenu(profile).openMenu(player);
+            }
+        });
+        button.put(26, new Button() {
+            @Override
+            public ItemStack getButtonItem(Player player) {
+                if (!profile.getPlayerOption().isStashVisibility() && !PlayerUtil.isStaff(player)) {
+                    return new ItemBuilder(Material.TRAPPED_CHEST).name("&6寄存箱").lore("&7查看这名玩家寄存箱中的物品.", " ", "&c此玩家选择隐藏了寄存箱信息,你无法查看!").build();
+                }
+                return new ItemBuilder(Material.TRAPPED_CHEST).name("&6寄存箱").lore("&7查看这名玩家寄存箱中的物品.", " ", "&e点击查看!").build();
+            }
+
+            @Override
+            public void clicked(Player player, int slot, ClickType clickType, int hotbarButton, ItemStack currentItem) {
+                if (!profile.getPlayerOption().isStashVisibility() && !PlayerUtil.isStaff(player)) {
+                    return;
+                }
+                new StashViewerMenu(profile).openMenu(player);
             }
         });
         return button;

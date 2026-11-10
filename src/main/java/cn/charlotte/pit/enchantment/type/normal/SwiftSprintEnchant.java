@@ -1,23 +1,20 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
-import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
-import cn.charlotte.pit.enchantment.param.item.BowOnly;
+import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
-import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
-import cn.charlotte.pit.util.chat.RomanUtil;
+import cn.charlotte.pit.parm.listener.ITickTask;
 import cn.charlotte.pit.util.cooldown.Cooldown;
-import cn.charlotte.pit.util.time.TimeUtil;
-import com.google.common.util.concurrent.AtomicDouble;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+/**
+ * Gotta go fast / 疾走: wearing the pants permanently increases walk speed.
+ */
+@ArmorOnly
+public class SwiftSprintEnchant extends AbstractEnchantment implements ITickTask {
 
-@BowOnly
-public class SwiftSprintEnchant extends AbstractEnchantment implements IPlayerShootEntity {
+    private static final float BASE_WALK_SPEED = 0.2F;
+
     @Override
     public String getEnchantName() {
         return "疾走";
@@ -45,20 +42,46 @@ public class SwiftSprintEnchant extends AbstractEnchantment implements IPlayerSh
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7弓箭命中玩家时你获得 &b速度 " + RomanUtil.convert(enchantLevel >= 3 ? 2 : 1) + " &f(" + TimeUtil.millisToTimer(1000 * (enchantLevel * 2L + 1)) + ")"
-                + (enchantLevel >= 2 ?
-                "/s&7且箭矢命中后对敌人施加 &c缓慢 I &f(00:03)" : "");
+        return "&7装备时移速 &b+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private static int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 5;
+            case 2:
+                return 10;
+            default:
+                return 20;
+        }
+    }
+
+    public static boolean isSwiftSprintSpeed(float speed) {
+        for (int level = 1; level <= 3; level++) {
+            float target = BASE_WALK_SPEED * (1.0F + 0.01F * getBoostPercent(level));
+            if (Math.abs(speed - target) < 0.002F) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void restoreDefaultWalkSpeed(Player player) {
+        if (isSwiftSprintSpeed(player.getWalkSpeed())) {
+            player.setWalkSpeed(BASE_WALK_SPEED);
+        }
     }
 
     @Override
-    @PlayerOnly
-    public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        attacker.removePotionEffect(PotionEffectType.SPEED);
-        attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * (enchantLevel * 2 + 1), enchantLevel >= 3 ? 1 : 0), true);
-        if (enchantLevel >= 2) {
-            Player targetPlayer = (Player) target;
-            targetPlayer.removePotionEffect(PotionEffectType.SLOW);
-            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20 * 3, 0, true));
+    public void handle(int enchantLevel, Player player) {
+        float target = BASE_WALK_SPEED * (1.0F + 0.01F * getBoostPercent(Math.max(1, enchantLevel)));
+        if (Math.abs(player.getWalkSpeed() - target) > 0.001F) {
+            player.setWalkSpeed(target);
         }
+    }
+
+    @Override
+    public int loopTick(int enchantLevel) {
+        return 20;
     }
 }

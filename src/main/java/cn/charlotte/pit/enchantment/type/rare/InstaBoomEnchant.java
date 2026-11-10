@@ -29,7 +29,7 @@ public class InstaBoomEnchant extends AbstractEnchantment implements IPlayerKill
                 .removeOnJoin(true)
                 .deathDrop(true)
                 .name("&c瞬爆TNT")
-                .lore(Arrays.asList("&7附魔物品", "&c放置时如没有装备对应附魔物品则TNT不会造成伤害!"));
+                .lore(Arrays.asList("&7附魔物品", "&c爆炸时须装备对应附魔，且附魔未被禁用，TNT才会伤害敌人!"));
     }
 
     @Override
@@ -60,17 +60,29 @@ public class InstaBoomEnchant extends AbstractEnchantment implements IPlayerKill
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         return "&7每次死亡后复活立刻获得 &f" + (enchantLevel >= 3 ? 2 : 1) + " * &c瞬爆TNT"
-                + "/s&7击杀玩家时获得 &f" + (enchantLevel >= 3 ? 2 : 1) + " * &c瞬爆TNT &7(持有上限5)"
+                + "/s&7击杀玩家时获得 &f" + (enchantLevel >= 3 ? 2 : 1) + " * &c瞬爆TNT &7(持有上限" + getMaxHeld(enchantLevel) + ")"
                 + "/s&7瞬爆TNT放置后立刻被点燃并立刻爆炸,对周围4格内的所有敌人造成 &c" + (enchantLevel * 0.25) + "❤ &7普通伤害."
                 + "/s&7(瞬爆TNT爆炸时如自身未装备此附魔,则TNT不会造成伤害)";
+    }
+
+    private int getMaxHeld(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 2;
+            case 2:
+                return 4;
+            default:
+                return 6;
+        }
     }
 
     @Override
     @PlayerOnly
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         myself.getInventory().addItem(getTNTBuilder().amount(enchantLevel >= 3 ? 2 : 1).build());
-        if (InventoryUtil.getAmountOfItem(myself, "insta_boom_tnt_enchant") > 5) {
-            InventoryUtil.removeItem(myself, "insta_boom_tnt_enchant", InventoryUtil.getAmountOfItem(myself, "insta_boom_tnt_enchant") - 5);
+        int max = getMaxHeld(enchantLevel);
+        if (InventoryUtil.getAmountOfItem(myself, "insta_boom_tnt_enchant") > max) {
+            InventoryUtil.removeItem(myself, "insta_boom_tnt_enchant", InventoryUtil.getAmountOfItem(myself, "insta_boom_tnt_enchant") - max);
         }
     }
 

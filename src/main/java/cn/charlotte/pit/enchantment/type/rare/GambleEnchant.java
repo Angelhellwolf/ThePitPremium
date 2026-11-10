@@ -54,17 +54,10 @@ public class GambleEnchant extends AbstractEnchantment implements IAttackEntity 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (RandomUtil.hasSuccessfullyByChance(0.5)) {
-            Player targetPlayer = (Player) target;
-            Player gamblePlayer = attacker;
-            if (RandomUtil.hasSuccessfullyByChance(0.5)) {
-                gamblePlayer = targetPlayer;
-            }
-            if (gamblePlayer.getHealth() > enchantLevel * 2) {
-                gamblePlayer.setHealth(Math.max(0.1, gamblePlayer.getHealth() - enchantLevel * 2));
-            } else {
-                gamblePlayer.damage(gamblePlayer.getMaxHealth() * 100);
-            }
-        }
+        Player targetPlayer = (Player) target;
+        // One shared coin flip: either the attacker or the victim takes the extra true damage.
+        Player gamblePlayer = RandomUtil.hasSuccessfullyByChance(0.5) ? targetPlayer : attacker;
+        double extraDamage = enchantLevel * 2.0;
+        cn.charlotte.pit.util.PlayerUtil.damage(attacker, gamblePlayer, cn.charlotte.pit.util.PlayerUtil.DamageType.TRUE, extraDamage, false);
     }
 }

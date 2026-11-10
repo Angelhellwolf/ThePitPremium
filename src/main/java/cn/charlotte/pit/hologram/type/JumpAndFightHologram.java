@@ -28,7 +28,7 @@ public class JumpAndFightHologram extends AbstractHologram {
 
     @Override
     public boolean shouldLoop() {
-        return true;
+        return false;
     }
 
     @Override

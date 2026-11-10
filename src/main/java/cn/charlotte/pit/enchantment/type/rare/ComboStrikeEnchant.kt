@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.rare
 
+import cn.charlotte.pit.util.combat.CombatContext
+
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.enchantment.AbstractEnchantment
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant
@@ -82,7 +84,7 @@ class ComboStrikeEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShootEnt
                 return
             }
         }
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.uniqueId).meleeHit % (if (enchantLevel > 1) 4 else 5) == 0) {
+        if (CombatContext.meleeHits(attacker) % (if (enchantLevel > 1) 4 else 5) == 0) {
             finalDamage.set(finalDamage.get() + 2 * getDamage(enchantLevel))
             PlayerUtil.playThunderEffect(target.getLocation())
             val victimProfile = PlayerProfile.getPlayerProfileByUuid(victim.uniqueId)
@@ -123,7 +125,7 @@ class ComboStrikeEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShootEnt
                 return
             }
         }
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.uniqueId).meleeHit % (if (enchantLevel > 1) 4 else 5) == 0) {
+        if (CombatContext.bowHits(attacker) % (if (enchantLevel > 1) 4 else 5) == 0) {
             finalDamage.set(finalDamage.get() + 2 * getDamage(enchantLevel))
             PlayerUtil.playThunderEffect(target.getLocation())
             val victimProfile = PlayerProfile.getPlayerProfileByUuid(victim.uniqueId)
@@ -142,9 +144,7 @@ class ComboStrikeEnchant : AbstractEnchantment(), IAttackEntity, IPlayerShootEnt
 
     override fun getText(level: Int, player: Player): String {
         val hit =
-            if (player.itemInHand != null && player.itemInHand.type == Material.BOW) PlayerProfile.getPlayerProfileByUuid(
-                player.uniqueId
-            ).bowHit else PlayerProfile.getPlayerProfileByUuid(player.uniqueId).meleeHit
+            if (player.itemInHand != null && player.itemInHand.type == Material.BOW) CombatContext.bowHits(player) else CombatContext.meleeHits(player)
         return if (hit % (if (level > 1) 4 else 5) == 0) "&a&l✔" else "&e&l" + ((if (level > 1) 4 else 5) - hit % if (level > 1) 4 else 5)
     }
 

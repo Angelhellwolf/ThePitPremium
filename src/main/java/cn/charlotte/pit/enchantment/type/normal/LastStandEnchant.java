@@ -5,7 +5,7 @@ import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
 import cn.charlotte.pit.enchantment.param.item.ArmorOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.ITickTask;
-import cn.charlotte.pit.util.PlayerUtil;
+import cn.charlotte.pit.util.combat.CombatPotions;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import cn.charlotte.pit.util.thread.ThreadHelper;
 import org.bukkit.entity.Player;
@@ -52,18 +52,9 @@ public class LastStandEnchant extends AbstractEnchantment implements IActionDisp
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        int time = 0;
-        String level;
-        switch (enchantLevel) {
-            case 1:
-            case 2:
-                time = 3;
-                break;
-            case 3:
-                time = 4;
-                break;
-        }
-        return "&7剩余 &c3❤ &7时获得 &b抗性提升 III &f(00:0" + time + ") &7(10秒冷却)";
+        int time = enchantLevel == 1 ? 3 : 4;
+        String roman = enchantLevel == 1 ? "I" : (enchantLevel == 2 ? "II" : "III");
+        return "&7剩余 &c3❤ &7时获得 &b抗性提升 " + roman + " &f(00:0" + time + ") &7(10秒冷却)";
     }
 
     @Override
@@ -73,21 +64,12 @@ public class LastStandEnchant extends AbstractEnchantment implements IActionDisp
 
     @Override
     public void handle(int enchantLevel, Player player) {
-        int time = 0;
-        switch (enchantLevel) {
-            case 1:
-            case 2:
-                time = 3;
-                break;
-            case 3:
-                time = 4;
-                break;
-        }
+        int time = enchantLevel == 1 ? 3 : 4;
         if (cooldown.getOrDefault(player.getUniqueId(), new Cooldown(0)).hasExpired()) {
             if (player.getHealth() <= 3 * 2) {
-                player.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
                 int finalTime = time;
-                sync(() -> PlayerUtil.addPotionEffect(player, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * finalTime, enchantLevel - 1,true), true));
+                sync(() -> CombatPotions.refresh(player, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,
+                        20 * finalTime, enchantLevel - 1, true)));
                 cooldown.put(player.getUniqueId(), new Cooldown(10, TimeUnit.SECONDS));
             }
         }

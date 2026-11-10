@@ -17,12 +17,14 @@ class LuckOfPondEnchant: AbstractEnchantment(), Listener{
 
     @EventHandler
     private fun onFish(event: PlayerFishEvent) {
+        if (event.isCancelled || event.state != PlayerFishEvent.State.FISHING
+            || !isEffectActive(event.player, null)) return
         val leggings = event.player.inventory.leggings
         if (leggings?.toMythicItem()?.enchantments?.keys?.any { enchant ->
                 enchant.nbtName == "luck_of_pond"
             } == true) {
             val chance = event.hook.biteChance
-            event.hook.biteChance = min(chance, 1.0)
+            event.hook.biteChance = min(chance * 1.10, 1.0)
         }
     }
 

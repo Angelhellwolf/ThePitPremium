@@ -1,14 +1,16 @@
-ENCHANT_NAME = "智识扩散";
+var PlayerUtil = Java.type('cn.charlotte.pit.util.PlayerUtil');
+ENCHANT_NAME = "智能扩散";
 INTERNAL_NAME = "hsr_erudition_spread_enchant";
 RARITY = "NORMAL";
 TYPE = ["BOW"];
 MAX_LEVEL = 3;
 
 function lore(level) {
-    var boost = 5 * level;
+    var boost = 6 + 4 * level;
+    var splash = (0.25 * level).toFixed(2);
     return [
-        "&7天赋: 箭矢命中玩家时, 若目标 &f3格 &7范围内(不包含你)存在至少 &f1名 &7其他玩家",
-        "&7则该次箭矢造成的伤害 &c+" + boost + "%"
+        "&7箭矢命中玩家时, 对目标 &e4格 &7内其他玩家造成 &c" + splash + "❤ &f真实&7伤害",
+        "&7若范围内存在其他玩家, 该箭伤害 &c+" + boost + "%"
     ];
 }
 
@@ -16,16 +18,22 @@ function shoot(enchant_level, attacker, target, damage, final_damage, boost_dama
     if (!(target instanceof Player)) {
         return;
     }
-    var nearby = target.getNearbyEntities(3, 3, 3);
-    var count = 0;
+    var nearby = PlayerUtil.getNearbyPlayers(target.getLocation(), 4);
+    var hitOther = false;
     for (var i = 0; i < nearby.size(); i++) {
-        var e = nearby.get(i);
-        if (e instanceof Player && !e.getUniqueId().equals(attacker.getUniqueId())) {
-            count++;
+        var entity = nearby.get(i);
+        if (!(entity instanceof Player)) {
+            continue;
         }
+        if (entity.getUniqueId().equals(attacker.getUniqueId()) || entity.getUniqueId().equals(target.getUniqueId())) {
+            continue;
+        }
+        hitOther = true;
+        var health = entity.getHealth();
+        var splash = 0.5 * enchant_level;
+        PlayerUtil.damage(attacker, entity, PlayerUtil.DamageType.TRUE, splash, true);
     }
-    if (count < 1) {
-        return;
+    if (hitOther) {
+        boost_damage.getAndAdd(0.06 + 0.04 * enchant_level);
     }
-    boost_damage.getAndAdd(0.05 * enchant_level);
 }

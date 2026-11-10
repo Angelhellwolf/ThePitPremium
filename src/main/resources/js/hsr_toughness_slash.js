@@ -1,3 +1,4 @@
+var CombatContext = Java.type('cn.charlotte.pit.util.combat.CombatContext');
 var PotionEffect = Java.type('org.bukkit.potion.PotionEffect');
 var PotionEffectType = Java.type('org.bukkit.potion.PotionEffectType');
 
@@ -20,7 +21,7 @@ function attack(enchant_level, attacker, target, damage, final_damage, boost_dam
         return;
     }
     var profile = pit_profile(attacker);
-    var hit = profile.getMeleeHit();
+    var hit = CombatContext.meleeHits(attacker);
     if (hit % 4 !== 0) {
         return;
     }

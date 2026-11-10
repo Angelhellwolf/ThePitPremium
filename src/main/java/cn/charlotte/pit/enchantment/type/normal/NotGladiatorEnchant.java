@@ -46,14 +46,15 @@ public class NotGladiatorEnchant extends AbstractEnchantment implements IPlayerD
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7在以你为中心的 &b12 &7格范围内,"
+        return "&7在以你为中心的 &b10 &7格范围内,"
                 + "/s&7每存在一名除你以外的玩家,"
-                + "/s&7你受到的伤害 &9-" + (0.5 + enchantLevel * 0.5) + "% &7(最高叠加10层,叠加低于3层时无效果) .";
+                + "/s&7你受到的伤害 &9-" + (0.5 + enchantLevel * 0.5) + "% &7(最高叠加10层).";
     }
 
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        double boost = PlayerUtil.getNearbyPlayers(myself.getLocation(), 12).size();
+        double boost = PlayerUtil.getNearbyPlayers(myself.getLocation(), 10).stream()
+                .filter(player -> !player.getUniqueId().equals(myself.getUniqueId())).count();
 
         int sybilLevel = Utils.getEnchantLevel(myself.getInventory().getLeggings(), "sybil");
         if (sybilLevel > 0) {
@@ -62,9 +63,6 @@ public class NotGladiatorEnchant extends AbstractEnchantment implements IPlayerD
 
         if (boost > 10) {
             boost = 10;
-        }
-        if (boost < 3) {
-            boost = 0;
         }
         boostDamage.set(boostDamage.get() - 0.01 * (0.5 + enchantLevel * 0.5) * boost);
     }

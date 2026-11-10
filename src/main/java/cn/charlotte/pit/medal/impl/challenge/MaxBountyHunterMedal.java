@@ -20,7 +20,7 @@ public class MaxBountyHunterMedal extends AbstractMedal {
 
     @Override
     public String getRequirementDescription(int level) {
-        return "击杀一名被5,000及以上硬币悬赏的玩家";
+        return "通过有效真人击杀领取一名赏金达到5,000g玩家的悬赏（排除Bot）";
     }
 
     @Override

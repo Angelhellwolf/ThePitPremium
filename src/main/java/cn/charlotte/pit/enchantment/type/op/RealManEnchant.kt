@@ -12,7 +12,7 @@ class RealManEnchant: AbstractEnchantment() , ITickTask {
     companion object {
         @JvmStatic
         fun hasRealMan(player: Player): Boolean {
-            return (player.getMetadata("real_man").firstOrNull()?.asLong() ?: Long.MAX_VALUE) >= System.currentTimeMillis()
+            return (player.getMetadata("real_man").firstOrNull()?.asLong() ?: Long.MIN_VALUE) >= System.currentTimeMillis()
         }
     }
 
@@ -37,13 +37,11 @@ class RealManEnchant: AbstractEnchantment() , ITickTask {
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7当你的7格范围内全部人 &cbuff天赋连杀失效/s" +
-                "           &7出范围外3秒效果消失"
+        return "&7周围7格内的玩家（包括自身）无法触发天赋和连杀效果/s&7离开范围3秒后恢复，已有药水效果不会立即移除"
     }
 
     override fun handle(enchantLevel: Int, player: Player) {
-        player.world.getNearbyEntities(player.location, 7.0, 7.0, 7.0)
-            .filterIsInstance<Player>()
+        cn.charlotte.pit.util.PlayerUtil.getNearbyPlayers(player.location, 7.0)
             .forEach {
                 it.setMetadata("real_man", FixedMetadataValue(ThePit.getInstance(), System.currentTimeMillis() + 3 * 1000L))
             }

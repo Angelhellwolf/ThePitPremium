@@ -45,7 +45,7 @@ public class DyeButton extends Button {
         if (profile.getCoins() < 200) {
             return;
         }
-        profile.setCoins(profile.getCoins() - 200);
+        cn.charlotte.pit.reward.CoinLedger.set(profile, profile.getCoins() - 200, cn.charlotte.pit.reward.CoinLedger.Flow.SPEND, "dye");
         ItemStack itemStack = new ItemBuilder(InventoryUtil.deserializeItemStack(profile.getEnchantingItem())).changeNbt("dyeColor", dyeColor.name()).build();
 
         profile.setEnchantingItem(InventoryUtil.serializeItemStack(ThePit.getApi().reformatPitItem(itemStack)));

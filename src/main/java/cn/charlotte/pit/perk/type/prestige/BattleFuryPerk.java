@@ -1,18 +1,27 @@
 package cn.charlotte.pit.perk.type.prestige;
 
-import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
+import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.AbstractPerk;
 import cn.charlotte.pit.perk.Passive;
 import cn.charlotte.pit.perk.PerkType;
+import cn.charlotte.pit.util.combat.CombatDamage;
+import cn.charlotte.pit.util.combat.PlayerLife;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Material;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,9 +31,12 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Passive
-public class BattleFuryPerk extends AbstractPerk implements IAttackEntity, IPlayerShootEntity {
+@AutoRegister
+public class BattleFuryPerk extends AbstractPerk implements IAttackEntity, IPlayerShootEntity, Listener {
 
-    private static final Map<UUID, ComboData> comboDataMap = new HashMap<>();
+    private static final Map<UUID, Window> windows = new HashMap<>();
+    private static final long DURATION_MILLIS = 3000;
+    private static final long COOLDOWN_MILLIS = 8000;
 
     @Override
     public String getInternalPerkName() {
@@ -64,11 +76,11 @@ public class BattleFuryPerk extends AbstractPerk implements IAttackEntity, IPlay
     @Override
     public List<String> getDescription(Player player) {
         List<String> lines = new ArrayList<>();
-        lines.add("&7当无伤击中同一个目标达标时,");
-        lines.add("&7下一次攻击额外造成伤害.");
-        lines.add("&7I: 连击4次后下一击伤害 &c+30%");
-        lines.add("&7II: 连击3次后下一击伤害 &c+35%");
-        lines.add("&7III: 连击3次后下一击伤害 &c+40%, 且获得 &b速度 II &f(00:04)");
+        lines.add("&7受到玩家有效攻击后,若剩余总生命");
+        lines.add("&7(含吸收心)低于 &c6❤&7,获得反击加成:");
+        lines.add("&7I / II / III: 普通伤害 &c+5% / +10% / +20%");
+        lines.add("&7持续 &e3秒&7,从触发时起冷却 &e8秒");
+        lines.add("&7不增加真实或必中伤害,环境与自伤不触发");
         return lines;
     }
 
@@ -89,75 +101,67 @@ public class BattleFuryPerk extends AbstractPerk implements IAttackEntity, IPlay
 
     @Override
     public void onPerkInactive(Player player) {
-        comboDataMap.remove(player.getUniqueId());
+        windows.remove(player.getUniqueId());
     }
 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        processHit(enchantLevel, attacker, (Player) target, boostDamage);
+        if (!cancel.get()) boostDamage.addAndGet(activeBonus(attacker, enchantLevel, System.currentTimeMillis()));
     }
 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        processHit(enchantLevel, attacker, (Player) target, boostDamage);
+        if (!cancel.get()) boostDamage.addAndGet(activeBonus(attacker, enchantLevel, System.currentTimeMillis()));
     }
 
-    private void processHit(int level, Player attacker, Player target, AtomicDouble boostDamage) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId());
-        ComboData data = comboDataMap.computeIfAbsent(attacker.getUniqueId(), ignored -> new ComboData());
-        long currentDamageMark = profile.getLastDamageAt();
-        boolean damagedSinceLastRecord = data.lastDamageAt != currentDamageMark;
-
-        if (damagedSinceLastRecord) {
-            data.readyBonus = false;
-            data.hits = 0;
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onDamaged(EntityDamageByEntityEvent event) {
+        if (!(event.getEntity() instanceof Player) || CombatDamage.accepted(event) <= 0) return;
+        Player player = (Player) event.getEntity();
+        Entity source = event.getDamager();
+        if (source instanceof Projectile && ((Projectile) source).getShooter() instanceof Entity) {
+            source = (Entity) ((Projectile) source).getShooter();
         }
-
-        if (data.readyBonus) {
-            boostDamage.getAndAdd(getBoost(level));
-            data.readyBonus = false;
-
-            if (level >= 3) {
-                attacker.removePotionEffect(PotionEffectType.SPEED);
-                attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 4, 1), true);
-            }
-        }
-
-        if (damagedSinceLastRecord || !target.getUniqueId().equals(data.lastTarget)) {
-            data.hits = 1;
-        } else {
-            data.hits++;
-        }
-
-        data.lastDamageAt = currentDamageMark;
-        data.lastTarget = target.getUniqueId();
-
-        if (data.hits >= getRequiredHit(level)) {
-            data.hits = 0;
-            data.readyBonus = true;
-        }
+        if (!(source instanceof Player) || source.getUniqueId().equals(player.getUniqueId()) || getPlayerLevel(player) <= 0) return;
+        Object life = PlayerLife.capture(player);
+        Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
+            if (event.isCancelled() || !PlayerLife.isCurrent(player, life) || getPlayerLevel(player) <= 0) return;
+            activate(player, life, CombatDamage.healthIncludingAbsorption(player), System.currentTimeMillis());
+        });
     }
 
-    private int getRequiredHit(int level) {
-        return level <= 1 ? 4 : 3;
+    boolean activate(Player player, Object life, double remainingHealth, long now) {
+        if (!Double.isFinite(remainingHealth) || remainingHealth <= 0 || remainingHealth >= 12) return false;
+        Window previous = windows.get(player.getUniqueId());
+        if (previous != null && previous.life == life && now < previous.readyAt) return false;
+        windows.put(player.getUniqueId(), new Window(life, now + DURATION_MILLIS, now + COOLDOWN_MILLIS));
+        return true;
     }
 
-    private double getBoost(int level) {
-        if (level <= 1) {
-            return 0.30D;
+    double activeBonus(Player player, int level, long now) {
+        Window window = windows.get(player.getUniqueId());
+        if (window == null || !PlayerLife.isCurrent(player, window.life)) {
+            windows.remove(player.getUniqueId());
+            return 0;
         }
-        if (level == 2) {
-            return 0.35D;
-        }
-        return 0.40D;
+        if (level <= 0 || now >= window.activeUntil) return 0;
+        return level == 1 ? 0.05 : level == 2 ? 0.10 : 0.20;
     }
 
-    private static class ComboData {
-        private UUID lastTarget;
-        private int hits;
-        private long lastDamageAt = -1L;
-        private boolean readyBonus;
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) { windows.remove(event.getEntity().getUniqueId()); }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) { windows.remove(event.getPlayer().getUniqueId()); }
+
+    private static final class Window {
+        final Object life;
+        final long activeUntil;
+        final long readyAt;
+        Window(Object life, long activeUntil, long readyAt) {
+            this.life = life; this.activeUntil = activeUntil; this.readyAt = readyAt;
+        }
     }
 }

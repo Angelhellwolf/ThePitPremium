@@ -8,7 +8,15 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.server.PluginDisableEvent;
+import cn.charlotte.pit.command.BossBarCommand;
+import cn.charlotte.pit.util.command.CommandHandler;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
 /**
  * @Author: EmptyIrony
@@ -16,15 +24,17 @@ import org.bukkit.scheduler.BukkitRunnable;
  */
 public class BossBarHandler implements Listener {
     private final BossBar bossBar;
+    private final BukkitTask task;
 
     public BossBarHandler() {
         this.bossBar = new BossBar("");
+        CommandHandler.registerClass(BossBarCommand.class);
 
-        new BukkitRunnable() {
+        task = new BukkitRunnable() {
             @Override
             public void run() {
-                if (bossBar.getTitle().isEmpty()) {
-                    if (bossBar.getWithers().isEmpty()) {
+                if (bossBar.isBlankTitle()) {
+                    if (!bossBar.hasPlayers()) {
                         return;
                     }
                     for (Player player : Bukkit.getOnlinePlayers()) {
@@ -34,26 +44,51 @@ public class BossBarHandler implements Listener {
                 }
 
                 for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (!bossBar.getWithers().containsKey(player.getUniqueId())) {
+                    if (player.hasMetadata("NPC")) continue;
+                    if (!bossBar.containsPlayer(player.getUniqueId())) {
                         bossBar.addPlayer(player);
                     }
                 }
                 bossBar.update();
             }
-        }.runTaskTimer(ThePit.getInstance(), 5, 5);
+        }.runTaskTimer(ThePit.getInstance(), 2, 2);
     }
 
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onJoin(PlayerJoinEvent event) {
-        if (!this.bossBar.getTitle().isEmpty()) {
-            this.bossBar.addPlayer(event.getPlayer());
+        if (!this.bossBar.isBlankTitle()) {
+            this.bossBar.rebuild(event.getPlayer());
         }
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         this.bossBar.removePlayer(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onMove(PlayerMoveEvent event) {
+        if (event.getTo() != null) bossBar.update(event.getPlayer(), event.getTo());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onTeleport(PlayerTeleportEvent event) { bossBar.rebuild(event.getPlayer()); }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onRespawn(PlayerRespawnEvent event) { bossBar.rebuild(event.getPlayer()); }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onWorldChange(PlayerChangedWorldEvent event) { bossBar.rebuild(event.getPlayer()); }
+
+    @EventHandler
+    public void onDisable(PluginDisableEvent event) {
+        if (event.getPlugin() == ThePit.getInstance()) shutdown();
+    }
+
+    public void shutdown() {
+        task.cancel();
+        bossBar.close();
     }
 
     public BossBar getBossBar() {

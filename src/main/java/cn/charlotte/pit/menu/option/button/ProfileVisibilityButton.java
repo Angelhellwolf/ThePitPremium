@@ -28,7 +28,7 @@ public class ProfileVisibilityButton extends Button {
         lines.add("&7你也可以使用 /view 查看其他玩家的档案.");
         lines.add(" ");
         lines.add("&7当前: " + (profile.getPlayerOption().isProfileVisibility() ? "&a允许" : "&c不允许"));
-        lines.add((profile.isSupporter() || PlayerUtil.isStaff(player) ? "&e&e点击切换此选项!" : "&c需要&e天坑乱斗会员"));
+        lines.add((profile.isSupporter() || PlayerUtil.isStaff(player) ? "&e&e点击切换此选项!" : "&c需要&e天坑·会员"));
         return new ItemBuilder(Material.NAME_TAG).name("&a隐私选项: 档案").lore(lines).build();
     }
 

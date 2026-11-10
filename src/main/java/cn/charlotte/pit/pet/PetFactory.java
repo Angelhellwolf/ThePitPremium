@@ -165,24 +165,30 @@ public class PetFactory implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
         if (event.getEntity() instanceof Player && !(event.getDamager() instanceof Player)) {
             final PetData data = entityToPetData.get(event.getDamager().getUniqueId());
             if (data == null) return;
-            event.setCancelled(data.ownerUuid.equals(event.getDamager().getUniqueId()));
+            if (data.ownerUuid.equals(event.getEntity().getUniqueId())) {
+                event.setCancelled(true);
+                return;
+            }
         } else if (event.getDamager() instanceof Player && !(event.getEntity() instanceof Player)) {
             final PetData data = entityToPetData.get(event.getEntity().getUniqueId());
             if (data == null) return;
-            event.setCancelled(data.ownerUuid.equals(event.getDamager().getUniqueId()));
+            if (data.ownerUuid.equals(event.getDamager().getUniqueId())) {
+                event.setCancelled(true);
+                return;
+            }
         }
 
         final PetData data = entityToPetData.get(event.getDamager().getUniqueId());
         if (data != null) {
             final Player killer = Bukkit.getPlayer(data.ownerUuid);
-            if (event.getEntity() instanceof LivingEntity) {
+            if (killer != null && event.getEntity() instanceof LivingEntity) {
                 final LivingEntity entity = (LivingEntity) event.getEntity();
-                if (entity.getHealth() < event.getFinalDamage()) {
+                if (entity.getHealth() <= event.getFinalDamage()) {
                     final EntityLiving player = ((CraftLivingEntity) entity).getHandle();
                     player.killer = ((CraftPlayer) killer).getHandle();
                 }

@@ -49,7 +49,7 @@ public class CoinsMedal extends AbstractMedal implements Listener {
             case 4:
                 return 10000000;
             case 5:
-                return 3000000;
+                return 30000000;
             default:
                 return -1;
         }
@@ -72,6 +72,6 @@ public class CoinsMedal extends AbstractMedal implements Listener {
 
     @EventHandler
     public void onGrindCoins(PitGainCoinsEvent event) {
-        addProgress(PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId()), (int) event.getCoins());
+        addProgress(PlayerProfile.getPlayerProfileByUuid(event.getPlayer().getUniqueId()), event.getCoins());
     }
 }

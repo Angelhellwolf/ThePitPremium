@@ -7,7 +7,6 @@ import lombok.SneakyThrows;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 
@@ -27,21 +26,9 @@ public class AssembleThread implements Runnable {
      */
     AssembleThread(Assemble assemble) {
         this.assemble = assemble;
-        Plugin protocolLib = Bukkit.getPluginManager().getPlugin("ProtocolLib");
-        boolean protocolLib5 = protocolLib != null
-                && protocolLib.getDescription() != null
-                && protocolLib.getDescription().getVersion() != null
-                && protocolLib.getDescription().getVersion().startsWith("5");
-
-        if (protocolLib5) {
-            taskId = Bukkit.getScheduler()
-                    .runTaskTimer(ThePit.getInstance(), this, assemble.getTicks(), assemble.getTicks())
-                    .getTaskId();
-        } else {
-            taskId = Bukkit.getScheduler()
-                    .runTaskTimerAsynchronously(ThePit.getInstance(), this, assemble.getTicks(), assemble.getTicks())
-                    .getTaskId();
-        }
+        taskId = Bukkit.getScheduler()
+                .runTaskTimer(ThePit.getInstance(), this, assemble.getTicks(), assemble.getTicks())
+                .getTaskId();
     }
 
     @Override

@@ -67,6 +67,7 @@ public class CoinContractBoostPerk extends AbstractPerk implements IPlayerKilled
         lines.add("&7每次升级:");
         lines.add("  &7击杀获得 &6+1.5% 硬币 &7.");
         lines.add("&7此增益会永久保留且升级进度与其他天赋互相独立.");
+        lines.add("&7以上击杀或助攻收益加成排除 Bot");
         return lines;
     }
 

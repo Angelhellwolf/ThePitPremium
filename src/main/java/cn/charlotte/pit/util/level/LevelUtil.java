@@ -19,6 +19,11 @@ public class LevelUtil {
      */
 
     public static String getPrestigeColor(int prestige) {
+        if (cn.charlotte.pit.reward.EconomyV2.active()) {
+            if (prestige == 50) return "&6&l";
+            if (prestige >= 45 && prestige < 50) return "&4";
+            if (prestige >= 40 && prestige < 45) return "&3";
+        }
         if (prestige >= 1 && prestige <= 4) {
             return "&9";
         } else if (prestige >= 5 && prestige <= 9) {
@@ -97,6 +102,8 @@ public class LevelUtil {
      * @return 某一等级所需经验值(level)
      */
     public static double getLevelExpRequired(int prestige, int level) {
+        if (cn.charlotte.pit.reward.EconomyV2.active())
+            return cn.charlotte.pit.reward.ProgressionV2.experienceForLevel(prestige, level);
         double boost = 1.1;
         if (level >= 10) {
             switch ((level - level % 10) / 10) {
@@ -135,6 +142,8 @@ public class LevelUtil {
      * @return 通过已有经验值推算等级
      */
     public static int getLevelByExp(int prestige, double exp) {
+        if (cn.charlotte.pit.reward.EconomyV2.active())
+            return cn.charlotte.pit.reward.ProgressionV2.levelByExperience(prestige, exp);
         double experience = exp;
         int level = 0;
         for (int i = 0; i <= 120; i++) {
@@ -154,6 +163,8 @@ public class LevelUtil {
      * @return 获取升级到某一级所需经验值(0 - level)
      */
     public static double getLevelTotalExperience(int prestige, int level) {
+        if (cn.charlotte.pit.reward.EconomyV2.active())
+            return cn.charlotte.pit.reward.ProgressionV2.experienceAtLevel(prestige, level);
         double experience = 0;
         for (int i = 0; i < level; i++) {
             experience = experience + getLevelExpRequired(prestige, i);

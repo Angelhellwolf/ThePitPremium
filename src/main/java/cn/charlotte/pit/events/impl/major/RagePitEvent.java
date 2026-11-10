@@ -3,8 +3,11 @@ package cn.charlotte.pit.events.impl.major;
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.config.NewConfiguration;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitDamageEvent;
 import cn.charlotte.pit.event.PitKillEvent;
+import cn.charlotte.pit.events.EventBlockTracker;
 import cn.charlotte.pit.events.IEpicEvent;
 import cn.charlotte.pit.events.IEvent;
 import cn.charlotte.pit.item.type.mythic.MythicLeggingsItem;
@@ -59,21 +62,11 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
     private static Cooldown timer;
 
     public static int getDamageRank(Player player) {
-        DamageData damage = damageMap.get(player.getUniqueId());
-        HashSet<Map.Entry<UUID, DamageData>> entry = new HashSet<>(damageMap.entrySet());
-
-        Map<Double, Integer> rank = new HashMap<>();
-        int i = 1;
-
-        for (DamageData en : entry.stream()
-                .map(Map.Entry::getValue)
-                .sorted(Comparator.comparingDouble(DamageData::getDamage).reversed())
-                .collect(Collectors.toList())) {
-            rank.put(en.getDamage(), i);
-            i++;
-        }
-
-        return rank.get(damage.getDamage());
+        List<Map.Entry<UUID, DamageData>> ranking = new ArrayList<>(damageMap.entrySet());
+        ranking.sort(Comparator.<Map.Entry<UUID, DamageData>>comparingDouble(entry -> entry.getValue().getDamage())
+                .reversed().thenComparing(entry -> entry.getKey().toString()));
+        for (int i = 0; i < ranking.size(); i++) if (ranking.get(i).getKey().equals(player.getUniqueId())) return i + 1;
+        return -1;
     }
 
     @Override
@@ -99,22 +92,28 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
             //build wall - start
             Location middle = ThePit.getInstance().getPitConfig().getRagePitMiddle();
             BlockVector vector = new BlockVector(middle.getBlockX(), middle.getBlockY(), middle.getBlockZ());
-            BukkitWorld world = new BukkitWorld(Bukkit.getWorlds().get(0));
+            BukkitWorld world = new BukkitWorld(middle.getWorld());
             session = FaweAPI.getEditSessionBuilder(world).build();
 
-
-            TaskManager.IMP.async(() -> {
-                session.makeCylinder(vector, new SingleBlockPattern(new BaseBlock(BlockID.GLASS)), ThePit.getInstance().getPitConfig().getRagePitRadius(), ThePit.getInstance().getPitConfig().getRagePitHeight(), false);
-                session.flushQueue();
-            });
-
-
+            // Clear temporary player blocks before either snapshotting the arena
+            // or letting FAWE record its undo state. Capturing first could store
+            // obsidian as the event baseline and resurrect it when the wall is
+            // restored.
             ClearRunnable.getClearRunnable().clearAllPlacedBlocks();
+            EventBlockTracker.get().captureHollowCylinder(
+                    EventBlockTracker.RAGE_PIT_WALL,
+                    middle,
+                    ThePit.getInstance().getPitConfig().getRagePitRadius(),
+                    ThePit.getInstance().getPitConfig().getRagePitHeight()
+            );
+
+            session.makeCylinder(vector, new SingleBlockPattern(new BaseBlock(BlockID.GLASS)), ThePit.getInstance().getPitConfig().getRagePitRadius(), ThePit.getInstance().getPitConfig().getRagePitHeight(), false);
+            session.flushQueue();
 
             //build wall - end
 
             //set Player's max health and teleport to spawn
-            for (Player player : Bukkit.getOnlinePlayers()) {
+            for (Player player : cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
                 player.setMaxHealth(player.getMaxHealth() * 2);
                 player.setHealth(player.getMaxHealth());
 
@@ -156,18 +155,25 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
 
     @EventHandler
     public void onPlayerKill(PitKillEvent event) {
+        if (cn.charlotte.pit.junxu.PublicPitParticipants.privateRoom(event.getKiller())) return;
+        if (!event.isProgressionEligible() || !event.isHumanPvp()) return;
         if ("rage_pit".equals(ThePit.getInstance().getEventFactory().getActiveEpicEventName())) {
             killed++;
         }
     }
 
     @EventHandler
-    public void onPlayerDamage(PitDamageEvent event) {
-        if ("rage_pit".equals(ThePit.getInstance().getEventFactory().getActiveEpicEventName())) {
-            damageMap.putIfAbsent(event.getAttacker().getUniqueId(), new DamageData(event.getAttacker().getUniqueId(), 0));
-            DamageData damageData = damageMap.get(event.getAttacker().getUniqueId());
-            damageData.setDamage(damageData.getDamage() + event.getFinalDamage());
-        }
+    public void onPlayerDamage(cn.charlotte.pit.event.PitDamageAppliedEvent event) {
+        if (!"rage_pit".equals(ThePit.getInstance().getEventFactory().getActiveEpicEventName())) return;
+        Player attacker = Bukkit.getPlayer(event.getAttacker());
+        Player victim = Bukkit.getPlayer(event.getVictim());
+        if (attacker == null || victim == null || !cn.charlotte.pit.junxu.PublicPitParticipants.humanCombat(attacker, victim)) return;
+        double damage = event.getAmount();
+        if (damage <= 0) return;
+        damageMap.putIfAbsent(attacker.getUniqueId(), new DamageData(attacker.getUniqueId(), 0));
+        DamageData data = damageMap.get(attacker.getUniqueId());
+        data.setDamage(data.getDamage() + damage);
+        cn.charlotte.pit.reward.MajorEventRewards.mark("rage_pit", attacker);
     }
 
     @Override
@@ -175,21 +181,14 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
         HandlerList.unregisterAll(this);
 
         //还原玩家血量,移除活动道具
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : cn.charlotte.pit.junxu.PublicPitParticipants.online()) {
             player.setMaxHealth(PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getExtraMaxHealthValue() + 20.0);
             InventoryUtil.removeItemWithInternalName(player, "angry_potato");
         }
         //取消Runnable
-        runnable.cancel();
-        //还原建筑
-        FaweAPI.getTaskManager().async(() -> {
-            session.undo(session);
-            session.flushQueue();
-        });
-        /* TaskManager.IMP.async(() -> {
-            session.undo(session);
-            session.flushQueue();
-        }); */
+        if (runnable != null) runnable.cancel();
+        EventBlockTracker.get().restoreImmediately(EventBlockTracker.RAGE_PIT_WALL);
+        session = null;
         //还原BossBar
         ThePit.getInstance()
                 .getBossBar()
@@ -200,7 +199,7 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
         List<DamageData> collect = entry
                 .stream()
                 .map(Map.Entry::getValue)
-                .sorted(Comparator.comparingDouble(DamageData::getDamage).reversed())
+                .sorted(Comparator.comparingDouble(DamageData::getDamage).reversed().thenComparing(data -> data.getUuid().toString()))
                 .collect(Collectors.toList());
         //结算消息
         int rank = 1;
@@ -209,16 +208,16 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
             if (player == null || !player.isOnline()) {
                 continue;
             }
-
+            rank = getDamageRank(player);
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
             player.sendMessage(CC.GOLD + CC.CHAT_BAR);
             player.sendMessage(CC.translate("&6&l天坑事件结束: &c" + this.getEventName()));
             double rewardCoins = 0;
             int rewardRenown = 0;
-            if (rank <= 3) {
+            if (rank > 0 && rank <= 3) {
                 rewardCoins += 2000;
                 rewardRenown += 2;
-            } else if (rank <= 20) {
+            } else if (rank > 0 && rank <= 20) {
                 rewardCoins += 500;
                 rewardRenown += 1;
             } else {
@@ -230,11 +229,11 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
             if (ThePit.getInstance().getPitConfig().isGenesisEnable() && profile.getGenesisData().getTier() >= 5 && rewardRenown > 0) {
                 rewardRenown++;
             }
-            int enchantBoostLevel = Utils.getEnchantLevel(player.getInventory().getLeggings(), "Paparazzi");
+            int enchantBoostLevel = cn.charlotte.pit.enchantment.type.rare.PaparazziEnchant.getUsableLevel(player);
             if (PlayerUtil.isVenom(player) || PlayerUtil.isEquippingSomber(player)) {
                 enchantBoostLevel = 0;
             }
-            if (enchantBoostLevel > 0) {
+            if (enchantBoostLevel > 0 && !cn.charlotte.pit.reward.EconomyV2.active()) {
                 rewardCoins += 0.5 * enchantBoostLevel * rewardCoins;
                 rewardRenown += Math.floor(0.5 * enchantBoostLevel * rewardRenown);
                 MythicLeggingsItem mythicLeggings = new MythicLeggingsItem();
@@ -249,16 +248,19 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
                 }
             }
             if (PlayerUtil.isPlayerUnlockedPerk(player, "self_confidence")) {
-                if (rank <= 5) {
+                if (rank > 0 && rank <= 5) {
                     rewardCoins += 5000;
-                } else if (rank <= 10) {
+                } else if (rank > 0 && rank <= 10) {
                     rewardCoins += 2500;
-                } else if (rank <= 15) {
+                } else if (rank > 0 && rank <= 15) {
                     rewardCoins += 1000;
                 }
             }
-            profile.grindCoins(rewardCoins);
-            profile.setCoins(profile.getCoins() + rewardCoins);
+            Map<UUID, Integer> economicRanks = new HashMap<>();
+            for (int index = 0; index < collect.size(); index++) economicRanks.put(collect.get(index).getUuid(), index + 1);
+            cn.charlotte.pit.reward.MajorEventRewards.Result payout = cn.charlotte.pit.reward.MajorEventRewards.settle(
+                    player, "rage_pit", rewardCoins, rewardRenown, rank, economicRanks, killed >= 600, enchantBoostLevel);
+            rewardCoins = payout.coins; rewardRenown = payout.renown;
             profile.setRenown(profile.getRenown() + rewardRenown);
             profile.kingsQuestsData.checkUpdate();
             if (profile.kingsQuestsData.getAccepted()) {
@@ -267,7 +269,7 @@ public class RagePitEvent implements IEvent, IEpicEvent, Listener {
                 }
             }
 
-            player.sendMessage(CC.translate("&6你的奖励: &6+" + rewardCoins + "硬币 &e+" + rewardRenown + "声望"));
+            player.sendMessage(CC.translate("&6你的奖励: &6+" + String.format(java.util.Locale.ROOT, "%.2f", rewardCoins) + "硬币 &e+" + rewardRenown + "声望"));
             if (killed >= 600) {
                 player.sendMessage(CC.translate("&6&l全局奖励: &a&l成功! &7所有人获得的金币翻倍!"));
             } else {

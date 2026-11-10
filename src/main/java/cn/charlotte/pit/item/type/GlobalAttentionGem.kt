@@ -19,6 +19,7 @@ import org.bukkit.inventory.ItemStack
 class GlobalAttentionGem  : AbstractPitItem(), Listener {
     @EventHandler
     fun interact(event: PlayerInteractEvent) {
+        if (event.action != org.bukkit.event.block.Action.RIGHT_CLICK_AIR && event.action != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return
         if ("global_attention_gem" == ItemUtil.getInternalName(event.item)) {
             event.isCancelled = true
             event.setUseInteractedBlock(Event.Result.DENY)
@@ -55,7 +56,8 @@ class GlobalAttentionGem  : AbstractPitItem(), Listener {
                 "",
                 "&7增加附魔物品的一级附魔, 并使神话物品生命后添加 &b♦ &7的字符",
                 "&7(普通及特殊附魔除外, 不可超过上限)",
-                "&8一件物品只能使用一次",
+                "&8一件物品只能使用任一种升级宝石一次",
+                "&8不能将 3/3/2 升级为 3/3/3；暗色神话之甲不可用",
                 "",
                 "&e右键使用"
             )

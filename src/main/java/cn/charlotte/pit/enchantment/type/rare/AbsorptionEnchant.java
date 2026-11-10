@@ -34,7 +34,7 @@ public class AbsorptionEnchant extends AbstractEnchantment implements IPlayerKil
 
     @Override
     public EnchantmentRarity getRarity() {
-        return EnchantmentRarity.RARE;
+        return EnchantmentRarity.NORMAL;
     }
 
     @Override
@@ -51,9 +51,9 @@ public class AbsorptionEnchant extends AbstractEnchantment implements IPlayerKil
     @PlayerOnly
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         float heart = (((CraftPlayer) myself).getHandle()).getAbsorptionHearts();
-        if (heart > 0) {
-            (((CraftPlayer) myself).getHandle()).setAbsorptionHearts(Math.min(heart + (enchantLevel + (enchantLevel >= 3 ? 1 : 0)), (2 * enchantLevel + 6)));
-        }
+        float grant = enchantLevel + (enchantLevel >= 3 ? 1 : 0);
+        float max = 2 * enchantLevel + 6;
+        (((CraftPlayer) myself).getHandle()).setAbsorptionHearts(Math.max(heart, Math.min(heart + grant, max)));
     }
 
 }

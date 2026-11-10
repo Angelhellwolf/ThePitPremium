@@ -3,8 +3,12 @@ package cn.charlotte.pit.events.impl
 import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.config.NewConfiguration.eventOnlineRequired
 import cn.charlotte.pit.data.PlayerProfile
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.reward.RewardSource
 import cn.charlotte.pit.events.IEvent
 import cn.charlotte.pit.events.INormalEvent
+import cn.charlotte.pit.events.EventBlockTracker
+import org.bukkit.scheduler.BukkitTask
 import cn.charlotte.pit.util.chat.CC
 import cn.charlotte.pit.util.hologram.Hologram
 import cn.charlotte.pit.util.hologram.HologramAPI
@@ -34,6 +38,8 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
     private var secondHologram: Hologram? = null
     private var isActive = false
     private var isClickable = false
+    private var endTask: BukkitTask? = null
+    private val lastEconomicClick = HashMap<UUID, Long>()
 
     companion object {
         private const val MAX_CLICKS = 230
@@ -77,7 +83,8 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
     }
 
     private fun scheduleEventDeactivation() {
-        Bukkit.getScheduler().runTaskLater(
+        endTask?.cancel()
+        endTask = Bukkit.getScheduler().runTaskLater(
             ThePit.getInstance(),
             {
                 deactivateEvent()
@@ -99,6 +106,7 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
             return
         }
         eggLocation = blockLocation
+        EventBlockTracker.get().captureBlock(EventBlockTracker.DRAGON_EGG, blockLocation)
         eggLocation?.block?.type = Material.DRAGON_EGG
         placedEggLocations.add(blockLocation)
         createHolograms(blockLocation)
@@ -154,13 +162,16 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
             Pair(clicks * 0.5 * randomMultiplier, clicks * 0.5 * (random.nextInt(5) + 1))
         }
 
-        if (clicks <= MAX_CLICKS) {
-            profile.coins += coins.toDouble()
-            profile.experience += exp.toDouble()
-        }
+        if (clicks >= MAX_CLICKS) return
+        val now = System.currentTimeMillis()
+        val eligible = now - (lastEconomicClick[player.uniqueId] ?: 0L) >= 250
+        if (eligible) lastEconomicClick[player.uniqueId] = now
+        val v2Gold = if (eligible) (8 + random.nextInt(5)) * cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.prestige) else 0.0
+        val reward = cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.DRAGON_EGG,
+            coins.toDouble(), exp.toDouble(), v2Gold, v2Gold * 4)
 
         player.playSound(player.location, Sound.CLICK, 1.5f, 1.5f)
-        player.sendMessage("&5&l龙蛋！ &7点击龙蛋 获得 &e$coins &6金币 &e$exp &b经验&7")
+        player.sendMessage(CC.translate(String.format(Locale.ROOT, "&5&l龙蛋！ &7点击龙蛋 获得 &e%.2f &6金币 &e%.2f &b经验&7", reward.coins, reward.experience)))
         clicks++
         updateHolograms()
     }
@@ -238,6 +249,8 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
     }
 
     private fun cleanup() {
+        endTask?.cancel()
+        endTask = null
         // Clear the current tracked egg
         eggLocation?.let { clearEggIfPlaced(it) }
         // Clear any remaining tracked locations
@@ -247,23 +260,11 @@ class DragonEggsEvent : IEvent, INormalEvent, Listener {
             }
         }
         placedEggLocations.clear()
-        // Scan around configured location for any stray dragon eggs that may have teleported
-        val origin = ThePit.getInstance().pitConfig.eggLoc
-        if (origin != null) {
-            val radius = SEARCH_RADIUS + 16
-            for (x in -radius..radius) {
-                for (y in -5..5) {
-                    for (z in -radius..radius) {
-                        val block = origin.clone().add(x.toDouble(), y.toDouble(), z.toDouble()).block
-                        if (block.type == Material.DRAGON_EGG) {
-                            block.type = Material.AIR
-                        }
-                    }
-                }
-            }
-        }
+        EventBlockTracker.get().restoreImmediately(EventBlockTracker.DRAGON_EGG)
         despawnHolograms()
         isActive = false
+        isClickable = false
+        eggLocation = null
         clicks = 0
     }
 }

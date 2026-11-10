@@ -97,7 +97,7 @@ public class PerkButton extends Button {
             List<String> lines = new ArrayList<>();
             lines.add("&7选定" + perk.getPerkType().getDisplayName() + ": &a" + perk.getDisplayName());
             lines.add(" ");
-            lines.addAll(perk.getDescription(player));
+            lines.addAll(perk.getEconomyDescription(player));
             lines.add(" ");
             lines.add("&e点击更换" + perk.getPerkType().getDisplayName() + "!");
 

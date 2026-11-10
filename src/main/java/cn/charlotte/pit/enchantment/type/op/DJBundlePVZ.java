@@ -49,12 +49,12 @@ public class DJBundlePVZ extends AbstractEnchantment implements ITickTask, Movem
                     Player player = Bukkit.getPlayer(entry.getKey());
                     if (player == null || !player.isOnline()) {
                         PositionSongPlayer remove = playerMap.remove(entry.getKey());
-                        remove.setPlaying(false);
+                        remove.destroy();
                         continue;
                     }
                     if (player.getInventory().getLeggings() == null || getItemEnchantLevel(player.getInventory().getLeggings()) == -1) {
                         PositionSongPlayer remove = playerMap.remove(entry.getKey());
-                        remove.setPlaying(false);
+                        remove.destroy();
                     }
                 }
             }
@@ -94,7 +94,7 @@ public class DJBundlePVZ extends AbstractEnchantment implements ITickTask, Movem
     @Override
     public String getUsefulnessLore(int enchantLevel) {
         return "&7此附魔只能通过阵营活动 &b光&c暗&f派系 &7获得."
-                + "/s&7向周围的玩家播放4首 &7&oPlants Vs Zombies 植物大战僵尸 &7游戏原声之一."
+                + "/s&7向周围玩家随机播放配置中的4首音符盒音乐之一."
                 + "/s&7&o不是所有人都能得到它的";
     }
 
@@ -104,13 +104,13 @@ public class DJBundlePVZ extends AbstractEnchantment implements ITickTask, Movem
         if (songPlayer == null) {
             //Song song = (Song) RandomUtil.helpMeToChooseOne(this.song, this.song2, this.song3, this.song4);
             //temp code
-            Song song = this.song;
+            Song song = (Song) cn.charlotte.pit.util.random.RandomUtil.helpMeToChooseOne(this.song, this.song2, this.song3, this.song4);
             PositionSongPlayer player = new PositionSongPlayer(song);
             player.setTargetLocation(target.getLocation());
             player.setAutoDestroy(false);
             player.setLoop(true);
             player.setPlaying(true);
-            player.setVolume((byte) 0.05);
+            player.setVolume((byte) 5);
 
             this.playerMap.put(target.getUniqueId(), player);
         } else {

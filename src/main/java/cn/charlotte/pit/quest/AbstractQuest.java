@@ -2,7 +2,10 @@ package cn.charlotte.pit.quest;
 
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.data.sub.QuestData;
+import cn.charlotte.pit.util.Utils;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.time.TimeUtil;
 import org.bukkit.Sound;
@@ -44,8 +47,9 @@ public abstract class AbstractQuest {
         questData.setLevel(level);
         questData.setCurrent(0);
         questData.setStartTime(now);
+        questData.setNightQuest(profile.isNightQuestEnable() && TimeUtil.getMinecraftTick(now) > 12000);
         //replace the end time if it is a night quest
-        if (profile.isNightQuestEnable() && TimeUtil.getMinecraftTick(now) > 12000) {
+        if (questData.getNightQuest()) {
             questData.setEndTime(now + 36 * 60 * 1000 - now % (36 * 60 * 1000));
         } else {
             questData.setEndTime(now + this.getDuration(level));
@@ -80,30 +84,36 @@ public abstract class AbstractQuest {
 
     public void onComplete(Player player, QuestData questData) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        if (questData == null || profile.getCurrentQuest() != questData || questData.getCurrent() < questData.getTotal()) return;
 
         int level = questData.getLevel();
-        if (profile.isNightQuestEnable() && TimeUtil.getMinecraftTick(questData.getStartTime()) > 12000) {
-            profile.setExperience(profile.getExperience() + level * 250);
+        double progressionScale = cn.charlotte.pit.reward.ProgressionV2.sideScale(profile.getPrestige());
+        if (QuestRules.isNight(profile, questData)) {
+            RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                    cn.charlotte.pit.reward.RewardDetail.NIGHT_QUEST, 0, level * 250,
+                    level * 100 * QuestRules.coinMultiplier(player) * progressionScale, level * 800 * progressionScale);
             player.sendMessage(CC.translate("&7奖励已交付:"));
-            player.sendMessage(CC.translate(" &8+ &b" + (level * 250) + " &7天坑乱斗经验值"));
+            if (reward.getCoins() > 0) player.sendMessage(CC.translate(" &8+ &6" + reward.getCoins() + " &7硬币"));
+            player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, " &8+ &b%.2f &7天坑乱斗经验值", reward.getExperience())));
             if (level > 1) {
                 player.getInventory().addItem(ThePit.api.generateItem("ChunkOfVileItem"));
                 profile.getQuestLimit().setTimes(profile.getQuestLimit().getTimes() + 1);
                 player.sendMessage(CC.translate(" &8+ &51 暗聚块"));
             }
         } else {
-            profile.setCoins(profile.getCoins() + level * 100);
-            profile.grindCoins(level * 100);
-            profile.setExperience(profile.getExperience() + level * 40);
+            double coinBonus = QuestRules.coinMultiplier(player);
+            int coins = (int) (level * 100 * coinBonus);
+            RewardService.Receipt reward = cn.charlotte.pit.reward.EconomyV2.grant(profile,
+                    cn.charlotte.pit.reward.RewardDetail.DAY_QUEST, coins, level * 40,
+                    level * 150 * coinBonus * progressionScale, level * 600 * progressionScale);
             profile.setActionBounty(profile.getActionBounty() + 5 * level);
 
 
             player.sendMessage(CC.translate("&7奖励已交付:"));
-            player.sendMessage(CC.translate(" &8+ &6" + (level * 100) + " &7硬币"));
+            player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, " &8+ &6%.2f &7硬币", reward.getCoins())));
             player.sendMessage(CC.translate(" &8+ &e" + (level * 5) + " &7行动赏金"));
-            player.sendMessage(CC.translate(" &8+ &b" + (level * 40) + " &7天坑乱斗经验值"));
+            player.sendMessage(CC.translate(String.format(java.util.Locale.ROOT, " &8+ &b%.2f &7天坑乱斗经验值", reward.getExperience())));
         }
-        profile.applyExperienceToPlayer(player);
 
         this.onInactive(player, level);
 

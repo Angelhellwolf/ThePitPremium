@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
@@ -51,28 +53,39 @@ public class ComboDamageEnchant extends AbstractEnchantment implements IAttackEn
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7每 &e" + (enchantLevel == 1 ? 4 : 3) + " &7次击中造成的伤害 &c+" + (enchantLevel * 10 + 10) + "%";
+        return "&7每 &e" + (enchantLevel == 1 ? 4 : 3) + " &7次击中造成的伤害 &c+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 20;
+            case 2:
+                return 30;
+            default:
+                return 40;
+        }
     }
 
     @Override
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % (enchantLevel == 1 ? 4 : 3) == 0) {
-            boostDamage.set(boostDamage.get() + (enchantLevel * 0.1 + 0.1));
+        if (CombatContext.meleeHits(attacker) % (enchantLevel == 1 ? 4 : 3) == 0) {
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
     }
 
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getBowHit() % (enchantLevel == 1 ? 4 : 3) == 0) {
-            boostDamage.set(boostDamage.get() + (enchantLevel * 0.1 + 0.1));
+        if (CombatContext.bowHits(attacker) % (enchantLevel == 1 ? 4 : 3) == 0) {
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
     }
 
     @Override
     public String getText(int level, Player player) {
-        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getBowHit() : PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getMeleeHit());
+        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? CombatContext.bowHits(player) : CombatContext.meleeHits(player));
         return (hit % (level == 1 ? 4 : 3) == 0 ? "&a&l✔" : "&e&l" + ((level == 1 ? 4 : 3) - hit % (level == 1 ? 4 : 3)));
     }
 }

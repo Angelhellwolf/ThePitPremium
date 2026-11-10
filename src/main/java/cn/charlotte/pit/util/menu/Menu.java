@@ -11,6 +11,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class Menu {
@@ -30,7 +31,7 @@ public abstract class Menu {
             return new ItemStack(Material.AIR);
         }
 
-        return item;
+        return MenuStyle.item(item, button);
     }
 
     public void openMenu(final Player player) {
@@ -38,6 +39,7 @@ public abstract class Menu {
             Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> {
                 openMenu(player);
             });
+            return;
         }
 
 
@@ -48,7 +50,7 @@ public abstract class Menu {
             Inventory inventory = null;
             int size = this.getSize() == -1 ? this.size(this.buttons) : this.getSize();
             boolean update = false;
-            String title = CC.translate(this.getTitle(player));
+            String title = MenuStyle.title(CC.translate(this.getTitle(player)));
 
             if (title.length() > 32) {
                 title = title.substring(0, 32);
@@ -102,6 +104,64 @@ public abstract class Menu {
         } catch (Exception e) {
             CC.printError(player, e);
         }
+    }
+
+    /**
+     * Refreshes an already-open menu without clearing and resending the whole
+     * inventory. Bukkit sends slot updates only for contents that changed.
+     */
+    public void updateMenu(final Player player) {
+        if (!Bukkit.isPrimaryThread()) {
+            Bukkit.getScheduler().runTask(ThePit.getInstance(), () -> updateMenu(player));
+            return;
+        }
+
+        try {
+            if (Menu.currentlyOpenedMenus.get(player.getName()) != this || player.getOpenInventory() == null) {
+                return;
+            }
+
+            Map<Integer, Button> updatedButtons = new HashMap<>(this.getButtons(player));
+            int size = this.getSize() == -1 ? this.size(updatedButtons) : this.getSize();
+            String title = MenuStyle.title(CC.translate(this.getTitle(player)));
+            if (title.length() > 32) {
+                title = title.substring(0, 32);
+            }
+
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            if (inventory.getSize() != size || !inventory.getTitle().equals(title)) {
+                this.openMenu(player);
+                return;
+            }
+
+            this.buttons = updatedButtons;
+            for (int slot = 0; slot < size; slot++) {
+                Button button = this.buttons.get(slot);
+                if (button == null && this.isPlaceholder()) {
+                    button = this.placeholderButton;
+                    this.buttons.put(slot, button);
+                }
+
+                ItemStack desired = button == null
+                        ? new ItemStack(Material.AIR)
+                        : createItemStack(player, button);
+                ItemStack current = inventory.getItem(slot);
+                if (!sameItem(current, desired)) {
+                    inventory.setItem(slot, desired);
+                }
+            }
+        } catch (Exception e) {
+            CC.printError(player, e);
+        }
+    }
+
+    private boolean sameItem(ItemStack first, ItemStack second) {
+        boolean firstEmpty = first == null || first.getType() == Material.AIR;
+        boolean secondEmpty = second == null || second.getType() == Material.AIR;
+        if (firstEmpty || secondEmpty) {
+            return firstEmpty && secondEmpty;
+        }
+        return Objects.equals(first, second);
     }
 
     public int size(Map<Integer, Button> buttons) {

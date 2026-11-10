@@ -46,7 +46,18 @@ public class AntiAbsorptionEnchant extends AbstractEnchantment implements IAttac
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7自身带有 &6生命吸收(❤) &7药水效果时攻击造成的伤害 &c+" + (5 * enchantLevel) + "%";
+        return "&7自身带有 &6生命吸收(❤) &7药水效果时攻击造成的伤害 &c+" + getBoostPercent(enchantLevel) + "%";
+    }
+
+    private int getBoostPercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 5;
+            case 2:
+                return 9;
+            default:
+                return 15;
+        }
     }
 
     @Override
@@ -54,7 +65,7 @@ public class AntiAbsorptionEnchant extends AbstractEnchantment implements IAttac
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         float heart = (((CraftPlayer) attacker).getHandle()).getAbsorptionHearts();
         if (heart > 0) {
-            boostDamage.getAndAdd(0.05 * enchantLevel);
+            boostDamage.getAndAdd(getBoostPercent(enchantLevel) * 0.01);
         }
     }
 }

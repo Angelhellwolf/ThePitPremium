@@ -7,8 +7,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
+import org.bukkit.entity.Player;
 
 public class ParticleBuilder {
+    private static final double DEFAULT_VIEW_DISTANCE_SQUARED = 48.0D * 48.0D;
+
     Location location;
     EnumParticle particle;
     float offsetX;
@@ -29,7 +32,9 @@ public class ParticleBuilder {
 
     public void play() {
         PacketPlayOutWorldParticles pwp = new PacketPlayOutWorldParticles(this.particle, true, (float)this.location.getX(), (float)this.location.getY(), (float)this.location.getZ(), this.offsetX, this.offsetY, this.offsetZ, this.velocity, this.count, new int[0]);
-        Bukkit.getOnlinePlayers().forEach(p -> ((CraftPlayer)p).getHandle().playerConnection.sendPacket(pwp));
+        Bukkit.getOnlinePlayers().stream()
+                .filter(this::isVisibleTo)
+                .forEach(p -> ((CraftPlayer)p).getHandle().playerConnection.sendPacket(pwp));
     }
 
     public ParticleBuilder setOffsetX(float offsetX) {
@@ -59,7 +64,21 @@ public class ParticleBuilder {
 
     public static void playColored(Location loc, Color color, EnumParticle ep) {
         PacketPlayOutWorldParticles p1 = new PacketPlayOutWorldParticles(ep, true, (float)loc.getX(), (float)loc.getY(), (float)loc.getZ(), (float)color.getRed() / 255.0f, (float)color.getGreen() / 255.0f, (float)color.getBlue() / 255.0f, 1.0f, 0, new int[0]);
-        Bukkit.getOnlinePlayers().forEach(p -> ((CraftPlayer)p).getHandle().playerConnection.sendPacket((Packet)p1));
+        Bukkit.getOnlinePlayers().stream()
+                .filter(player -> isVisibleTo(player, loc))
+                .forEach(p -> ((CraftPlayer)p).getHandle().playerConnection.sendPacket((Packet)p1));
+    }
+
+    private boolean isVisibleTo(Player player) {
+        return isVisibleTo(player, this.location);
+    }
+
+    private static boolean isVisibleTo(Player player, Location origin) {
+        return player != null
+                && origin != null
+                && origin.getWorld() != null
+                && origin.getWorld().equals(player.getWorld())
+                && player.getLocation().distanceSquared(origin) <= DEFAULT_VIEW_DISTANCE_SQUARED;
     }
 
     public static void playColoredDust(Location loc, Color color) {
@@ -70,4 +89,3 @@ public class ParticleBuilder {
         ParticleBuilder.playColored(loc, color, EnumParticle.SPELL_MOB);
     }
 }
-

@@ -1,6 +1,7 @@
 package cn.charlotte.pit.perk.type.streak.highlander;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.BountyRules;
 import cn.charlotte.pit.enchantment.param.event.PlayerOnly;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
@@ -81,14 +82,16 @@ public class HighlanderMegaStreak extends AbstractPerk implements Listener, IAtt
         list.add(" ");
         list.add("&7激活后:");
         list.add("  &a▶ &7获得 &b速度 I &6&o持续时间无限");
-        list.add("  &a▶ &7击杀获得 &6+110% 硬币");
+        list.add("  &a▶ &7有效真人击杀额外获得 &6基础硬币的50%");
+        list.add("  &7额外硬币随收益日历变化，不叠加其他收益加成");
         list.add("  &a▶ &7攻击被悬赏的玩家造成的伤害 &c+33%");
         list.add("  &c▶ &7赏金上限 &6+5000g");
         list.add("  &c▶ &7激活后每击杀1名玩家,受到来自装备天赋");
-        list.add("  &6赏金猎人 &7的玩家伤害受到伤害 &c+0.3% (可堆叠,无上限)");
+        list.add("  &6赏金猎人 &7的玩家伤害 &c+0.3% &7(最高 &c+30%&7)");
         list.add(" ");
         list.add("&7激活后死亡时:");
-        list.add("  &a▶ &7获得与自身赏金数同数量的硬币");
+        list.add("  &7自身赏金清空，由符合条件的击杀者领取");
+        list.add("  &7击杀Bot不增长赏金，也不触发额外硬币");
         return list;
     }
 
@@ -119,18 +122,15 @@ public class HighlanderMegaStreak extends AbstractPerk implements Listener, IAtt
         int trigger = 50;
         //trigger check (get X streak)
         if (event.getFrom() < trigger && event.getTo() >= trigger) {
-            CC.boardCast(MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &6&l尊贵血统 &7!");
-            Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player.getLocation(), Sound.WITHER_SPAWN, 0.8F, 1.5F));
+            cn.charlotte.pit.junxu.JunxuMessages.broadcast(event.getPlayerProfile().getPlayerUuid(), MessageType.COMBAT, "&c&l超级连杀! " + event.getPlayerProfile().getFormattedNameWithRoman() + " &7激活了 &6&l尊贵血统 &7!");
+            cn.charlotte.pit.junxu.JunxuMessages.audience(event.getPlayerProfile().getPlayerUuid()).forEach(player -> player.playSound(player.getLocation(), Sound.WITHER_SPAWN, 0.8F, 1.5F));
         }
     }
 
     @Override
     @PlayerOnly
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
-        if (profile.getStreakKills() >= 50) {
-            coins.getAndAdd(1.1 * coins.get());
-        }
+        // CombatListener credits a fixed share of the raw human kill reward after modifiers.
     }
 
     @Override
@@ -169,10 +169,7 @@ public class HighlanderMegaStreak extends AbstractPerk implements Listener, IAtt
     @Override
     @PlayerOnly
     public void handlePlayerBeKilledByEntity(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
-        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
-        if (profile.getStreakKills() >= 50) {
-            profile.setCoins(profile.getCoins() + profile.getBounty());
-        }
+        // The victim never receives a second copy of the hunter's bounty.
     }
 
 
@@ -183,7 +180,7 @@ public class HighlanderMegaStreak extends AbstractPerk implements Listener, IAtt
         if (profile.getStreakKills() > 50) {
             Player attackerPlayer = (Player) attacker;
             if (PlayerUtil.isPlayerChosePerk(attackerPlayer, new BountyHunterPerk().getInternalPerkName())) {
-                boostDamage.getAndAdd(0.003 * (profile.getStreakKills() - 50));
+                boostDamage.getAndAdd(BountyRules.highlanderVulnerability(profile.getStreakKills()));
             }
         }
     }

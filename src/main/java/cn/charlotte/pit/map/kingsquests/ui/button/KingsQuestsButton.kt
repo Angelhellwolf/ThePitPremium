@@ -4,6 +4,8 @@ import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.data.sub.KingsQuestsData
 import cn.charlotte.pit.getPitProfile
 import cn.charlotte.pit.item.type.GoldenHelmet
+import cn.charlotte.pit.reward.RewardService
+import cn.charlotte.pit.reward.RewardSource
 import cn.charlotte.pit.util.countItem
 import cn.charlotte.pit.util.decimalFormat
 import cn.charlotte.pit.util.item.ItemBuilder
@@ -79,23 +81,23 @@ object KingsQuestsButton: Button() {
 
         data.completed = true
 
-        player.inventory.addItem(
-            GoldenHelmet().toItemStack()
-        )
+        player.inventory.addItem(GoldenHelmet().toItemStack()).values.forEach {
+            player.world.dropItemNaturally(player.location, it)
+        }
 
         val rewardExp = profile.getRewardExp()
         val rewardCoins = profile.getRewardCoins()
 
-        profile.experience += rewardExp
-        profile.coins += rewardCoins
+        val receipt = cn.charlotte.pit.reward.EconomyV2.grant(profile, cn.charlotte.pit.reward.RewardDetail.KING_QUEST,
+            (2000.0 * profile.prestige) + 10000,
+            rewardExp,
+            cn.charlotte.pit.reward.ProgressionV2.goldRequired(profile.prestige) * .15,
+            cn.charlotte.pit.reward.ProgressionV2.totalExperience(profile.prestige) * .15)
 
-        profile.applyExperienceToPlayer(player)
-        profile.grindCoins(rewardCoins)
-
-        player.sendMessage("&a&l任务完成! &a你完成了 &e国王任务&a, 获得奖励: ")
-        player.sendMessage(" &e+&6金头盔")
-        player.sendMessage(" &b${decimalFormat.format(rewardExp)}经验")
-        player.sendMessage(" &6${decimalFormat.format(rewardCoins)}金币")
+        player.sendMessage(cn.charlotte.pit.util.chat.CC.translate("&a&l任务完成! &a你完成了 &e国王任务&a, 获得奖励: "))
+        player.sendMessage(cn.charlotte.pit.util.chat.CC.translate(" &e+&6金头盔"))
+        player.sendMessage(cn.charlotte.pit.util.chat.CC.translate(" &b${decimalFormat.format(receipt.experience)}经验"))
+        player.sendMessage(cn.charlotte.pit.util.chat.CC.translate(" &6${decimalFormat.format(receipt.coins)}金币"))
 
         player.playSound(player.location, Sound.LEVEL_UP, 1.2f, 1.2f)
     }
@@ -105,12 +107,8 @@ object KingsQuestsButton: Button() {
     }
 
     private fun PlayerProfile.getRewardExp(): Double {
-        var needExp = 0.0
-        for (level in 1 .. 120) {
-            needExp += LevelUtil.getLevelExpRequired(prestige, level)
-        }
-
-        return needExp * 0.30326
+        if (cn.charlotte.pit.reward.EconomyV2.active()) return cn.charlotte.pit.reward.ProgressionV2.totalExperience(prestige) * .15
+        return LevelUtil.getLevelTotalExperience(prestige, 120) * 0.30326
     }
 
     private fun PlayerProfile.getQuestDescription(): List<String> {
@@ -119,7 +117,7 @@ object KingsQuestsButton: Button() {
             "",
             "&7任务需求:",
             " &7做一个&d 迷你蛋糕",
-            " &7击杀 &c100&7 名玩家",
+            " &7击杀 &c100&7 名玩家（含 Bot）",
             " &7从事件中收集 &e10 &7声望",
             "",
             "&7任务奖励:",
@@ -147,7 +145,7 @@ object KingsQuestsButton: Button() {
             "&7(&c${kingsQuestsData.killedPlayer}&7/100)"
         }
 
-        val renownProgress = if (kingsQuestsData.collectedRenown >= 100) {
+        val renownProgress = if (kingsQuestsData.collectedRenown >= 10) {
             "&7(&a10&7/10)"
         } else {
             "&7(&c${kingsQuestsData.collectedRenown}&7/10)"
@@ -158,7 +156,7 @@ object KingsQuestsButton: Button() {
             "",
             "&7任务需求:",
             " &7做一个&d 迷你蛋糕 $cakeProgress",
-            " &7击杀 &c100&7 名玩家 $killProgress",
+            " &7击杀 &c100&7 名玩家（含 Bot） $killProgress",
             " &7从事件中收集 &e10 &7声望 $renownProgress",
             "",
             "&7任务奖励:",
@@ -170,6 +168,7 @@ object KingsQuestsButton: Button() {
     }
 
     private fun PlayerProfile.getRewardCoins(): Double {
+        if (cn.charlotte.pit.reward.EconomyV2.active()) return cn.charlotte.pit.reward.ProgressionV2.goldRequired(prestige) * .15
         return (2000.0 * prestige) + 10000
     }
 }

@@ -39,7 +39,7 @@ public class KeepSilence extends AbstractQuest {
     @Override
     public List<String> getQuestDescription(int level, boolean isNightQuest) {
         return Arrays.asList(
-                "&f禁止在天赋栏装备&c天赋&f与&c连杀天赋");
+                "&f清空并禁止装备普通天赋与连杀天赋", "&7超级连杀和已解锁的被动升级保留");
     }
 
     @Override

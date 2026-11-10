@@ -1,5 +1,7 @@
 package cn.charlotte.pit.perk.type.prestige
 
+import cn.charlotte.pit.util.combat.CombatContext
+
 import cn.charlotte.pit.data.PlayerProfile
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.parm.listener.IAttackEntity
@@ -101,7 +103,7 @@ class KungFuKnowledgePerk : AbstractPerk(), Listener, IAttackEntity {
         cancel: AtomicBoolean?
     ) {
         val profile = PlayerProfile.getPlayerProfileByUuid(attacker.uniqueId)
-        if (profile.meleeHit % 4 == 0) {
+        if (CombatContext.meleeHits(attacker) % 4 == 0) {
             attacker.addPotionEffect(PotionEffect(PotionEffectType.SPEED, 20 * 5, 1), false)
         }
     }

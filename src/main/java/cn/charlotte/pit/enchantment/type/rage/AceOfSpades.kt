@@ -16,7 +16,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 
 @AutoRegister
 @ArmorOnly
-class AceOfSpades : AbstractEnchantment() {
+class AceOfSpades : AbstractEnchantment(), org.bukkit.event.Listener {
     override fun getEnchantName(): String {
         return "战斗铲之王"
     }
@@ -53,7 +53,8 @@ class AceOfSpades : AbstractEnchantment() {
         val victim = event.entity
         if (damager is Player && victim is Player) {
             val item = damager.itemInHand
-            if ("combat_spade" == ItemUtil.getInternalName(item)) {
+            if (item != null && item.type == org.bukkit.Material.DIAMOND_SPADE
+                && ItemUtil.getInternalName(item) in listOf("combat_spade", "shopItem")) {
                 val leggings = victim.inventory.leggings
                 val enchantLevel = ThePit.api.getItemEnchantLevel(leggings, nbtName)
                 if (enchantLevel > 0) {
@@ -66,7 +67,7 @@ class AceOfSpades : AbstractEnchantment() {
                         else -> 1.5
                     } * 2
 
-                    event.damage -= reduceValue
+                    event.damage = kotlin.math.max(0.0, event.damage - reduceValue)
                 }
             }
         }

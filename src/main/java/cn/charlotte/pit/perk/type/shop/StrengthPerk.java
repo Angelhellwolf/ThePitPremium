@@ -65,7 +65,7 @@ public class StrengthPerk extends AbstractPerk implements IPlayerKilledEntity, I
     @Override
     public List<String> getDescription(Player player) {
         List<String> lines = new ArrayList<>();
-        lines.add("&7每击杀一名玩家,你在7秒内的攻击力 &c+4% &7,");
+        lines.add("&7每击杀一名玩家,你在7秒内的近战伤害 &c+4% &7,");
         lines.add("&7攻击力增益可叠加,最高10层,每次增加重置持续时间.");
         return lines;
     }
@@ -82,12 +82,15 @@ public class StrengthPerk extends AbstractPerk implements IPlayerKilledEntity, I
 
     @Override
     public void onPerkInactive(Player player) {
-
+        PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
+        profile.setStrengthNum(0);
+        profile.setStrengthTimer(new Cooldown(0));
     }
 
     @Override
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(myself.getUniqueId());
+        if (profile.getStrengthTimer().hasExpired()) profile.setStrengthNum(0);
         profile.setStrengthTimer(new Cooldown(7, TimeUnit.SECONDS));
         if (profile.getStrengthNum() < 10) {
             profile.setStrengthNum(profile.getStrengthNum() + 1);

@@ -5,6 +5,8 @@ import org.bukkit.entity.Player;
 
 public class PositionSongPlayer extends SongPlayer {
 
+    private static final double HEARING_DISTANCE_SQUARED = 48.0D * 48.0D;
+
     private Location targetLocation;
 
     public PositionSongPlayer(Song song) {
@@ -21,8 +23,9 @@ public class PositionSongPlayer extends SongPlayer {
 
     @Override
     public void playTick(Player p, int tick) {
-        if (!p.getWorld().getName().equals(targetLocation.getWorld().getName())) {
-            // not in same world
+        if (targetLocation == null || targetLocation.getWorld() == null
+                || !p.getWorld().equals(targetLocation.getWorld())
+                || p.getLocation().distanceSquared(targetLocation) > HEARING_DISTANCE_SQUARED) {
             return;
         }
         byte playerVolume = NoteBlockPlayerMain.getPlayerVolume(p);

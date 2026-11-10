@@ -1,0 +1,18 @@
+# 第七军需处 · 余烬之约
+# 以付费账户当前有效最高档位决定权益：神话契约 4h、5 Bot；神话圣契 8h、10 Bot、邀请。
+# 不使用网络 VIP 权限代替契约。访客不消耗个人额度。
+world: junxu_void
+timezone: Asia/Shanghai
+owner-absence-seconds: 60
+visitors:
+  maximum: 1
+  invitation-seconds: 60
+bots:
+  respawn-delay-ticks: 100
+  maximum-health: 200
+building:
+  blocks-per-tick: 2000
+# /junxu admin npc create 保存管理员当前位置和朝向，重复执行迁移唯一入口。
+entrance: {}
+# 未设置时使用现有公共天坑安全出生点；可用 /junxu admin return set 保存。
+return: {}

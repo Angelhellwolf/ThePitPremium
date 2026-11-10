@@ -31,6 +31,9 @@ public abstract class AbstractPerk {
     public abstract int requireLevel();
 
     public abstract List<String> getDescription(Player player);
+    public List<String> getEconomyDescription(Player player) {
+        return cn.charlotte.pit.reward.EconomyLore.perk(getInternalPerkName(), getDescription(player));
+    }
 
     public abstract int getMaxLevel();
 
@@ -49,6 +52,7 @@ public abstract class AbstractPerk {
     }
 
     public int getPlayerLevel(Player player) {
+        if (player == null || cn.charlotte.pit.UtilKt.hasRealMan(player)) return -1;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
 
         boolean passiveFound = this.getClass().isAnnotationPresent(Passive.class);

@@ -83,36 +83,75 @@ public abstract class NPCBase implements NPC, NPCPacketHandler {
     @Override
     public NPC setText(Player player, List<String> text) {
         Validate.notNull(player, "Player cannot be null.");
+        // Packet-only teams can disappear when another renderer replaces the
+        // viewer's scoreboard. Keep the profile name hidden on that real board,
+        // including when the hologram's cached text did not change.
+        org.bukkit.scoreboard.Scoreboard board = player.getScoreboard();
+        String hiddenTeamName = "pitn_" + name;
+        org.bukkit.scoreboard.Team hiddenTeam = board.getTeam(hiddenTeamName);
+        if (hiddenTeam == null) hiddenTeam = board.registerNewTeam(hiddenTeamName);
+        if (hiddenTeam.getNameTagVisibility() != org.bukkit.scoreboard.NameTagVisibility.NEVER)
+            hiddenTeam.setNameTagVisibility(org.bukkit.scoreboard.NameTagVisibility.NEVER);
+        if (!hiddenTeam.hasEntry(name)) hiddenTeam.addEntry(name);
+        UUID playerId = player.getUniqueId();
         List<String> originalText = getText(player);
 
-        if (text == null) {
-            playerText.remove(player.getUniqueId());
-        } else playerText.put(player.getUniqueId(), text);
+        List<String> existingOverride = playerText.get(playerId);
+        if (text != null && existingOverride != null && existingOverride.equals(text)) {
+            return this;
+        }
 
-        if (originalText.size() != text.size()) { // recreate the entire hologram
+        if (text == null) {
+            playerText.remove(playerId);
+        } else {
+            // Keep our own stable snapshot so callers cannot mutate the cached text
+            // behind our change detector.
+            playerText.put(playerId, Collections.unmodifiableList(new ArrayList<>(text)));
+        }
+
+        List<String> updatedText = getText(player);
+        if (originalText.equals(updatedText)) {
+            return this;
+        }
+
+        updateDisplayedText(player, originalText, updatedText);
+        return this;
+    }
+
+    private void updateDisplayedText(Player player, List<String> originalText, List<String> updatedText) {
+        if (originalText.size() != updatedText.size()) { // recreate the entire hologram
             Hologram originalHologram = getHologram(player);
             originalHologram.hide(player); // essentially destroy the hologram
             playerHologram.remove(player.getUniqueId()); // remove the old object
         }
         if (isShown(player)) { // only show hologram if the player is in range
-            if (originalText.size() != text.size()) {
+            if (originalText.size() != updatedText.size()) {
                 getHologram(player).show(player);
             } else {
                 Hologram hologram = getHologram(player);
-                List<Object> updatePackets = hologram.getUpdatePackets(text);
+                List<Object> updatePackets = hologram.getUpdatePackets(updatedText);
                 hologram.update(player, updatePackets);
             }
         }
-        return this;
     }
 
     @Override
     public NPC setText(List<String> text) {
-        this.text = text;
+        List<String> updatedText = text == null
+                ? Collections.emptyList()
+                : Collections.unmodifiableList(new ArrayList<>(text));
+        List<String> originalText = this.text;
+        if (originalText.equals(updatedText)) {
+            return this;
+        }
+
+        this.text = updatedText;
         for (UUID uuid : shown) {
+            // A per-player override is independent from the global NPC text.
+            if (playerText.containsKey(uuid)) continue;
             Player player = Bukkit.getPlayer(uuid);
             if (player == null) continue;
-            setText(player, text);
+            updateDisplayedText(player, originalText, updatedText);
         }
         return this;
     }

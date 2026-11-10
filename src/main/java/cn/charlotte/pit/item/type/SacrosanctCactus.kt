@@ -16,7 +16,7 @@ class SacrosanctCactus {
             "&7手持并右键可以从九件 I级 附魔的",
             "&7随机 &a神&c话&e之&6甲 &7选择其一.",
             " ",
-            "&c&l无法重复刷新!",
+            "&c&l开启即消耗，关闭界面会放弃本次奖励！",
             " ",
             "&6(随机颜色选择)"
         ).internalName("sacrosanct_cactus")

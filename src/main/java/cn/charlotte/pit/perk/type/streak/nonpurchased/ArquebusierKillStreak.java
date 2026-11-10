@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.nonpurchased;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.AbstractPerk;
@@ -70,6 +72,7 @@ public class ArquebusierKillStreak extends AbstractPerk implements Listener {
         list.add("  &a▶ &7立刻获得 &6+7 硬币");
         list.add("  &a▶ &7立刻获得 &f16 * 箭 &7(上限128)");
         list.add("  &a▶ &7立刻获得 &b速度 I &7(00:10)");
+        list.add("&7Bot 击杀可推进连杀，但触发时不发放额外金币或经验");
         return list;
     }
 
@@ -106,8 +109,8 @@ public class ArquebusierKillStreak extends AbstractPerk implements Listener {
         }
         //trigger check (every X streak)
         int streak = 3;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
-            profile.setCoins(profile.getCoins() + 7);
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
+            cn.charlotte.pit.reward.EconomyV2.streak(profile, 3, 7, 0);
             myself.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 10, 0), true);
             int count = 0;
             for (ItemStack item : myself.getInventory()) {

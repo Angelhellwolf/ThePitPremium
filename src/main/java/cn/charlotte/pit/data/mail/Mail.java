@@ -21,6 +21,9 @@ public class Mail {
     private long sendTime;
     private long expireTime;
     private boolean claimed;
+    private String rewardOrigin;
+    public String getRewardOrigin() { return rewardOrigin; }
+    public void setRewardOrigin(String value) { rewardOrigin = value; }
 
     public Mail() {
         this.item = new PlayerInv();

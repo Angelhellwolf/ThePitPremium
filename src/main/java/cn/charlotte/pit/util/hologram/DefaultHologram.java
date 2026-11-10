@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -54,7 +55,7 @@ public class DefaultHologram extends CraftHologram {
             public void run() {
                 DefaultHologram.this.deSpawn();
             }
-        }.runTaskLaterAsynchronously(ThePit.getInstance(), ticks);
+        }.runTaskLater(ThePit.getInstance(), ticks);
     }
 
     @Override
@@ -125,6 +126,9 @@ public class DefaultHologram extends CraftHologram {
 
     @Override
     public void setText(String text) {
+        if (Objects.equals(this.text, text)) {
+            return;
+        }
         this.text = text;
         if (this.isSpawned()) {
             try {

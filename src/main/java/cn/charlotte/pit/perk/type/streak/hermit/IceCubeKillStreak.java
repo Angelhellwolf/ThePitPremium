@@ -1,6 +1,8 @@
 package cn.charlotte.pit.perk.type.streak.hermit;
 
 import cn.charlotte.pit.data.PlayerProfile;
+import cn.charlotte.pit.reward.RewardService;
+import cn.charlotte.pit.reward.RewardSource;
 import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.perk.AbstractPerk;
@@ -16,6 +18,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockCanBuildEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +74,7 @@ public class IceCubeKillStreak extends AbstractPerk implements Listener {
         list.add("&7触发时:");
         list.add("  &a▶ &7立刻获得一个 &b冰立方");
         list.add("&7物品 &b冰立方&7: &c手持攻击消耗,对目标造成 &c1❤ &f真实&7伤害与 &c缓慢 I &f(00:04) &7,自身获得 &b40 经验值 &7.");
+        list.add("&7攻击 Bot 保留战斗效果，但不获得额外经验");
         return list;
     }
 
@@ -104,7 +109,7 @@ public class IceCubeKillStreak extends AbstractPerk implements Listener {
         }
         //trigger check (every X streak)
         int streak = 10;
-        if (Math.floor(event.getFrom()) % streak != 0 && Math.floor(event.getTo()) % streak == 0) {
+        if (cn.charlotte.pit.util.reward.StreakRewardMath.crossedMilestones(event.getFrom(), event.getTo(), streak) > 0) {
             //effect goes here
             myself.getInventory().addItem(
                     new ItemBuilder(Material.ICE)
@@ -114,19 +119,22 @@ public class IceCubeKillStreak extends AbstractPerk implements Listener {
                             .deathDrop(true)
                             .internalName("ice_cube")
                             .name("&b冰立方")
-                            .lore("&7手持攻击造成 &c1❤ &f真实&7伤害与 &c缓慢 I &f(00:04) &7,自身获得 &b40 经验值 &7. &c(使用后消耗)")
+                            .lore("&7手持攻击造成 &c1❤ &f真实&7伤害与 &c缓慢 I &f(00:04)", "&7获得 &b40 经验值 &7（排除 Bot），使用后消耗")
                             .build());
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
+        if (!Double.isFinite(event.getFinalDamage()) || event.getFinalDamage() <= 0) return;
         if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
             if (((Player) event.getDamager()).getItemInHand() != null && "ice_cube".equals(ItemUtil.getInternalName(((Player) event.getDamager()).getItemInHand()))) {
                 PlayerUtil.takeOneItemInHand(((Player) event.getDamager()));
+                PlayerUtil.addPotionEffect((Player) event.getEntity(), new PotionEffect(PotionEffectType.SLOW, 4 * 20, 0));
                 PlayerUtil.damage(((Player) event.getDamager()), ((Player) event.getEntity()), PlayerUtil.DamageType.TRUE, 2D, true);
                 PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(event.getDamager().getUniqueId());
-                profile.setExperience(profile.getExperience() + 40);
+                PlayerProfile target = PlayerProfile.getPlayerProfileByUuid(event.getEntity().getUniqueId());
+                if (target.isLoaded() && !target.isBot()) RewardService.grant(profile, RewardSource.STREAK, 0, 40);
             }
         }
     }
@@ -138,4 +146,3 @@ public class IceCubeKillStreak extends AbstractPerk implements Listener {
         }
     }
 }
-

@@ -49,13 +49,13 @@ public class PermanentBoostButton extends Button {
             lore.add("&7价格: &6" + perk.requireCoins() + " 硬币");
             lore.add(" ");
             lore.add("&e" + perk.getDisplayName());
-            lore.addAll(perk.getDescription(player));
+            lore.addAll(perk.getEconomyDescription(player));
             lore.add(" ");
             lore.add("&7&o这是一个天赋解锁类天赋,");
             lore.add("&7&o解锁该任务加成天赋相当于解锁其普通天赋的购买权,");
             lore.add("&7&o仍然需要达到等级要求后花费硬币购买&装备后才能生效.");
         } else {
-            lore.addAll(perk.getDescription(player));
+            lore.addAll(perk.getEconomyDescription(player));
         }
         lore.add(" ");
         String color;

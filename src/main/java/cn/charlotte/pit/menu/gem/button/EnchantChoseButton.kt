@@ -40,8 +40,8 @@ class EnchantChoseButton(
                 "&7消耗: &a一个遵纪守法的宝石",
                 "",
                 if (Utils.canUseGen(item,false)) {
-                    if (enchantLevel >= 3) "&c已达最大等级" else
-                        if (enchantment.rarity.parentType == EnchantmentRarity.RarityType.RARE) "&c稀有附魔" else
+                    if (enchantLevel >= enchantment.maxEnchantLevel) "&c已达最大等级" else
+                        if (enchantment.rarity.parentType != EnchantmentRarity.RarityType.NORMAL) "&c稀有或特殊附魔不可升级" else
                             "&a点击使用!"
                 } else "&c无法作用于此附魔上"
             )
@@ -62,15 +62,17 @@ class EnchantChoseButton(
 
         val mythicItem = item.toMythicItem() ?: return
 
+        val gemIndex = (0 until 36).firstOrNull { ItemUtil.getInternalName(player.inventory.getItem(it)) == "totally_legit_gem" } ?: return
         val indexedItem = player.inventory.getItem(index)
+        if (!Utils.canUseGen(indexedItem, false) || indexedItem == null || !indexedItem.isSimilar(item)) return
         val indexedMythicItem = indexedItem.toMythicItem()
         if (indexedMythicItem != null && isSameEnchant(mythicItem, indexedMythicItem)) {
             val enchantLevel = indexedMythicItem.enchantments[enchantment] ?: return
-            if (enchantLevel >= 3) {
+            if (enchantLevel >= enchantment.maxEnchantLevel) {
                 return
             }
 
-            if (enchantment.rarity.parentType == EnchantmentRarity.RarityType.RARE) {
+            if (enchantment.rarity.parentType != EnchantmentRarity.RarityType.NORMAL) {
                 return
             }
 
@@ -98,7 +100,13 @@ class EnchantChoseButton(
 
             indexedMythicItem.isBoostedByGem = true
 
-            player.inventory.setItem(index, indexedMythicItem.toItemStack())
+            val result = indexedMythicItem.toItemStack()
+            val gemStack = player.inventory.getItem(gemIndex) ?: return
+            if (gemStack.amount == 1) player.inventory.setItem(gemIndex, null) else {
+                gemStack.amount--
+                player.inventory.setItem(gemIndex, gemStack)
+            }
+            player.inventory.setItem(index, result)
         } else {
             return
         }
@@ -106,18 +114,6 @@ class EnchantChoseButton(
         player.closeInventory()
         player.playSound(player.location, Sound.ANVIL_USE, 1.5f, 1.5f)
         player.sendMessage(CC.translate("&a使用成功!"))
-        player.inventory.forEachIndexed { index, itemStack ->
-            val internalName = ItemUtil.getInternalName(itemStack)
-            if ("totally_legit_gem" == internalName) {
-                if (itemStack.amount == 1) {
-                    player.inventory.setItem(index, null)
-                } else {
-                    itemStack.amount--
-                    player.inventory.setItem(index, itemStack)
-                }
-                return
-            }
-        }
     }
 
     private fun isSameEnchant(itemA: cn.charlotte.pit.item.IMythicItem, itemB: cn.charlotte.pit.item.IMythicItem): Boolean {

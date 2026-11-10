@@ -60,10 +60,10 @@ public class DryBlood extends AbstractQuest implements Listener {
         if (!(event.getEntity() instanceof Player)) return;
         final Player player = (Player) event.getEntity();
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-        if (profile.getCurrentQuest() != null && profile.getCurrentQuest().getEndTime() > System.currentTimeMillis()) {
+        if (profile.getCurrentQuest() != null) {
             QuestData questData = profile.getCurrentQuest();
             if (!questData.getInternalName().equals(this.getQuestInternalName())) return;
-            event.setAmount(Math.max(0, event.getAmount() - 2 * questData.getLevel()));
+            event.setAmount(Math.max(0, event.getAmount() - questData.getLevel()));
         }
     }
 
@@ -71,10 +71,10 @@ public class DryBlood extends AbstractQuest implements Listener {
     public void onRegain(PitRegainHealthEvent event) {
         Player player = event.getPlayer();
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
-        if (profile.getCurrentQuest() != null && profile.getCurrentQuest().getEndTime() > System.currentTimeMillis()) {
+        if (profile.getCurrentQuest() != null) {
             QuestData questData = profile.getCurrentQuest();
             if (!questData.getInternalName().equals(this.getQuestInternalName())) return;
-            event.setAmount(Math.max(0, event.getAmount() - 2 * questData.getLevel()));
+            event.setAmount(Math.max(0, event.getAmount() - questData.getLevel()));
         }
     }
 

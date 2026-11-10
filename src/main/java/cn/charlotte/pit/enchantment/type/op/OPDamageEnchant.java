@@ -44,12 +44,12 @@ public class OPDamageEnchant extends AbstractEnchantment implements IPlayerDamag
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7受到的普通与&f真实&7类型的伤害 &a-90%";
+        return "&7普通伤害的减伤加成 &a+90% &7（合并后最多减免80%）"
+                + "/s&7受到的&f真实&7伤害 &a-90% &7，必中伤害不受影响";
     }
 
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         boostDamage.set(boostDamage.get() - 0.9);
-        finalDamage.set(finalDamage.get() * 0.1);
     }
 }

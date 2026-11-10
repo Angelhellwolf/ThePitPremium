@@ -50,8 +50,8 @@ public class PitMBAEnchant extends AbstractEnchantment implements IPlayerKilledE
     public String getUsefulnessLore(int enchantLevel) {
         int coinBonus = enchantLevel * 20 - 10;
         int expBonus = enchantLevel * 10;
-        return "&7当周围15格内有至少5名玩家时,"
-                + "/s&7击杀获得硬币 &6+" + coinBonus + "% &7,获得经验值 &b+" + expBonus + "%";
+        return ("&7当周围15格内有至少5名玩家时（包含自身）,"
+                + "/s&7击杀获得硬币 &6+" + coinBonus + "% &7,获得经验值 &b+" + expBonus + "%") + "/s" + "&7以上金币或经验加成排除 Bot";
     }
 
 

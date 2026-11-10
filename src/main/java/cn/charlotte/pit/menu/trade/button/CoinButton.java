@@ -99,7 +99,8 @@ public class CoinButton extends Button {
                             player.sendMessage(CC.translate("&c双方其中一人的今日交易硬币量上限不允许你放置此数量的硬币!"));
                             return;
                         }
-                        profileA.setCoins(profileA.getCoins() + tradeManager.getACoins() - coins);
+                        cn.charlotte.pit.reward.CoinLedger.set(profileA, profileA.getCoins() + tradeManager.getACoins() - coins,
+                                cn.charlotte.pit.reward.CoinLedger.Flow.ESCROW, "trade_offer");
                         tradeManager.setACoins(coins);
                     } else {
                         if (tradeManager.getBItems().size() >= 8) {
@@ -114,7 +115,8 @@ public class CoinButton extends Button {
                             player.sendMessage(CC.translate("&c双方其中一人的今日交易硬币量上限不允许你放置此数量的硬币!"));
                             return;
                         }
-                        profileB.setCoins(profileB.getCoins() + tradeManager.getBCoins() - coins);
+                        cn.charlotte.pit.reward.CoinLedger.set(profileB, profileB.getCoins() + tradeManager.getBCoins() - coins,
+                                cn.charlotte.pit.reward.CoinLedger.Flow.ESCROW, "trade_offer");
                         tradeManager.setBCoins(coins);
                     }
 

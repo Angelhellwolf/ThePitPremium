@@ -38,17 +38,26 @@ class HealerEnchant : AbstractEnchantment(), IAttackEntity, IActionDisplayEnchan
         return null
     }
 
-    fun getHealAmount(enchantLevel: Int): Int {
+    fun getSelfHealHearts(enchantLevel: Int): Double {
         return when (enchantLevel) {
-            1 -> 2
-            2 -> 4
-            3 -> 5
-            else -> 0
+            1 -> 0.5
+            2 -> 0.75
+            3 -> 1.0
+            else -> 0.0
+        }
+    }
+
+    fun getTargetHealHearts(enchantLevel: Int): Double {
+        return when (enchantLevel) {
+            1 -> 2.0
+            2 -> 4.0
+            3 -> 5.0
+            else -> 0.0
         }
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7攻击命中玩家时恢复自身 &c" + (0.25 + 0.25 * enchantLevel) + "❤ &7并恢复对方 &c" + getHealAmount(
+        return "&7攻击命中玩家时恢复自身 &c" + getSelfHealHearts(enchantLevel) + "❤ &7并恢复对方 &c" + getTargetHealHearts(
             enchantLevel
         ) + "❤ &7(1秒冷却)"
     }
@@ -68,8 +77,8 @@ class HealerEnchant : AbstractEnchantment(), IAttackEntity, IActionDisplayEnchan
     ) {
         if (target is Player && Companion.cooldown.getOrDefault(attacker.uniqueId, Cooldown(0)).hasExpired()) {
             Companion.cooldown[attacker.uniqueId] = Cooldown(1, TimeUnit.SECONDS)
-            PlayerUtil.heal(attacker, 0.5 + 0.5 * enchantLevel)
-            PlayerUtil.heal(target, (2 * getHealAmount(enchantLevel)).toDouble())
+            PlayerUtil.heal(attacker, getSelfHealHearts(enchantLevel) * 2)
+            PlayerUtil.heal(target, getTargetHealHearts(enchantLevel) * 2)
         }
     }
 

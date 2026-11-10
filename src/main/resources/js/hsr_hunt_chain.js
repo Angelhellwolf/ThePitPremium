@@ -1,4 +1,6 @@
 var FixedMetadataValue = Java.type('org.bukkit.metadata.FixedMetadataValue');
+var PotionEffect = Java.type('org.bukkit.potion.PotionEffect');
+var PotionEffectType = Java.type('org.bukkit.potion.PotionEffectType');
 
 ENCHANT_NAME = "巡猎连斩";
 INTERNAL_NAME = "hsr_hunt_chain_enchant";
@@ -7,10 +9,11 @@ TYPE = ["WEAPON"];
 MAX_LEVEL = 3;
 
 function lore(level) {
-    var boost = 8 * level;
+    var boost = 8 + 6 * level;
     return [
-        "&7终结技: 击杀玩家后, 获得 1 次 &b连斩",
-        "&7下一次近战命中伤害 &c+" + boost + "% &7(持续 &f4秒&7)"
+        "&7击杀玩家后进入 &b连斩 &f(6秒)",
+        "&7期间近战伤害 &c+" + boost + "% &7并获得 &b速度 I",
+        "&7连斩期间再次击杀会刷新持续时间"
     ];
 }
 
@@ -26,19 +29,16 @@ function _setMetaLong(entity, key, value) {
 }
 
 function killed(enchant_level, myself, target, coins, experience) {
-    _setMetaLong(myself, "hsr_hunt_chain_ready", Date.now() + 4000);
+    _setMetaLong(myself, "hsr_hunt_chain_ready", Date.now() + 6000);
+    myself.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 120, 0), true);
 }
 
 function attack(enchant_level, attacker, target, damage, final_damage, boost_damage, cancel) {
     if (!(target instanceof Player)) {
         return;
     }
-    var now = Date.now();
-    var readyUntil = _metaLong(attacker, "hsr_hunt_chain_ready");
-    if (now > readyUntil) {
+    if (Date.now() > _metaLong(attacker, "hsr_hunt_chain_ready")) {
         return;
     }
-    _setMetaLong(attacker, "hsr_hunt_chain_ready", 0);
-    boost_damage.getAndAdd(0.08 * enchant_level);
+    boost_damage.getAndAdd(0.08 + 0.06 * enchant_level);
 }
-

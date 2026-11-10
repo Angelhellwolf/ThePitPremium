@@ -8,6 +8,7 @@ import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.UtilKt;
 import cn.charlotte.pit.util.chat.RomanUtil;
 import cn.charlotte.pit.util.cooldown.Cooldown;
+import cn.charlotte.pit.util.combat.CombatPotions;
 import cn.charlotte.pit.util.time.TimeUtil;
 import com.google.common.util.concurrent.AtomicDouble;
 import net.minecraft.server.v1_8_R3.NBTTagCompound;
@@ -71,8 +72,7 @@ public class SprintDrainEnchant extends AbstractEnchantment implements IPlayerSh
     @Override
     @PlayerOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        attacker.removePotionEffect(PotionEffectType.SPEED);
-        attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * (enchantLevel * 2 + 1), enchantLevel >= 3 ? 1 : 0), true);
+        CombatPotions.refresh(attacker, new PotionEffect(PotionEffectType.SPEED, 20 * (enchantLevel * 2 + 1), enchantLevel >= 3 ? 1 : 0));
         if (enchantLevel >= 2) {
             Player targetPlayer = (Player) target;
             targetPlayer.removePotionEffect(PotionEffectType.SLOW);

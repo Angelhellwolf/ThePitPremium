@@ -8,7 +8,7 @@ function lore(level) {
     var reward = 3 * level;
     return [
         "&7终结技: 击杀玩家时, 额外获得 &6+" + reward + " &7硬币 与 &b+" + reward + " &7经验值",
-        "&7该效果来自你的护甲行迹, 可与其他加成叠加"
+        "&7可与其他加成叠加，击杀 Bot 不获得此加成"
     ];
 }
 

@@ -101,6 +101,7 @@ public class BowBundleShopButton extends AbstractShopButton implements Listener 
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (e.getAction() == Action.PHYSICAL) {
             e.setCancelled(true);
             return;

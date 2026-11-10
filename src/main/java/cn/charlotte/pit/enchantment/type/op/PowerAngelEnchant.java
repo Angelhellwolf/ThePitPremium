@@ -6,6 +6,7 @@ import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.chat.RomanUtil;
 import cn.charlotte.pit.util.cooldown.Cooldown;
+import cn.charlotte.pit.util.combat.CombatPotions;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -53,7 +54,6 @@ public class PowerAngelEnchant extends AbstractEnchantment implements IPlayerSho
     @Override
     @cn.charlotte.pit.parm.type.BowOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        attacker.removePotionEffect(PotionEffectType.DAMAGE_RESISTANCE);
-        attacker.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 4, enchantLevel - 1), false);
+        CombatPotions.refresh(attacker, new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE, 20 * 4, enchantLevel - 1));
     }
 }

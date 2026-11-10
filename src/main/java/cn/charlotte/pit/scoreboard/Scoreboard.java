@@ -87,6 +87,18 @@ public class Scoreboard implements AssembleAdapter {
     public List<String> getLines(Player player) {
         serverAddress = ThePit.getInstance().getPitConfig().getServerName();
 
+        cn.charlotte.pit.junxu.JunxuManager junxu = ThePit.getInstance().getJunxuManager();
+        if (junxu != null && junxu.isWorld(player.getWorld())) {
+            cn.charlotte.pit.junxu.JunxuRoom room = junxu.at(player.getLocation());
+            if (room != null) return CC.translate(Arrays.asList("", "&6第七军需处", "&7房主：&f" + room.ownerName,
+                    "&7身份：&f" + (room.owner.equals(player.getUniqueId()) ? "房主" : "访客"),
+                    "&7剩余：&e" + cn.charlotte.pit.junxu.JunxuManager.duration(junxu.remaining(room)),
+                    "&7战魂：&b" + junxu.bots().count(room) + " / " + cn.charlotte.pit.junxu.JunxuEntitlements.bots(room.tier),
+                    "&7区域：&f" + (room.arena(player.getLocation()) ? "演武场" : "安全服务区"), " ",
+                    "&f/junxu &7管理房间", "&f/junxu leave &7返回", "", serverAddress));
+            return CC.translate(Arrays.asList("", "&6第七军需处 · 模板", "&f/junxu leave &7返回", "", serverAddress));
+        }
+
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
         if (profile == null) {
             return new ArrayList<>();
@@ -255,19 +267,8 @@ public class Scoreboard implements AssembleAdapter {
         }
         if (gladiator && profile.isInArena()) {
 
-            double boost = PlayerUtil.getNearbyPlayers(player.getLocation(), 8).size();
-
-            int sybilLevel = Utils.getEnchantLevel(player.getInventory().getLeggings(), "sybil");
-            if (sybilLevel > 0) {
-                boost += sybilLevel + 1;
-            }
-
-            if (boost > 10) {
-                boost = 10;
-            }
-            if (boost >= 3) {
-                lines.add("&f角斗士: &9-" + boost * 3 + "%");
-            }
+            double reduction = cn.charlotte.pit.perk.type.shop.GladiatorPerk.getReduction(player);
+            if (reduction > 0) lines.add("&f角斗士: &9-" + numFormat.format(reduction * 100) + "%");
 
         }
 

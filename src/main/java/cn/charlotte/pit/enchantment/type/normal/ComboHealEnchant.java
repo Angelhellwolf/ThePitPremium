@@ -1,5 +1,7 @@
 package cn.charlotte.pit.enchantment.type.normal;
 
+import cn.charlotte.pit.util.combat.CombatContext;
+
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.enchantment.AbstractEnchantment;
 import cn.charlotte.pit.enchantment.IActionDisplayEnchant;
@@ -61,12 +63,10 @@ public class ComboHealEnchant extends AbstractEnchantment implements IAttackEnti
 
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeHit() % 4 == 0) {
+        if (CombatContext.meleeHits(attacker) % 4 == 0) {
             float heart = (((CraftPlayer) attacker).getHandle()).getAbsorptionHearts();
-            float heal = new Double(enchantLevel * 0.8).floatValue();
-            if (heart <= heal) {
-                (((CraftPlayer) attacker).getHandle()).setAbsorptionHearts(Math.min(heart + heal, heal));
-            }
+            float heal = (float) (enchantLevel * 0.8);
+            (((CraftPlayer) attacker).getHandle()).setAbsorptionHearts(Math.max(heart, heal));
             PlayerUtil.heal(attacker, 0.8 * enchantLevel);
         }
     }
@@ -74,19 +74,17 @@ public class ComboHealEnchant extends AbstractEnchantment implements IAttackEnti
     @Override
     @cn.charlotte.pit.parm.type.BowOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getBowHit() % 4 == 0) {
+        if (CombatContext.bowHits(attacker) % 4 == 0) {
             float heart = (((CraftPlayer) attacker).getHandle()).getAbsorptionHearts();
-            float heal = new Double(enchantLevel * 0.8).floatValue();
-            if (heart <= heal) {
-                (((CraftPlayer) attacker).getHandle()).setAbsorptionHearts(Math.min(heart + heal, heal));
-            }
+            float heal = (float) (enchantLevel * 0.8);
+            (((CraftPlayer) attacker).getHandle()).setAbsorptionHearts(Math.max(heart, heal));
             PlayerUtil.heal(attacker, 0.8 * enchantLevel);
         }
     }
 
     @Override
     public String getText(int level, Player player) {
-        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getBowHit() : PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()).getMeleeHit());
+        int hit = (player.getItemInHand() != null && player.getItemInHand().getType() == Material.BOW ? CombatContext.bowHits(player) : CombatContext.meleeHits(player));
         return (hit % 4 == 0 ? "&a&l✔" : "&e&l" + (4 - hit % 4));
     }
 }

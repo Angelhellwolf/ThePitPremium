@@ -1,36 +1,32 @@
 package cn.charlotte.pit.enchantment.type.aqua
 
-import cn.charlotte.pit.ThePit
 import cn.charlotte.pit.enchantment.AbstractEnchantment
 import cn.charlotte.pit.enchantment.param.item.ArmorOnly
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity
 import cn.charlotte.pit.parm.AutoRegister
 import cn.charlotte.pit.util.cooldown.Cooldown
-import cn.charlotte.pit.util.toMythicItem
-import org.bukkit.Bukkit
+import cn.charlotte.pit.util.BotEnchantPolicy
+import cn.charlotte.pit.util.PlayerUtil
 import org.bukkit.entity.FishHook
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
-import kotlin.math.max
 
 @ArmorOnly
 @AutoRegister
 class GrandmasterEnchant: AbstractEnchantment(), Listener{
-    @EventHandler
-    private fun onDamage(event: EntityDamageByEntityEvent) {
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    fun onDamage(event: EntityDamageByEntityEvent) {
         val damager = event.damager
-        if (damager is FishHook && event.entity is Player &&
-            damager.shooter is Player && (damager.shooter as Player).inventory.leggings?.toMythicItem()?.enchantments?.any {
-                it.key.nbtName == "rod_back"
-            } == true) {
-            Bukkit.getScheduler().runTaskLater(ThePit.getInstance(), {
-                val player = event.entity as Player
-                player.damage(0.0, (event.damager as FishHook).shooter as Player)
-                player.health = max(0.0, player.health - 1.0)
-            }, 1L)
-        }
+        if (event.isCancelled || damager !is FishHook || event.entity !is Player) return
+        val shooter = damager.shooter as? Player ?: return
+        val target = event.entity as Player
+        if (shooter.uniqueId == target.uniqueId || !BotEnchantPolicy.effectAllowed(shooter, target)
+            || PlayerUtil.shouldIgnoreEnchant(shooter, target)) return
+        if (getItemEnchantLevel(shooter.inventory.leggings) <= 0) return
+        event.damage = event.damage.coerceAtLeast(0.0) + 1.0
     }
 
     override fun getEnchantName(): String {
@@ -54,6 +50,6 @@ class GrandmasterEnchant: AbstractEnchantment(), Listener{
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7使用鱼竿命中玩家时额外造成 &c0.5❤ &7的伤害"
+        return "&7使用鱼竿命中玩家时额外造成 &c0.5❤ &7普通伤害/s&7此伤害受护甲与抗性效果减免"
     }
 }

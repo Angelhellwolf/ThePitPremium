@@ -55,10 +55,11 @@ public class EchoOfSnowlandWEnchant extends AbstractEnchantment implements IAtta
     @PlayerOnly
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         Player targetPlayer = (Player) target;
-        if (PlayerProfile.getPlayerProfileByUuid(attacker.getUniqueId()).getMeleeAttack() % 3 == 0) {
-            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 10, 1), true);
-            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20 * 10, 0), true);
-
+        if (cn.charlotte.pit.util.combat.CombatContext.meleeHits(attacker) % 3 == 0) {
+            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 20 * 10, 0), true);
+            targetPlayer.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 20 * 10, 1), true);
+        }
+        if (targetPlayer.hasPotionEffect(PotionEffectType.WEAKNESS) && targetPlayer.hasPotionEffect(PotionEffectType.SLOW)) {
             boostDamage.set(boostDamage.get() + 1.2);
             finalDamage.set(finalDamage.get() + 2);
         }

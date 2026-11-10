@@ -34,17 +34,13 @@ class ComboPowerfulEnchant: AbstractEnchantment(), IAttackEntity {
     }
 
     override fun getUsefulnessLore(enchantLevel: Int): String {
-        return "&7在&a 不在战斗&7 状态中持续15秒未受到伤害/s" +
-                "&7则你下次攻击伤害额外增加&c +${
-                    when(enchantLevel) {
-                        2 -> "95"
-                        3 -> "110"
-                        else -> "75"
-                    }
-                }%/s/s" +
-                "&7在&c 战斗中&7 状态持续超过25秒未收到伤害, /s" +
-                "则你下次攻击变为&f 真实伤害"
+        val percent = when (enchantLevel) { 2 -> 95; 3 -> 110; else -> 75 }
+        return "&7脱战且15秒未受玩家攻击时，下次近战伤害 &c+$percent%/s" +
+                "&7仍在战斗且25秒未受玩家攻击时，下次近战普通伤害转为真实伤害/s" +
+                "&7触发后重新蓄力"
     }
+
+    private val lastActivation = HashMap<java.util.UUID, Long>()
 
     override fun handleAttackEntity(
         enchantLevel: Int,
@@ -55,24 +51,18 @@ class ComboPowerfulEnchant: AbstractEnchantment(), IAttackEntity {
         boostDamage: AtomicDouble,
         cancel: AtomicBoolean
     ) {
+        if (cancel.get() || target !is Player || damage <= 0) return
         val profile = PlayerProfile.getPlayerProfileByUuid(attacker.uniqueId)
-        val inFight = profile.combatTimer.hasExpired()
-
+        val inCombat = !profile.combatTimer.hasExpired()
         val now = System.currentTimeMillis()
-        if (inFight) {
-            val lastDamageAt = profile.lastDamageAt
-
-            if (lastDamageAt == -1L || now - lastDamageAt >= 25 * 1000L) {
-                val boost = boostDamage.getAndSet(0.0)
-                finalDamage.addAndGet(damage * boost)
-            }
+        val since = maxOf(profile.lastDamageAt, profile.lastLoginTime, lastActivation[attacker.uniqueId] ?: 0L)
+        if (since <= 0 || now - since < (if (inCombat) 25_000L else 15_000L)) return
+        if (inCombat) {
+            cn.charlotte.pit.util.combat.CombatContext.convertNormalToTrue(1.0)
         } else {
-            val lastDamageAt = profile.lastDamageAt
-
-            if (lastDamageAt == -1L || now - lastDamageAt >= 15 * 1000L) {
-                val boost = boostDamage.getAndSet(0.0)
-                finalDamage.addAndGet(damage * boost)
-            }
+            val boost = when (enchantLevel) { 2 -> 0.95; 3 -> 1.10; else -> 0.75 }
+            boostDamage.addAndGet(boost)
         }
+        cn.charlotte.pit.util.combat.CombatContext.afterAccepted { lastActivation[attacker.uniqueId] = now }
     }
 }

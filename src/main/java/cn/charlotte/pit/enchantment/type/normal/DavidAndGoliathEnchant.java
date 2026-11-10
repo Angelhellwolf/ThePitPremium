@@ -46,7 +46,18 @@ public class DavidAndGoliathEnchant extends AbstractEnchantment implements IPlay
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7受到来自持有赏金的玩家攻击时受到的伤害 &9-" + (10 + enchantLevel * 10) + "%";
+        return "&7受到来自持有赏金的玩家攻击时受到的伤害 &9-" + getReducePercent(enchantLevel) + "%";
+    }
+
+    private int getReducePercent(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 15;
+            case 2:
+                return 25;
+            default:
+                return 40;
+        }
     }
 
     @Override
@@ -55,7 +66,7 @@ public class DavidAndGoliathEnchant extends AbstractEnchantment implements IPlay
         Player attackerPlayer = (Player) attacker;
         PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(attackerPlayer.getUniqueId());
         if (profile.getBounty() > 0) {
-            boostDamage.getAndAdd(-0.1 - 0.1 * enchantLevel);
+            boostDamage.getAndAdd(-getReducePercent(enchantLevel) * 0.01);
         }
     }
 }

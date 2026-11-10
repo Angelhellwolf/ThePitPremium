@@ -45,12 +45,23 @@ public class ParasiteEnchant extends AbstractEnchantment implements IPlayerShoot
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "弓箭击中恢复自身 &c" + (enchantLevel * 0.25 + (enchantLevel >= 3 ? 0.25 : 0)) + "❤";
+        return "弓箭击中恢复自身 &c" + getHealHearts(enchantLevel) + "❤";
+    }
+
+    private double getHealHearts(int enchantLevel) {
+        switch (enchantLevel) {
+            case 1:
+                return 0.25;
+            case 2:
+                return 0.5;
+            default:
+                return 1.0;
+        }
     }
 
     @Override
     @cn.charlotte.pit.parm.type.BowOnly
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
-        PlayerUtil.heal(attacker, enchantLevel * 0.5 + (enchantLevel >= 3 ? 0.5 : 0));
+        PlayerUtil.heal(attacker, getHealHearts(enchantLevel) * 2);
     }
 }

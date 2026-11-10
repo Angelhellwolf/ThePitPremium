@@ -15,7 +15,7 @@ import java.util.Map;
 public class EventPreviewerMenu extends Menu {
     @Override
     public String getTitle(Player player) {
-        return "天坑乱斗会员: /events";
+        return "天坑·会员: /events";
     }
 
     @Override

@@ -11,6 +11,9 @@ import cn.charlotte.pit.event.PitStreakKillChangeEvent;
 import cn.charlotte.pit.events.genesis.team.GenesisTeam;
 import cn.charlotte.pit.medal.impl.challenge.HundredLevelMedal;
 import cn.charlotte.pit.quest.AbstractQuest;
+import cn.charlotte.pit.reward.RewardMath;
+import cn.charlotte.pit.supporter.SupporterAccount;
+import cn.charlotte.pit.supporter.SupporterTier;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.chat.MessageType;
 import cn.charlotte.pit.util.chat.TitleUtil;
@@ -21,6 +24,7 @@ import cn.charlotte.pit.util.random.RandomUtil;
 import cn.charlotte.pit.util.rank.RankUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
@@ -29,6 +33,9 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.slf4j.Logger;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -139,10 +146,29 @@ public class PlayerProfile {
     private OfferData offerData;
     //累计获得硬币
     private double grindedCoins;
+    private cn.charlotte.pit.data.sub.EconomyData economyData = new cn.charlotte.pit.data.sub.EconomyData();
+
+    public cn.charlotte.pit.data.sub.EconomyData getEconomyData() {
+        if (economyData == null) economyData = new cn.charlotte.pit.data.sub.EconomyData();
+        return economyData;
+    }
+
+    public void setEconomyData(cn.charlotte.pit.data.sub.EconomyData value) {
+        economyData = value == null ? new cn.charlotte.pit.data.sub.EconomyData() : value;
+    }
     private PlayerOption playerOption;
     private PlayerBanData playerBanData;
     private boolean supporter;
     private boolean supporterGivenByAdmin;
+    private long supporterExpiresAt;
+    private int supporterContractTier;
+    private long supporterContractExpiresAt;
+    @JsonIgnore
+    private volatile SupporterAccount supporterAccount;
+    private long renameDailyPeriodStart;
+    private int renameDailyFreeUsed;
+    private long renameWeeklyPeriodStart;
+    private int renameWeeklyFreeUsed;
     //补偿信息
     private int remedyLevel;
     private double remedyExp;
@@ -217,6 +243,16 @@ public class PlayerProfile {
 
     public KingsQuestsData kingsQuestsData = new KingsQuestsData();
 
+    private long cherryLuckExpiresAt;
+
+    public long getCherryLuckExpiresAt() {
+        return cherryLuckExpiresAt;
+    }
+
+    public void setCherryLuckExpiresAt(long cherryLuckExpiresAt) {
+        this.cherryLuckExpiresAt = Math.max(0L, cherryLuckExpiresAt);
+    }
+
     public PlayerProfile(UUID uuid, String playerName) {
         //调用默认构造函数，初始化赋值
         this();
@@ -276,6 +312,11 @@ public class PlayerProfile {
 
         this.supporter = false;
         this.supporterGivenByAdmin = false;
+        this.supporterExpiresAt = 0L;
+        this.renameDailyPeriodStart = 0L;
+        this.renameDailyFreeUsed = 0;
+        this.renameWeeklyPeriodStart = 0L;
+        this.renameWeeklyFreeUsed = 0;
 
         this.totalFishTimes = 0;
         this.totalFishTreasureTimes = 0;
@@ -452,6 +493,7 @@ public class PlayerProfile {
     }
 
     public void init() {
+        cn.charlotte.pit.reward.EconomyV2.migrate(this);
         cacheProfile.put(this.getPlayerUuid(), this);
     }
 
@@ -499,6 +541,7 @@ public class PlayerProfile {
         PlayerProfile profile = PlayerProfile.loadPlayerProfileByUuid(this.getPlayerUuid());
         if (profile == null) {
             this.registerTime = System.currentTimeMillis();
+            if (cn.charlotte.pit.reward.EconomyV2.active()) getEconomyData().version = 2;
             //refresh quests - start
             this.refreshQuest();
             //refresh quests - end
@@ -514,6 +557,7 @@ public class PlayerProfile {
         profile.refreshGenesisData();
         //refresh quests - end
 
+        cn.charlotte.pit.reward.EconomyV2.migrate(profile);
         profile.loaded = true;
 
         if (ThePit.getInstance().isEnabled()) {
@@ -566,11 +610,15 @@ public class PlayerProfile {
     }
 
     public void checkUpdate(double newExperience) {
+        checkUpdate(this.experience, newExperience);
+    }
+
+    private void checkUpdate(double oldExperience, double newExperience) {
         final Player player = Bukkit.getPlayer(this.getPlayerUuid());
         if (player != null) {
             applyExperienceToPlayer(player);
             final int newLevel = LevelUtil.getLevelByExp(prestige, newExperience);
-            final int oldLevel = this.getLevel();
+            final int oldLevel = LevelUtil.getLevelByExp(prestige, oldExperience);
 
             if (newLevel > oldLevel) {
 
@@ -579,7 +627,7 @@ public class PlayerProfile {
                 }
 
                 final String newLevelTag = LevelUtil.getLevelTag(this.prestige, newExperience);
-                final String oldLevelTag = LevelUtil.getLevelTag(this.prestige, this.experience);
+                final String oldLevelTag = LevelUtil.getLevelTag(this.prestige, oldExperience);
 
                 CC.send(MessageType.MISC, player, "&b&l天坑升级! " + oldLevelTag + " &7➠ " + newLevelTag);
                 TitleUtil.sendTitle(player, CC.translate("&6&l升 级!"), CC.translate(oldLevelTag + " &7➠ " + newLevelTag), 10, 20, 10);
@@ -590,9 +638,11 @@ public class PlayerProfile {
 
     @JsonIgnore
     public void applyExperienceToPlayer(Player player) {
+        cn.charlotte.pit.reward.EconomyV2.migrate(this);
+        this.experience = RewardMath.experienceTotal(this.experience,
+                LevelUtil.getLevelTotalExperience(this.prestige, 120));
         player.setLevel(getLevel());
         if (getLevel() >= 120) {
-            this.experience = LevelUtil.getLevelTotalExperience(this.prestige, 120);
             player.setExp(1);
             return;
         }
@@ -708,25 +758,21 @@ public class PlayerProfile {
     }
 
     public String getFormattedName() {
-        return getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
+        return cn.charlotte.pit.reward.GrowthProgress.badge(this) + getFormattedLevelTag() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
     }
 
     public String getFormattedNameWithRoman() {
-        return getFormattedLevelTagWithRoman() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
+        return cn.charlotte.pit.reward.GrowthProgress.badge(this) + getFormattedLevelTagWithRoman() + " " + RankUtil.getPlayerColoredName(this.getPlayerUuid());
     }
 
     public String getFormattedLevelTag() {
-        if (nicked) {
-            return LevelUtil.getLevelTag(this.nickPrestige, this.nickLevel);
-        }
-        return LevelUtil.getLevelTag(this.getPrestige(), this.getLevel());
+        return LevelUtil.getLevelTag(cn.charlotte.pit.util.PublicProfileDisplay.prestige(this),
+                cn.charlotte.pit.util.PublicProfileDisplay.level(this));
     }
 
     public String getFormattedLevelTagWithRoman() {
-        if (nicked) {
-            return LevelUtil.getLevelTagWithRoman(this.nickPrestige, this.nickLevel);
-        }
-        return LevelUtil.getLevelTagWithRoman(this.getPrestige(), this.getLevel());
+        return LevelUtil.getLevelTagWithRoman(cn.charlotte.pit.util.PublicProfileDisplay.prestige(this),
+                cn.charlotte.pit.util.PublicProfileDisplay.level(this));
     }
 
     public void addLiteStreakKill(double value) {
@@ -1007,10 +1053,17 @@ public class PlayerProfile {
     }
 
     public void setExperience(double experience) {
-        if (loaded) {
-            checkUpdate(experience);
+        if (!Double.isFinite(experience)) {
+            throw new IllegalArgumentException("Experience must be finite");
         }
-        this.experience = experience;
+        double oldExperience = this.experience;
+        // Jackson may deserialize experience before prestige. Apply the cap only
+        // after loading; loaded gameplay grants always normalize before display.
+        this.experience = loaded ? RewardMath.experienceTotal(experience,
+                LevelUtil.getLevelTotalExperience(this.prestige, 120)) : Math.max(0, experience);
+        if (loaded) {
+            checkUpdate(oldExperience, this.experience);
+        }
     }
 
     public int getPrestige() {
@@ -1030,6 +1083,7 @@ public class PlayerProfile {
     }
 
     public void setCoins(double coins) {
+        cn.charlotte.pit.reward.CoinLedger.record(this, this.coins, coins);
         this.coins = coins;
     }
 
@@ -1050,13 +1104,8 @@ public class PlayerProfile {
     }
 
     public void setBounty(int bounty) {
-        if (bounty >= 5000) {
-//            final Player player = Bukkit.getPlayer(this.getPlayerUuid());
-//            if (player != null) {
-//                new MaxBountyMedal().setProgress(PlayerProfile.getPlayerProfileByUuid(player.getUniqueId()), 1);
-//            }
-        }
         this.bounty = bounty;
+        if (loaded && !bot && bounty > 5000) new cn.charlotte.pit.medal.impl.challenge.MaxBountyMedal().setProgress(this, 1);
     }
 
     public int getActionBounty() {
@@ -1220,16 +1269,106 @@ public class PlayerProfile {
         this.playerBanData = playerBanData;
     }
 
+    @JsonIgnore
     public boolean isSupporter() {
+        SupporterAccount account = supporterAccount;
+        if (account != null && account.isPermanent()) return true;
         PitInternalHook api = ThePit.getApi();
         if (api == null) return false;
 
-        if (supporter && !api.getRemoveSupportWhenNoPermission()) return true;
+        if (hasLocalSupporterAccess() && !api.getRemoveSupportWhenNoPermission()) return true;
 
         Player player = Bukkit.getPlayerExact(playerName);
         if (player == null) return false;
 
         return player.hasPermission(api.getPitSupportPermission());
+    }
+
+    /** Serialize the local entitlement, never a transient Bukkit wildcard permission. */
+    @JsonProperty("supporter")
+    public boolean getSupporter() {
+        SupporterAccount account = supporterAccount;
+        return account == null ? supporter : account.isPermanent();
+    }
+
+    @JsonIgnore
+    public SupporterAccount getSupporterAccount() { return supporterAccount; }
+
+    public synchronized void applySupporterAccount(SupporterAccount account) {
+        if (account == null || (supporterAccount != null
+                && account.getRevision() < supporterAccount.getRevision())) return;
+        supporter = account.isPermanent();
+        supporterGivenByAdmin = account.isGivenByAdmin();
+        supporterExpiresAt = 0L;
+        supporterContractTier = account.getTier().getId();
+        supporterContractExpiresAt = account.getExpiresAt();
+        supporterAccount = account;
+    }
+
+    public int getSupporterContractTier() {
+        SupporterAccount account = supporterAccount;
+        return account == null ? supporterContractTier : account.getTier().getId();
+    }
+
+    public void setSupporterContractTier(int tier) { supporterContractTier = tier; }
+
+    public long getSupporterContractExpiresAt() {
+        SupporterAccount account = supporterAccount;
+        return account == null ? supporterContractExpiresAt : account.getExpiresAt();
+    }
+
+    public void setSupporterContractExpiresAt(long expiry) { supporterContractExpiresAt = expiry; }
+
+    @JsonIgnore
+    public SupporterTier getActiveSupporterTier() {
+        if (getSupporterContractExpiresAt() <= System.currentTimeMillis() || !isSupporter()) {
+            return SupporterTier.NONE;
+        }
+        return SupporterTier.fromId(getSupporterContractTier());
+    }
+
+    @JsonIgnore
+    public String getSupporterStar() { return getActiveSupporterTier().getColor() + "✬"; }
+
+    @JsonIgnore
+    public boolean hasLocalSupporterAccess() {
+        if (!supporter) {
+            return false;
+        }
+        if (supporterGivenByAdmin) {
+            return true;
+        }
+        // supporter=true with no expiry is a legacy permanent purchase. Keep it
+        // valid so the monthly migration does not revoke existing entitlements.
+        return supporterExpiresAt <= 0L || supporterExpiresAt > System.currentTimeMillis();
+    }
+
+    @JsonIgnore
+    public boolean hasExpiringSupporterSubscription() {
+        return supporter && !supporterGivenByAdmin && supporterExpiresAt > System.currentTimeMillis();
+    }
+
+    @JsonIgnore
+    public boolean hasLegacyPermanentSupporter() {
+        return supporter && !supporterGivenByAdmin && supporterExpiresAt <= 0L;
+    }
+
+    @JsonIgnore
+    public long getSupporterRemainingMillis() {
+        return Math.max(0L, supporterExpiresAt - System.currentTimeMillis());
+    }
+
+    public void extendSupporter(int days) {
+        if (days <= 0) {
+            throw new IllegalArgumentException("会员天数必须大于 0");
+        }
+        long duration = TimeUnit.DAYS.toMillis(days);
+        long base = supporterExpiresAt > System.currentTimeMillis()
+                ? supporterExpiresAt
+                : System.currentTimeMillis();
+        supporter = true;
+        supporterGivenByAdmin = false;
+        supporterExpiresAt = Math.addExact(base, duration);
     }
 
     public void setSupporter(boolean supporter) {
@@ -1242,6 +1381,92 @@ public class PlayerProfile {
 
     public void setSupporterGivenByAdmin(boolean supporterGivenByAdmin) {
         this.supporterGivenByAdmin = supporterGivenByAdmin;
+    }
+
+    public long getSupporterExpiresAt() {
+        return supporterExpiresAt;
+    }
+
+    public void setSupporterExpiresAt(long supporterExpiresAt) {
+        this.supporterExpiresAt = supporterExpiresAt;
+    }
+
+    @JsonIgnore
+    public int getRenameDailyFreeRemaining(int dailyLimit) {
+        refreshRenameQuotaPeriods();
+        return Math.max(0, dailyLimit - renameDailyFreeUsed);
+    }
+
+    @JsonIgnore
+    public int getRenameWeeklyFreeRemaining(int weeklyLimit) {
+        refreshRenameQuotaPeriods();
+        return Math.max(0, weeklyLimit - renameWeeklyFreeUsed);
+    }
+
+    @JsonIgnore
+    public boolean hasFreeRename(int dailyLimit, int weeklyLimit) {
+        return getRenameDailyFreeRemaining(dailyLimit) > 0
+                && getRenameWeeklyFreeRemaining(weeklyLimit) > 0;
+    }
+
+    public void consumeFreeRename(int dailyLimit, int weeklyLimit) {
+        refreshRenameQuotaPeriods();
+        if (renameDailyFreeUsed >= dailyLimit || renameWeeklyFreeUsed >= weeklyLimit) {
+            throw new IllegalStateException("没有剩余免费改名次数");
+        }
+        renameDailyFreeUsed++;
+        renameWeeklyFreeUsed++;
+    }
+
+    @JsonIgnore
+    private void refreshRenameQuotaPeriods() {
+        LocalDate today = LocalDate.now();
+        long currentDay = today.toEpochDay();
+        long currentWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toEpochDay();
+
+        if (renameDailyPeriodStart != currentDay) {
+            renameDailyPeriodStart = currentDay;
+            renameDailyFreeUsed = 0;
+        }
+        if (renameWeeklyPeriodStart != currentWeek) {
+            renameWeeklyPeriodStart = currentWeek;
+            renameWeeklyFreeUsed = 0;
+        }
+
+        renameDailyFreeUsed = Math.max(0, renameDailyFreeUsed);
+        renameWeeklyFreeUsed = Math.max(0, renameWeeklyFreeUsed);
+    }
+
+    public long getRenameDailyPeriodStart() {
+        return renameDailyPeriodStart;
+    }
+
+    public void setRenameDailyPeriodStart(long renameDailyPeriodStart) {
+        this.renameDailyPeriodStart = renameDailyPeriodStart;
+    }
+
+    public int getRenameDailyFreeUsed() {
+        return renameDailyFreeUsed;
+    }
+
+    public void setRenameDailyFreeUsed(int renameDailyFreeUsed) {
+        this.renameDailyFreeUsed = renameDailyFreeUsed;
+    }
+
+    public long getRenameWeeklyPeriodStart() {
+        return renameWeeklyPeriodStart;
+    }
+
+    public void setRenameWeeklyPeriodStart(long renameWeeklyPeriodStart) {
+        this.renameWeeklyPeriodStart = renameWeeklyPeriodStart;
+    }
+
+    public int getRenameWeeklyFreeUsed() {
+        return renameWeeklyFreeUsed;
+    }
+
+    public void setRenameWeeklyFreeUsed(int renameWeeklyFreeUsed) {
+        this.renameWeeklyFreeUsed = renameWeeklyFreeUsed;
     }
 
     public int getRemedyLevel() {
@@ -1432,8 +1657,12 @@ public class PlayerProfile {
     }
 
     public void setStreakKills(double kills) {
+        setStreakKills(kills, true);
+    }
+
+    public void setStreakKills(double kills, boolean rewardEligible) {
         final PitStreakKillChangeEvent event = new PitStreakKillChangeEvent(this, this.streakKills, kills);
-        if (kills > 0) {
+        if (kills > 0 && rewardEligible) {
             event.callEvent();
         }
         if (event.isCancelled()) {

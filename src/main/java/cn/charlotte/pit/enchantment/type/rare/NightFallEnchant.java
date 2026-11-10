@@ -36,6 +36,7 @@ public class NightFallEnchant extends AbstractEnchantment implements IPlayerShoo
 
     @Override
     public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        if (!(target instanceof Player) || cancel.get()) return;
         Cooldown.putIfAbsent(attacker.getUniqueId(), new Cooldown(0L));
         if ((Cooldown.get(attacker.getUniqueId())).hasExpired()) {
             Cooldown.put(attacker.getUniqueId(), getCooldown());

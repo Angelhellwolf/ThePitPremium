@@ -7,6 +7,7 @@ import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IPlayerKilledEntity;
 import cn.charlotte.pit.parm.listener.IPlayerRespawn;
 import cn.charlotte.pit.util.cooldown.Cooldown;
+import cn.charlotte.pit.util.inventory.InventoryUtil;
 import cn.charlotte.pit.util.item.ItemBuilder;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.Material;
@@ -48,20 +49,28 @@ public class CreativeEnchant extends AbstractEnchantment implements IPlayerKille
     public String getUsefulnessLore(int enchantLevel) {
         return "&7每次死亡后复活立刻获得 &f" + (16 * enchantLevel) + " * &6木板"
                 + "/s&7击杀玩家时获得 &f" + (6 * enchantLevel) + " * &6木板"
-                + "/s&7木板放置后存在时间降低至 &e30 秒 &7且无法被延长.";
+                + "/s&7木板放置后存在时间降低至 &e30 秒 &7且无法被延长."
+                + "/s&7持有上限 &e64";
     }
 
 
     @Override
     @PlayerOnly
     public void handlePlayerKilled(int enchantLevel, Player myself, Entity target, AtomicDouble coins, AtomicDouble experience) {
-        ItemBuilder woodBuilder = new ItemBuilder(Material.WOOD).canDrop(false).canSaveToEnderChest(false).deathDrop(true).canTrade(false).removeOnJoin(true).internalName("creative_enchantment_item");
-        myself.getInventory().addItem(woodBuilder.amount(6 * enchantLevel).build());
+        givePlanks(myself, 6 * enchantLevel);
     }
 
     @Override
     public void handleRespawn(int enchantLevel, Player myself) {
+        givePlanks(myself, 16 * enchantLevel);
+    }
+
+    private void givePlanks(Player player, int amount) {
         ItemBuilder woodBuilder = new ItemBuilder(Material.WOOD).canDrop(false).canSaveToEnderChest(false).deathDrop(true).canTrade(false).removeOnJoin(true).internalName("creative_enchantment_item");
-        myself.getInventory().addItem(woodBuilder.amount(16 * enchantLevel).build());
+        player.getInventory().addItem(woodBuilder.amount(amount).build());
+        int held = InventoryUtil.getAmountOfItem(player, "creative_enchantment_item");
+        if (held > 64) {
+            InventoryUtil.removeItem(player, "creative_enchantment_item", held - 64);
+        }
     }
 }

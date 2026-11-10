@@ -1,3 +1,4 @@
+var PlayerUtil = Java.type('cn.charlotte.pit.util.PlayerUtil');
 var FixedMetadataValue = Java.type('org.bukkit.metadata.FixedMetadataValue');
 
 ENCHANT_NAME = "丰饶回收";
@@ -40,6 +41,6 @@ function shoot(enchant_level, attacker, target, damage, final_damage, boost_dama
     if (maxHealth <= 0) {
         return;
     }
-    attacker.setHealth(Math.min(maxHealth, attacker.getHealth() + 0.5 * enchant_level)); // 0.25❤ * lvl
+    PlayerUtil.heal(attacker, 0.5 * enchant_level); // 0.25❤ * lvl
 }
 

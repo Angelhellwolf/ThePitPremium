@@ -4,7 +4,6 @@ import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.data.sub.MedalData;
 import cn.charlotte.pit.event.PitProfileLoadedEvent;
-import cn.charlotte.pit.parm.AutoRegister;
 import cn.charlotte.pit.util.chat.CC;
 import cn.charlotte.pit.util.command.util.ClassUtil;
 import lombok.Data;
@@ -22,7 +21,6 @@ import java.util.List;
  * @Date 2021/6/8 20:13
  */
 @Data
-@AutoRegister
 public class MedalFactory implements Listener {
 
     private final List<AbstractMedal> medals;

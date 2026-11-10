@@ -42,7 +42,7 @@ public class KFCBoomerEnchant extends AbstractEnchantment implements IPlayerShoo
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "Just to break everything";
+        return "&7实验附魔：当前没有额外战斗效果";
     }
 
     @Override

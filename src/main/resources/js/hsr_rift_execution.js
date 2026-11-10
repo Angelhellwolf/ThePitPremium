@@ -8,7 +8,7 @@ function lore(level) {
     var boost = 8 * level;
     var trueHearts = (0.2 * level).toFixed(1);
     return [
-        "&7终结技: 当目标生命值低于 &c30% &7时",
+        "&7终结技: 当目标生命值不高于 &c30% &7时",
         "&7你造成的伤害 &c+" + boost + "% &7且额外造成 &c" + trueHearts + "❤ &f真实&7伤害"
     ];
 }

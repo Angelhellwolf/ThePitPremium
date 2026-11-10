@@ -50,17 +50,17 @@ public class JerryEnchant5 extends AbstractEnchantment implements ITickTask, Mov
                     }
                 }
             }
-        }.runTaskTimerAsynchronously(ThePit.getInstance(), 20, 20);
+        }.runTaskTimer(ThePit.getInstance(), 20, 20);
     }
 
     private boolean isWearingLeggingsWithEnchantment(Player player) {
-        return player.getInventory().getLeggings() != null && getItemEnchantLevel(player.getInventory().getLeggings()) != -1;
+        return player.getInventory().getLeggings() != null && getItemEnchantLevel(player.getInventory().getLeggings()) > 0 && isEffectActive(player, null);
     }
 
     private void stopPlaying(UUID playerId) {
         PositionSongPlayer player = playerMap.remove(playerId);
         if (player != null) {
-            player.setPlaying(false);
+            player.destroy();
         }
     }
 
@@ -122,7 +122,7 @@ public class JerryEnchant5 extends AbstractEnchantment implements ITickTask, Mov
             player.setAutoDestroy(false);
             player.setLoop(true);
             player.setPlaying(true);
-            player.setVolume((byte) 0);
+            player.setVolume((byte) 5);
             playerMap.put(target.getUniqueId(), player);
         }
     }
@@ -154,5 +154,3 @@ public class JerryEnchant5 extends AbstractEnchantment implements ITickTask, Mov
     public void handleUpdateRotation(Player player, Location from, Location to, PacketPlayInFlying packet) {
     }
 }
-
-

@@ -55,6 +55,7 @@ public class RagePantsCraftButton extends Button {
         if (InventoryUtil.getAmountOfItem(player, ChunkOfVileItem.getInternalName()) < 14) {
             return;
         }
+        if (!cn.charlotte.pit.reward.RareSupply.freshClaim(player)) return;
         if (InventoryUtil.removeItem(player, ChunkOfVileItem.getInternalName(), 14)) {
             final MythicLeggingsItem item = new MythicLeggingsItem();
             item.setColor(MythicColor.RAGE);

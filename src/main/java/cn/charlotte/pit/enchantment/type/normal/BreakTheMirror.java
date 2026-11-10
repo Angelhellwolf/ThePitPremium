@@ -6,6 +6,7 @@ import cn.charlotte.pit.enchantment.param.item.BowOnly;
 import cn.charlotte.pit.enchantment.param.item.WeaponOnly;
 import cn.charlotte.pit.enchantment.rarity.EnchantmentRarity;
 import cn.charlotte.pit.parm.listener.IAttackEntity;
+import cn.charlotte.pit.parm.listener.IPlayerShootEntity;
 import cn.charlotte.pit.util.cooldown.Cooldown;
 import com.google.common.util.concurrent.AtomicDouble;
 import org.bukkit.entity.Entity;
@@ -17,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @ArmorOnly
 @BowOnly
 @WeaponOnly
-public class BreakTheMirror extends AbstractEnchantment implements IAttackEntity {
+public class BreakTheMirror extends AbstractEnchantment implements IAttackEntity, IPlayerShootEntity {
     @Override
     public String getEnchantName() {
         return "破镜";
@@ -53,10 +54,15 @@ public class BreakTheMirror extends AbstractEnchantment implements IAttackEntity
     @Override
     public void handleAttackEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         if (target instanceof Player) {
-            ItemStack itemStack = attacker.getInventory().getLeggings();
+            ItemStack itemStack = ((Player) target).getInventory().getLeggings();
             if (itemStack != null && new MirrorEnchant().isItemHasEnchant(itemStack)) {
                 boostDamage.getAndAdd(enchantLevel * 0.06);
             }
         }
     }
+
+    @Override
+    public void handleShootEntity(int enchantLevel, Player attacker, Entity target, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
+        handleAttackEntity(enchantLevel, attacker, target, damage, finalDamage, boostDamage, cancel);
     }
+}

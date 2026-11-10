@@ -101,6 +101,7 @@ public class SwordBundleShopButton extends AbstractShopButton implements Listene
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (e.getAction() == Action.PHYSICAL) {
             e.setCancelled(true);
             return;
@@ -137,7 +138,7 @@ public class SwordBundleShopButton extends AbstractShopButton implements Listene
             for (int i = 0; i < 36; i++) {
                 ItemStack itemStack = player.getInventory().getItem(i);
                 if (itemStack != null && "mythic_sword".equalsIgnoreCase(ItemUtil.getInternalName(itemStack))) {
-                    AbstractPitItem pitItem = new MythicLeggingsItem();
+                    AbstractPitItem pitItem = new MythicSwordItem();
                     pitItem.loadFromItemStack(itemStack);
                     if (!pitItem.isEnchanted()) {
                         mythicCount++;

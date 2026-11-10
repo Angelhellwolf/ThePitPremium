@@ -2,6 +2,7 @@ package cn.charlotte.pit.runnable;
 
 import cn.charlotte.pit.ThePit;
 import cn.charlotte.pit.data.LeaderBoardEntry;
+import cn.charlotte.pit.util.rank.RankUtil;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
 import java.util.ArrayList;
@@ -68,7 +69,10 @@ public class LeaderBoardRunnable implements Runnable {
                 String uuid = document.getString("uuid");
                 Double experience = getExperience(document);
                 int prestige = document.getInteger("prestige");
-                entries.add(new LeaderBoardEntry(name, UUID.fromString(uuid), rank, experience, prestige));
+                UUID playerUuid = UUID.fromString(uuid);
+                if (cn.charlotte.pit.util.PublicProfileDisplay.masked(playerUuid)) continue;
+                String coloredName = rank <= 10 ? resolveColoredName(playerUuid, name) : "§7" + name;
+                entries.add(new LeaderBoardEntry(name, playerUuid, rank, experience, prestige, coloredName));
                 rank++;
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "处理文档时发生错误：", e);
@@ -91,10 +95,18 @@ public class LeaderBoardRunnable implements Runnable {
         }
     }
 
-    private void updateLeaderBoardEntries(List<LeaderBoardEntry> entries) {
-        synchronized (LeaderBoardEntry.class) {
-            LeaderBoardEntry.setLeaderBoardEntries(entries);
+    private String resolveColoredName(UUID uuid, String name) {
+        try {
+            // This method may load an offline LuckPerms user. LeaderBoardRunnable
+            // runs on its own executor, so the wait never blocks the server thread.
+            return RankUtil.getNameColor(uuid) + name;
+        } catch (Exception ignored) {
+            return "§7" + name;
         }
+    }
+
+    private void updateLeaderBoardEntries(List<LeaderBoardEntry> entries) {
+        LeaderBoardEntry.setLeaderBoardEntries(entries);
     }
 
     public void shutdown() {

@@ -54,8 +54,7 @@ public class ArchangelEnchant extends AbstractEnchantment implements IPlayerDama
     @Override
     public void handlePlayerDamaged(int enchantLevel, Player myself, Entity attacker, double damage, AtomicDouble finalDamage, AtomicDouble boostDamage, AtomicBoolean cancel) {
         if (attacker instanceof Arrow) {
-            double newHeal = myself.getHealth() + 0.5 * enchantLevel;
-            myself.setHealth(Math.min(newHeal, myself.getMaxHealth()));
+            cn.charlotte.pit.util.PlayerUtil.heal(myself, enchantLevel);
         }
     }
 }

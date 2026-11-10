@@ -5,7 +5,9 @@ import cn.charlotte.pit.UtilKt;
 import cn.charlotte.pit.data.PlayerProfile;
 import cn.charlotte.pit.data.sub.PerkData;
 import cn.charlotte.pit.data.temp.TradeRequest;
+import cn.charlotte.pit.enchantment.type.normal.SwiftSprintEnchant;
 import cn.charlotte.pit.parm.listener.ITickTask;
+import cn.charlotte.pit.util.Utils;
 import cn.charlotte.pit.util.perf.PerfMetrics;
 import lombok.Getter;
 import net.minecraft.server.v1_8_R3.NBTTagCompound;
@@ -40,11 +42,14 @@ public class GameRunnable extends BukkitRunnable {
         int players = 0;
         int tasksExecuted = 0;
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        java.util.List<Player> participants = new java.util.ArrayList<>(Bukkit.getOnlinePlayers());
+        if (ThePit.getInstance().getPitBotManager() != null) participants.addAll(ThePit.getInstance().getPitBotManager().getActivePlayers());
+        for (Player player : participants) {
             players++;
             CraftPlayer craftPlayer = (CraftPlayer) player;
-            if (craftPlayer.getHandle().getAbsorptionHearts() > 40.0F) {
-                craftPlayer.getHandle().setAbsorptionHearts(40.0F);
+            float absorptionLimit = Utils.getEnchantLevel(player.getInventory().getLeggings(), "needless_suffering_enchant") > 0 ? 60.0F : 40.0F;
+            if (craftPlayer.getHandle().getAbsorptionHearts() > absorptionLimit) {
+                craftPlayer.getHandle().setAbsorptionHearts(absorptionLimit);
             }
 
             PlayerProfile profile = PlayerProfile.getPlayerProfileByUuid(player.getUniqueId());
@@ -52,12 +57,18 @@ public class GameRunnable extends BukkitRunnable {
                 continue;
             }
 
-            tasksExecuted += runPerkTasks(profile.getChosePerk().values(), perkTasks, player);
-            tasksExecuted += runPerkTasks(profile.getUnlockedPerkMap().values(), perkTasks, player);
+            tasksExecuted += runPerkTasks(perkTasks, player);
 
             //裤子
             final ItemStack leggings = player.getInventory().getLeggings();
             tasksExecuted += runEnchantmentTasks(leggings, enchantmentTasks, player);
+            if (Utils.getEnchantLevel(leggings, "swift_sprint_enchant") <= 0 || cn.charlotte.pit.util.PlayerUtil.shouldIgnoreEnchant(player)) {
+                SwiftSprintEnchant.restoreDefaultWalkSpeed(player);
+            }
+            if ((Utils.getEnchantLevel(leggings, "hearts_enchant") <= 0 || cn.charlotte.pit.util.PlayerUtil.shouldIgnoreEnchant(player))
+                    && profile.getExtraMaxHealth().remove("hearts_enchant") != null) {
+                player.setMaxHealth(profile.getMaxHealth());
+            }
 
             ItemStack itemInHand = player.getInventory().getItemInHand();
             if (itemInHand != null && itemInHand.getType() != Material.AIR && itemInHand.getType() != Material.LEATHER_LEGGINGS && itemInHand.getType() != Material.PAPER) {
@@ -66,7 +77,7 @@ public class GameRunnable extends BukkitRunnable {
         }
 
         // This collection is global, so cleaning it once per tick is sufficient.
-        if (!tradeRequests.isEmpty()) {
+        if (tick % 20L == 0L && !tradeRequests.isEmpty()) {
             tradeRequests.removeIf(tradeRequest -> tradeRequest.getCooldown().hasExpired());
         }
 
@@ -76,15 +87,16 @@ public class GameRunnable extends BukkitRunnable {
         PerfMetrics.recordTime("game.tick", System.nanoTime() - startNs);
     }
 
-    private int runPerkTasks(Iterable<PerkData> perks, Map<String, ITickTask> tasks, Player player) {
+    private int runPerkTasks(Map<String, ITickTask> tasks, Player player) {
         int executed = 0;
-        for (PerkData perk : perks) {
-            final ITickTask task = tasks.get(perk.getPerkInternalName());
-            if (task == null || !isDue(task, perk.getLevel())) {
+        for (ITickTask task : tasks.values()) {
+            cn.charlotte.pit.perk.AbstractPerk perk = (cn.charlotte.pit.perk.AbstractPerk) task;
+            int level = perk.getPlayerLevel(player);
+            if (level < 0 || !isDue(task, level, player)) {
                 continue;
             }
-
-            task.handle(perk.getLevel(), player);
+            if (ThePit.getInstance().getGame().getDisabledPerks().contains(perk)) continue;
+            task.handle(level, player);
             executed++;
         }
         return executed;
@@ -137,7 +149,9 @@ public class GameRunnable extends BukkitRunnable {
                 continue;
             }
 
-            if (isDue(task, level)) {
+            if (level > 0 && task instanceof cn.charlotte.pit.enchantment.AbstractEnchantment
+                    && ((cn.charlotte.pit.enchantment.AbstractEnchantment) task).isEffectActive(player, null)
+                    && isDue(task, level, player)) {
                 task.handle(level, player);
                 executed++;
             }
@@ -145,9 +159,17 @@ public class GameRunnable extends BukkitRunnable {
         return executed;
     }
 
-    private boolean isDue(ITickTask task, int level) {
+    private boolean isDue(ITickTask task, int level, Player player) {
         int loopTicks = task.loopTick(level);
-        return loopTicks > 0 && tick % loopTicks == 0;
+        if (loopTicks <= 0) {
+            return false;
+        }
+
+        // Periodic effects used to fire for every online player on the exact same
+        // server tick (mostly tick 0 of each second). A stable per-player phase keeps
+        // the same cadence while spreading the work and packet bursts across ticks.
+        int phase = Math.floorMod(player.getUniqueId().hashCode(), loopTicks);
+        return Math.floorMod(tick, (long) loopTicks) == phase;
     }
 
     private static boolean supportsEnchantmentTicks(String internalName) {

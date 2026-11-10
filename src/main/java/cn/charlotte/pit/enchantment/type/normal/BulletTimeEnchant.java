@@ -49,7 +49,7 @@ public class BulletTimeEnchant extends AbstractEnchantment implements IPlayerDam
 
     @Override
     public String getUsefulnessLore(int enchantLevel) {
-        return "&7使用剑格挡时免疫弓箭伤害" + (enchantLevel > 1 ? "/s且格挡弓箭时恢复自身 &c" + (0.5 * enchantLevel) + "❤" : "");
+        return "&7使用剑格挡时免疫弓箭伤害/s且格挡弓箭时恢复自身 &c" + (0.5 * enchantLevel) + "❤";
     }
 
     @Override
@@ -59,9 +59,7 @@ public class BulletTimeEnchant extends AbstractEnchantment implements IPlayerDam
             cancel.set(true);
             myself.getLocation().getWorld().playEffect(myself.getLocation(), Effect.SMOKE, 1, 1);
             myself.playSound(myself.getLocation(), Sound.ZOMBIE_WOODBREAK, 2f, 2f);
-            if (enchantLevel > 1) {
-                PlayerUtil.heal(myself, enchantLevel);
-            }
+            PlayerUtil.heal(myself, enchantLevel);
         }
     }
 }
